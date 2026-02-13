@@ -1,3 +1,11 @@
-# thryft
+# Thryft Item 2
 
-A new Flutter project.
+Team 4c members:
+up2245819/Joyeehing
+up2219830/Konstantinos
+up2227777/Georgios
+up2205638/AbigailHinchliffe
+up2306089/AlucardOffD2
+up2257593/ChrystallaT1
+
+
