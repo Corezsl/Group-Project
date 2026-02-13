@@ -37,5 +37,27 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] Set a price for listing
 [] Price Recommendations from previous items in same category
 
-[4] Users Should Be Able to Edit and Manage Their Listings
-[] Active (Non-closed) Listings 
+[4] & [5] & [6] Users Should Be Able to Edit and Manage Their Listings, Users Should Be Able to View Their Purchase and Listing History, Buyers Should Be Able to Track Their Orders 
+[] Display active (Non-closed) Listings 
+[] Users can edit existing selling listings
+[] Users can create new listings
+[] Users can delete existing listings
+[] Users can organise their selling listings.
+[] Users can track the progress and status of any pending listings
+[] Users can easily identify the state of a listing 'Sold', 'Waiting for offer', 'Pending Payment'. 'Offer declined' etc.
+[] Any user can view what another profile has bought and sold
+
+[7] Buyers Should Be Able to Communicate with Sellers 
+[] Users can chat with other registered users about a specific product
+[] Users can pitch and negotiate offers about a product
+
+[8] & [9] Users Should Be Able to Save Listings (Wishlist) & Users Should Receive Notifications for Wishlist Updates 
+[] Users can mark products they are interested in save later for quicker future access
+[] Sellers can view how many people are interested in their product
+[] Users recieved notifications for updates in regards to items they had previously wishlisted, including price change or description change
+
+[10] Users Should Be Able to Register and Log in Securely 
+[] Any user can create an account
+    - Valid inputs include: A valid email address & Password
+    - Verification process
+    - Confirmation of typed password to validate password 
