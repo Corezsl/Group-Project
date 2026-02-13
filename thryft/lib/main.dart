@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:thryft/widgets/header.dart';
 
 void main() {
-  runApp(const HomePage());
+  runApp(const ThryftApp());
+}
+
+class ThryftApp extends StatelessWidget {
+  const ThryftApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: HomePage(),
+    );
+  }
 }
 
 class HomePage extends StatelessWidget {
@@ -9,11 +21,11 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Thryft HomePage'),
-        ),
+    return const Scaffold(
+      body: Column(
+        children: [
+          Header(),
+        ],
       ),
     );
   }
