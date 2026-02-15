@@ -20,14 +20,22 @@ class Header extends StatelessWidget {
               style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 14, fontWeight: FontWeight.bold),
             ),
             Spacer(),
-            Padding(
-              padding: EdgeInsets.only(right: 16.0),
-              child: IconButton(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon (Icons.shopping_cart_outlined,
+                  color: Colors.white
+                ),
+                onPressed: null,
+                ),
+                IconButton(
                 icon: Icon (Icons.person_outline,
                 color: Colors.white
                 ),
                 onPressed: null,
-              ),
+                ),
+              ],
             ),
           ],
         ),
