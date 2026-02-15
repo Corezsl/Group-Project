@@ -13,12 +13,6 @@ class Header extends StatelessWidget {
         child: Row(
           children:[
             Spacer(),
-            Text(
-              'Placeholder for header',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            Spacer(),
             SizedBox(
               width: 500,
               child: TextField(
