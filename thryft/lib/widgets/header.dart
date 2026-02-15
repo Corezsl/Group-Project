@@ -19,6 +19,25 @@ class Header extends StatelessWidget {
               style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 14, fontWeight: FontWeight.bold),
             ),
             Spacer(),
+            SizedBox(
+              width: 500,
+              child: TextField(
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.search, color: Colors.white),
+                  hintText: 'Search',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Color.fromARGB(50, 255, 255, 255),
+                ),
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Spacer(),
+
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
