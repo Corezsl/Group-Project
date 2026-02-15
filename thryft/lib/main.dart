@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/product_carousel.dart';
 
 void main() {
   runApp(const ThryftApp());
@@ -10,9 +11,7 @@ class ThryftApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: HomePage(),
-    );
+    return const MaterialApp(home: HomePage());
   }
 }
 
@@ -21,11 +20,17 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Column(
-        children: [
-          Header(),
-        ],
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const Header(),
+
+            // other widgets can be added here
+            const SizedBox(height: 16),
+            const ProductCarousel(),
+          ],
+        ),
       ),
     );
   }
