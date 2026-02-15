@@ -24,6 +24,12 @@ class Header extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
+                  icon: Icon (Icons.favorite_outline,
+                  color: Colors.white
+                ),
+                onPressed: null,
+                ),
+                IconButton(
                   icon: Icon (Icons.shopping_cart_outlined,
                   color: Colors.white
                 ),
