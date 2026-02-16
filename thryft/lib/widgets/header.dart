@@ -9,7 +9,7 @@ class Header extends StatelessWidget {
     return Container(
       height: 100,
       color: const Color.fromARGB(255, 71, 164, 245),
-      child: const Center(
+      child: Center(
         child: Row(
           children:[
             Spacer(),
@@ -31,7 +31,15 @@ class Header extends StatelessWidget {
               ),
             ),
             Spacer(),
-
+            
+            FilledButton.tonal(
+              onPressed: null,
+              style: FilledButton.styleFrom(
+                textStyle: TextStyle(fontSize: 16.0),
+              ),
+              child: Text('SELL NOW'),
+            ),
+            Spacer(),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
