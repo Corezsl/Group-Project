@@ -78,11 +78,31 @@ class Header extends StatelessWidget {
             TextButton(
               onPressed: null,
               child: Text('Home'),
-            ),
+              ),
             SizedBox(width: 16),
             TextButton(
               onPressed: null,
               child: Text('Shirts'),
+                ),
+            SizedBox(width: 16),
+            TextButton(
+              onPressed: null,
+              child: Text('Trousers'),
+                ),
+            SizedBox(width: 16),
+            TextButton(
+              onPressed: null,
+              child: Text('Shoes'),
+                ),
+            SizedBox(width: 16),
+            TextButton(
+              onPressed: null,
+              child: Text('Accessories'),
+                ),
+            SizedBox(width: 16),
+            TextButton(
+              onPressed: null,
+              child: Text('About Us'),
                 ),
               ],
             ),
