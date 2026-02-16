@@ -61,6 +61,8 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            // other widgets can be added here
+            const SizedBox(height: 16),
             const ProductCarousel(),
             const SizedBox(height: 40),
           ],

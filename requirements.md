@@ -2,7 +2,8 @@ Requirements File:
 Written below is a list of steps (problem decomposition) of the main requirements listed in CW1 that we can use to support meeting the targets gathered by the Team via interviews. 
 
 [1] Users Should Be Able to Filter Items:
-[] Add search bar to header
+[✅] Add search bar to header
+    [❌]Expected behaviour: User can click on the search box and type what they want to search, and the relevant results should be displayed.
 [] Filter positioning
 [] Filter Button Behaviour: Basic Dropdown
 [] Filter by Size
@@ -32,7 +33,7 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] Integrating photo import feature
 [] Create Listings button on the homepage
 [] Attached listings button for profile
-    - Expected behaviour: To appear only when a user is logged in and on their own profile. Others cannot add listings to another user's profile.
+    []- Expected behaviour: To appear only when a user is logged in and on their own profile. Others cannot add listings to another user's profile.
 [] Predefined Condition categories upon listing creation
 [] Set a price for listing
 [] Price Recommendations from previous items in same category
