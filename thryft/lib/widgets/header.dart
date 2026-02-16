@@ -14,7 +14,7 @@ class Header extends StatelessWidget {
           children:[
             Image.asset(
               'assets/images/thyrft_logo.png',
-              height: 24,
+              height: 60,
               fit: BoxFit.cover,
             ),
             Spacer(),
