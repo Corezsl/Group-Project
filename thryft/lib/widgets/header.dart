@@ -10,8 +10,11 @@ class Header extends StatelessWidget {
       height: 100,
       color: const Color.fromARGB(255, 71, 164, 245),
       child: Center(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children:[
+            Row(
+              children: [
             Image.asset(
               'assets/images/thyrft_logo.png',
               height: 60,
@@ -36,7 +39,6 @@ class Header extends StatelessWidget {
               ),
             ),
             Spacer(),
-            
             FilledButton.tonal(
               onPressed: null,
               style: FilledButton.styleFrom(
@@ -65,6 +67,22 @@ class Header extends StatelessWidget {
                 color: Colors.white
                 ),
                 onPressed: null,
+                ),
+              ],
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: null,
+              child: Text('Home'),
+            ),
+            SizedBox(width: 16),
+            TextButton(
+              onPressed: null,
+              child: Text('Shirts'),
                 ),
               ],
             ),
