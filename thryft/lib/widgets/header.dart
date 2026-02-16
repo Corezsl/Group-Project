@@ -12,6 +12,11 @@ class Header extends StatelessWidget {
       child: Center(
         child: Row(
           children:[
+            Image.asset(
+              'assets/images/thyrft_logo.png',
+              height: 24,
+              fit: BoxFit.cover,
+            ),
             Spacer(),
             SizedBox(
               width: 500,
