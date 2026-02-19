@@ -44,15 +44,16 @@ Written below is a list of steps (problem decomposition) of the main requirement
 
 
 
-[4] & [5] & [6] Users Should Be Able to Edit and Manage tingTheir Listings, Users Should Be Able to View Their Purchase and Listing History, Buyers Should Be Able to Track Their Orders 
-[] Display active (Non-closed) Listings 
-[] Users can edit existing selling listings
-[] Users can create new listings
-[] Users can delete existing listings 
-[] Users can organise their selling listings.
-[] Users can track the progress and status of any pending listo dattings
+[4] & [5]Users Should Be Able to Edit and Manage their Listings, Users Should Be Able to View their Listing History, 
+[] On account page make a button "view listings" that take you to a new page where you can view and edit listings
+[] at the top of the page you can filter between sold,items active listings and all which will be displayed in chronological order
+[] each listing will have a trash icon or something similar where a pop up box will pop up and ask if youre sure you want to delete the listing and if you press yes listing is deleted from the UI and from the database
+[] Create an "edit" button where if pressed it will take you to the listing page with all the fields filled and the user  will be able to change any value they want and press the "list item" button to update the listing (both UI and database)  
 [] Users can easily identify the state of a listing 'Sold', 'Waiting for offer', 'Pending Payment'. 'Offer declined' etc.
 [] Any user can view what another profile has bought and sold
+
+[5] & [6]
+[]create button "view wishlist" that takes you to seperate page where all items in wishlist are displayed
 
 [7] Buyers Should Be Able to Communicate with Sellers b
 [] Users can chat with other registered users about a specific product
