@@ -49,11 +49,13 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] at the top of the page you can filter between sold,items active listings and all which will be displayed in chronological order
 [] each listing will have a trash icon or something similar where a pop up box will pop up and ask if youre sure you want to delete the listing and if you press yes listing is deleted from the UI and from the database
 [] Create an "edit" button where if pressed it will take you to the listing page with all the fields filled and the user  will be able to change any value they want and press the "list item" button to update the listing (both UI and database)  
-[] Users can easily identify the state of a listing 'Sold', 'Waiting for offer', 'Pending Payment'. 'Offer declined' etc.
-[] Any user can view what another profile has bought and sold
 
-[5] & [6]
+[5] 
 []create button "view wishlist" that takes you to seperate page where all items in wishlist are displayed
+[]this page should display all the product cards with the items that are wish listed on an account
+[]make the product cards faded and say "sold" if the have been sold
+[]when the user clicks on a product card Y
+
 
 [7] Buyers Should Be Able to Communicate with Sellers b
 [] Users can chat with other registered users about a specific product
