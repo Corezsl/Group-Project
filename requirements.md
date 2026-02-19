@@ -63,10 +63,28 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] Users must be able to share images (e.g. additional product photos) within chat
 
 
-[8] & [9] Users Should Be Able to Save Listings (Wishlist) & Users Should Receive Notifications for Wishlist Updates 
-[] Users can mark products they are interested in save later for quicker future access
-[] Sellers can view how many people are interested in their product
-[] Users recieved notifications for updates in regards to items they had previously wishlisted, including price change or description change
+
+
+[8] Users Should Be Able to Save Listings (Wishlist)
+[] Make the product cards faded and say "sold" on them if they are sold
+[] when the user clidks on a product card display the products page
+[] Add a save/heart icon button on each listing
+    - [] Expected behaviour: Clicking saves the item to the user's wishlist. Clicking again removes it.
+[] Create a "View Wishlist" button on the account page that reroutes to the wishlist page
+    - [] Expected behaviour: Displays all wishlisted items with image, title, price and condition.
+[] Show wishlist interest count to sellers on their listings
+    - [] Expected behaviour: Sellers can see how many users have wishlisted their product.
+
+[9] Users Should Receive Notifications for Wishlist Updates
+[] Notify users when a wishlisted item's price changes
+    - [] Expected behaviour: User receives an in-app notification showing the old and new price.
+[] Notify users when a wishlisted item's details are updated
+    - [] Expected behaviour: Changes to title, condition, or description trigger a notification.
+[] Add a notifications panel accessible from the header
+    - [] Expected behaviour: Users can view all notifications in chronological order with an unread badge count.
+[] Allow users to mark notifications as read
+    - [] Expected behaviour: Clicking a notification marks it as read. A "Mark all as read" button clears all.
+
 
 [10] Users Should Be Able to Register and Log in Securely 
 [] Any user can create an account
@@ -78,32 +96,6 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] Users must register using a valid email address and password.will
 [] The system must validate input fields to ensure:will
 The email address follows a valid format.
-
-The password meets minimum security requirements (e.g. length, complexity).    - The email address follows a valid format.
-
-The password meets minimum security requirements (e.g. length, complexity).
-    -  ()@mailt, characters
-    Users must be required to confirm their password during registration to reduce input errors.[] will [] Users must be able to log in securely using their registered credentials.willwill 
-
-j[]8 Users sShould Be ab Able to Sabeve Listings ()Whiishlist
-Users Should Be Able to View Their Purchase and Listing History, Buyers Should Be Able to Track Their Orders 
-[6] []& [7] v Create "save5Save/6Wishli
-st" button on each listing that adds item to user's siwishlis,Users shoulddt
-[] be Maabkee le witosh vliiews t thpeaigre lsis acticnge ssghisible from huisesrto prorfyile or navigation bar/menu with
-[] Makeop option button to remoe ve items from wishlist both on product page and [] Make button to remove items from wishlist both on product page and wishlist page
-[] Display saved items in wishlist with relevant information (e.g. price, seller, etc.)
-[] Allow users to move items from wishlist to cart or directly to purchaseMake  counter viissible to sellers showing how man y s[] Make counter visible to sellers showing how many users have wishlisted their itempr[] Make counter visible to sellers showing how many users have wishlisted their producton accounyt  ono propdauctge  page/icon
-[] Create have a button view lisitings""Have a fuilter in dropdownwhiish tha can filter between sold listing s ,,current listings and all listings list sorted by date listedsection on user profile that displays
- al[]l saegi=ve lviesdting autocimatically listing date li satinnd gtisme and send to databaSEse
-
-[]9 User Shavhoeu ,da crldeate  lRiesting cei"v"e  [9] User Should Receive Notifications for Wishlist Updates
-[] Implement notification system that alerts users when there are updates to items in their wishlist
-[] Notifications can include price changes, description changes, or availability updates
-[] Users can choose to receive notifications via email or in-app notifications
-[] Create a notification center where users can view all their notifications in one place
-[] Allow users to manage their notification preferences (e.g. turn on/off specific types of notifications)[9] User Should Receive butNtootnifications  afort  bottomW ohif page thatis htalike youst  to Updatesc
-rreat[]eat e listing pageCreate oncotriefaite ctartioans shuy sicon 
     
 [11] Site shoulc red recommend new items based on user's view and 
 
-[]5 7 & []6ystem that alerts users when there a re ure updates to items in their wishlist item
