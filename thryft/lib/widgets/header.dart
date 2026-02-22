@@ -86,7 +86,10 @@ class Header extends StatelessWidget {
                 SizedBox(width: 16),
                 TextButton(
                   onPressed: null,
-                  child: Text('Trousers', style: TextStyle(color: Colors.white)),
+                  child: Text(
+                    'Trousers',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
                 SizedBox(width: 16),
                 TextButton(
@@ -104,7 +107,10 @@ class Header extends StatelessWidget {
                 SizedBox(width: 16),
                 TextButton(
                   onPressed: null,
-                  child: Text('About Us', style: TextStyle(color: Colors.white)),
+                  child: Text(
+                    'About Us',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),
