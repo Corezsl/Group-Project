@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Header(),
-
+            const HeroBanner(),
             const SizedBox(height: 24),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
