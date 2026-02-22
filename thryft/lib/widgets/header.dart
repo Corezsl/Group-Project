@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -63,10 +64,8 @@ class Header extends StatelessWidget {
                 onPressed: null,
                 ),
                 IconButton(
-                icon: Icon (Icons.person_outline,
-                color: Colors.white
-                ),
-                onPressed: null,
+                  icon: Icon(Icons.person_outline, color: Colors.white),
+                  onPressed: () => context.push('/account'),
                 ),
               ],
             ),
@@ -76,9 +75,9 @@ class Header extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextButton(
-              onPressed: null,
+              onPressed: () => context.go('/'),
               child: Text('Home'),
-              ),
+            ),
             SizedBox(width: 16),
             TextButton(
               onPressed: null,
