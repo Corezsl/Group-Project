@@ -3,13 +3,7 @@ import 'package:flutter/material.dart';
 class CategorySection extends StatelessWidget {
   const CategorySection({super.key});
 
-  final List<Map<String, dynamic>> categories = const [
-    {'icon': Icons.checkroom, 'label': 'Clothing'},
-    {'icon': Icons.laptop, 'label': 'Tech'},
-    {'icon': Icons.chair, 'label': 'Home'},
-    {'icon': Icons.sports_basketball, 'label': 'Sports'},
-    {'icon': Icons.menu_book, 'label': 'Books'},
-  ];
+  final List<Map<String, dynamic>> categories = const [];
 
   @override
   Widget build(BuildContext context) {
