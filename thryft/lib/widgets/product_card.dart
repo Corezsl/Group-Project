@@ -13,8 +13,9 @@ class ProductCard extends StatelessWidget {
       width: 160,
       child: Card(
         clipBehavior: Clip.antiAlias,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        color: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: InkWell(
           onTap: () {
             context.push(
@@ -27,44 +28,79 @@ class ProductCard extends StatelessWidget {
             children: [
               // ── Image area ──────────────────────────────────────────
               Expanded(
-                child: Hero(
-                  tag: 'product_image_${product.id}',
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Hero(
+                      tag: 'product_image_${product.id}',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: product.imageUrl != null
+                            ? Image.network(
+                                product.imageUrl!,
+                                fit: BoxFit.cover,
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
+                              ),
                       ),
                     ),
-                    child: product.imageUrl != null
-                        ? Image.network(product.imageUrl!, fit: BoxFit.cover)
-                        : const Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 48,
-                              color: Colors.grey,
-                            ),
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(
+                            Icons.favorite_border,
+                            size: 20,
+                            color: Colors.grey,
                           ),
-                  ),
+                          onPressed: () {},
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               // ── Text content ─────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product name
+                    // Brand
                     Text(
-                      product.name,
+                      product.brand,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // ── Description row: size · condition ──────
+                    Text(
+                      '${product.size} · ${product.condition}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 4),
 
@@ -97,15 +133,6 @@ class ProductCard extends StatelessWidget {
                           ),
                         ],
                       ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    // ── Description row: size · brand · condition ──────
-                    Text(
-                      '${product.size} · ${product.brand} · ${product.condition}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
                   ],
                 ),

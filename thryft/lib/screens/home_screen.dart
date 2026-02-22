@@ -25,8 +25,28 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // other widgets can be added here
-            const SizedBox(height: 16),
+            const ProductCarousel(),
+            const SizedBox(height: 32),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                "Trending Near You",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const ProductCarousel(),
+            const SizedBox(height: 32),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                "Designer Brands",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
             const ProductCarousel(),
             const SizedBox(height: 40),
             const Footer(),
