@@ -44,7 +44,7 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - Step 2: Create "My Listings" Screen
   - [ ] Create lib/screens/my_listings_screen.dart.
   - [ ] Add a filter bar to toggle view between 'Active', 'Pending', and 'Sold'.
-  - [ ] Implement ListView displaying dummy products with status badges (Green=Active, Orange=Pending, Red=Sold).
+  - [ ] Implement ListView displaying dummy products with status badges (Green=Active, Red=Sold).
 - Step 3: Create "Create Listing" Screen
   - [ ] Create lib/screens/create_listing_screen.dart with input form:
     - [ ] Title, Price, Description fields.
@@ -54,7 +54,7 @@ Written below is a list of steps (problem decomposition) of the main requirement
   - [ ] Add Floating Action Button (+) in MyListingsScreen to navigate here.
 - Step 4: Implement Edit & Delete
   - [ ] Add "Edit" button to listing items -> Navigates to CreateListingScreen populated with item data.
-  - [ ] Add "Delete" button to listing items -> Removes item from list.
+  - [ ] Add "Delete" button to listing items -> Removes item from list and later from database.
 - Step 5: Purchase History & Order Tracking
   - [ ] Create lib/screens/my_orders_screen.dart.
   - [ ] Display list of purchased items with status (e.g., 'Shipped', 'Delivered').

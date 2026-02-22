@@ -40,6 +40,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const ProductCarousel(),
             const SizedBox(height: 40),
+            const Footer(),
           ],
         ),
       ),
