@@ -15,12 +15,19 @@ class Header extends StatelessWidget {
           children: [
             Row(
               children: [
-                Image.asset(
-                  'assets/images/thyrft_logo.png',
-                  height: 60,
-                  fit: BoxFit.cover,
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: Image.asset(
+                        'assets/images/thyrft_logo.png',
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
                 ),
-                Spacer(),
                 SizedBox(
                   width: 500,
                   child: TextField(
@@ -39,34 +46,47 @@ class Header extends StatelessWidget {
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                Spacer(),
-                FilledButton.tonal(
-                  onPressed: null,
-                  style: FilledButton.styleFrom(
-                    textStyle: TextStyle(fontSize: 16.0),
-                  ),
-                  child: Text('SELL NOW'),
-                ),
-                Spacer(),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.favorite_outline, color: Colors.white),
-                      onPressed: null,
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.shopping_cart_outlined,
-                        color: Colors.white,
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: null,
+                        style: FilledButton.styleFrom(
+                          textStyle: TextStyle(fontSize: 16.0),
+                        ),
+                        child: Text('SELL NOW'),
                       ),
-                      onPressed: null,
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.person_outline, color: Colors.white),
-                      onPressed: () => context.push('/account'),
-                    ),
-                  ],
+                      const SizedBox(width: 16),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.favorite_outline,
+                              color: Colors.white,
+                            ),
+                            onPressed: null,
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.shopping_cart_outlined,
+                              color: Colors.white,
+                            ),
+                            onPressed: null,
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => context.push('/account'),
+                          ),
+                          const SizedBox(width: 16),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

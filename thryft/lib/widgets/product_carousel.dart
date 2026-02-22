@@ -15,7 +15,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
   // how far we scroll when pressing the arrows (roughly 2 cards)
   static const double _scrollAmount = 344;
 
-  // placeholder product data
+  // placeholder product data(fetch real data from backend later in the project)
   final List<Product> products = const [
     Product(
       id: '1',
