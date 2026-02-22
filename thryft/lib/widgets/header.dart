@@ -5,104 +5,88 @@ class Header extends StatelessWidget {
   const Header({super.key});
 
   @override
-  Widget build (BuildContext context) {
-
+  Widget build(BuildContext context) {
     return Container(
       height: 100,
       color: const Color.fromARGB(255, 71, 164, 245),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children:[
+          children: [
             Row(
               children: [
-            Image.asset(
-              'assets/images/thyrft_logo.png',
-              height: 60,
-              fit: BoxFit.cover,
-            ),
-            Spacer(),
-            SizedBox(
-              width: 500,
-              child: TextField(
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search, color: Colors.white),
-                  hintText: 'Search',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide.none,
+                Image.asset(
+                  'assets/images/thyrft_logo.png',
+                  height: 60,
+                  fit: BoxFit.cover,
+                ),
+                Spacer(),
+                SizedBox(
+                  width: 500,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.search, color: Colors.white),
+                      hintText: 'Search',
+                      hintStyle: TextStyle(color: Colors.white70),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(borderSide: BorderSide.none),
+                      filled: true,
+                      fillColor: Color.fromARGB(50, 255, 255, 255),
+                    ),
+                    style: TextStyle(color: Colors.white),
                   ),
-                  filled: true,
-                  fillColor: Color.fromARGB(50, 255, 255, 255),
                 ),
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            Spacer(),
-            FilledButton.tonal(
-              onPressed: null,
-              style: FilledButton.styleFrom(
-                textStyle: TextStyle(fontSize: 16.0),
-              ),
-              child: Text('SELL NOW'),
-            ),
-            Spacer(),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon (Icons.favorite_outline,
-                  color: Colors.white
+                Spacer(),
+                FilledButton.tonal(
+                  onPressed: null,
+                  style: FilledButton.styleFrom(
+                    textStyle: TextStyle(fontSize: 16.0),
+                  ),
+                  child: Text('SELL NOW'),
                 ),
-                onPressed: null,
-                ),
-                IconButton(
-                  icon: Icon (Icons.shopping_cart_outlined,
-                  color: Colors.white
-                ),
-                onPressed: null,
-                ),
-                IconButton(
-                  icon: Icon(Icons.person_outline, color: Colors.white),
-                  onPressed: () => context.push('/account'),
+                Spacer(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.favorite_outline, color: Colors.white),
+                      onPressed: null,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.shopping_cart_outlined,
+                        color: Colors.white,
+                      ),
+                      onPressed: null,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.person_outline, color: Colors.white),
+                      onPressed: () => context.push('/account'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-              onPressed: () => context.go('/'),
-              child: Text('Home'),
-            ),
-            SizedBox(width: 16),
-            TextButton(
-              onPressed: null,
-              child: Text('Shirts'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () => context.go('/'),
+                  child: Text('Home'),
                 ),
-            SizedBox(width: 16),
-            TextButton(
-              onPressed: null,
-              child: Text('Trousers'),
-                ),
-            SizedBox(width: 16),
-            TextButton(
-              onPressed: null,
-              child: Text('Shoes'),
-                ),
-            SizedBox(width: 16),
-            TextButton(
-              onPressed: null,
-              child: Text('Accessories'),
-                ),
-            SizedBox(width: 16),
-            TextButton(
-              onPressed: null,
-              child: Text('About Us'),
-                ),
+                SizedBox(width: 16),
+                TextButton(onPressed: null, child: Text('Shirts')),
+                SizedBox(width: 16),
+                TextButton(onPressed: null, child: Text('Trousers')),
+                SizedBox(width: 16),
+                TextButton(onPressed: null, child: Text('Shoes')),
+                SizedBox(width: 16),
+                TextButton(onPressed: null, child: Text('Accessories')),
+                SizedBox(width: 16),
+                TextButton(onPressed: null, child: Text('About Us')),
               ],
             ),
           ],
