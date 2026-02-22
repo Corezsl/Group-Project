@@ -39,14 +39,26 @@ Written below is a list of steps (problem decomposition) of the main requirement
 [] Price Recommendations from previous items in same category
 
 [4] & [5] & [6] Users Should Be Able to Edit and Manage Their Listings, Users Should Be Able to View Their Purchase and Listing History, Buyers Should Be Able to Track Their Orders 
-[] Display active (Non-closed) Listings 
-[] Users can edit existing selling listings
-[] Users can create new listings
-[] Users can delete existing listings
-[] Users can organise their selling listings.
-[] Users can track the progress and status of any pending listings
-[] Users can easily identify the state of a listing 'Sold', 'Waiting for offer', 'Pending Payment'. 'Offer declined' etc.
-[] Any user can view what another profile has bought and sold
+- Step 1: Create Data Model
+  - [ ] Create lib/models/product.dart class with properties: id, title, price, imageUrl, description, ProductStatus (Active, Sold)MAYBE PENDING???.
+- Step 2: Create "My Listings" Screen
+  - [ ] Create lib/screens/my_listings_screen.dart.
+  - [ ] Add a filter bar to toggle view between 'Active', 'Pending', and 'Sold'.
+  - [ ] Implement ListView displaying dummy products with status badges (Green=Active, Orange=Pending, Red=Sold).
+- Step 3: Create "Create Listing" Screen
+  - [ ] Create lib/screens/create_listing_screen.dart with input form:
+    - [ ] Title, Price, Description fields.
+    - [ ] Category dropdown.
+    - [ ] Image upload placeholder.
+  - [ ] Add "Create Listing" button logic (for now, adds to local list).
+  - [ ] Add Floating Action Button (+) in MyListingsScreen to navigate here.
+- Step 4: Implement Edit & Delete
+  - [ ] Add "Edit" button to listing items -> Navigates to CreateListingScreen populated with item data.
+  - [ ] Add "Delete" button to listing items -> Removes item from list.
+- Step 5: Purchase History & Order Tracking
+  - [ ] Create lib/screens/my_orders_screen.dart.
+  - [ ] Display list of purchased items with status (e.g., 'Shipped', 'Delivered').
+
 
 [7] Buyers Should Be Able to Communicate with Sellers 
 [] Users can chat with other registered users about a specific product
