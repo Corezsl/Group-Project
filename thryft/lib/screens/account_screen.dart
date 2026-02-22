@@ -69,6 +69,18 @@ class AccountScreen extends StatelessWidget {
                           },
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.favorite_outline),
+                          title: const Text('My Favourites'),
+                          subtitle: const Text('View your saved items'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            // TODO: Implement favourites view
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
