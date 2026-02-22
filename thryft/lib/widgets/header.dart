@@ -75,18 +75,37 @@ class Header extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () => context.go('/'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white),
                   child: Text('Home'),
                 ),
                 SizedBox(width: 16),
-                TextButton(onPressed: null, child: Text('Shirts')),
+                TextButton(
+                  onPressed: null,
+                  child: Text('Shirts', style: TextStyle(color: Colors.white)),
+                ),
                 SizedBox(width: 16),
-                TextButton(onPressed: null, child: Text('Trousers')),
+                TextButton(
+                  onPressed: null,
+                  child: Text('Trousers', style: TextStyle(color: Colors.white)),
+                ),
                 SizedBox(width: 16),
-                TextButton(onPressed: null, child: Text('Shoes')),
+                TextButton(
+                  onPressed: null,
+                  child: Text('Shoes', style: TextStyle(color: Colors.white)),
+                ),
                 SizedBox(width: 16),
-                TextButton(onPressed: null, child: Text('Accessories')),
+                TextButton(
+                  onPressed: null,
+                  child: Text(
+                    'Accessories',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
                 SizedBox(width: 16),
-                TextButton(onPressed: null, child: Text('About Us')),
+                TextButton(
+                  onPressed: null,
+                  child: Text('About Us', style: TextStyle(color: Colors.white)),
+                ),
               ],
             ),
           ],
