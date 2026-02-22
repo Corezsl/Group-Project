@@ -69,58 +69,59 @@ class _ProductCarouselState extends State<ProductCarousel> {
               itemBuilder: (context, index) {
                 final product = products[index];
                 // ... inside itemBuilder
-              return SizedBox(
-                width: 160,
-                child: Card(
-                  clipBehavior: Clip.antiAlias, // Ensures ink splash is contained
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      context.push(
-                        '/product/${product['name']}',
-                        extra: product,
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Wrapped in Hero for animation
-                          Expanded(
-                            child: Hero(
-                              tag: 'product_image_${product['name']}',
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image,
-                                    size: 48,
-                                    color: Colors.grey,
+                return SizedBox(
+                  width: 160,
+                  child: Card(
+                    clipBehavior:
+                        Clip.antiAlias, // Ensures ink splash is contained
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        context.push(
+                          '/product/${product['name']}',
+                          extra: product,
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Wrapped in Hero for animation
+                            Expanded(
+                              child: Hero(
+                                tag: 'product_image_${product['name']}',
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image,
+                                      size: 48,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          // ... rest of your text widgets (name, price) remain the same
-                          const SizedBox(height: 8),
-                          Text(
-                            product['name']!,
-                            // ... styles
-                          ),
-                          // ...
-                        ],
+                            // ... rest of your text widgets (name, price) remain the same
+                            const SizedBox(height: 8),
+                            Text(
+                              product['name']!,
+                              // ... styles
+                            ),
+                            // ...
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
+                );
               },
             ),
           ),

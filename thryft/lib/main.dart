@@ -26,5 +26,3 @@ class ThryftApp extends StatelessWidget {
     );
   }
 }
-
-

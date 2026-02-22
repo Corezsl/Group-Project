@@ -5,10 +5,7 @@ import 'package:thryft/screens/product_detail_screen.dart';
 final GoRouter router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     GoRoute(
       path: '/product/:id',
       builder: (context, state) {
