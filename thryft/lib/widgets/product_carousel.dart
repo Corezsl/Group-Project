@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:thryft/screens/product_detail_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class ProductCarousel extends StatefulWidget {
   const ProductCarousel({super.key});
@@ -79,11 +79,9 @@ class _ProductCarouselState extends State<ProductCarousel> {
                   ),
                   child: InkWell(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailScreen(product: product),
-                        ),
+                      context.push(
+                        '/product/${product['name']}',
+                        extra: product,
                       );
                     },
                     child: Padding(
