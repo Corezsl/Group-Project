@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:thryft/screens/product_detail_screen.dart';
+import 'package:thryft/models/product.dart';
+import 'package:thryft/widgets/product_card.dart';
 
 class ProductCarousel extends StatefulWidget {
   const ProductCarousel({super.key});
@@ -11,13 +12,96 @@ class ProductCarousel extends StatefulWidget {
 class _ProductCarouselState extends State<ProductCarousel> {
   final ScrollController _scrollController = ScrollController();
 
-  // how far we scroll when pressing the arrows
-  static const double _scrollAmount = 344; // roughly 2 cards
+  // how far we scroll when pressing the arrows (roughly 2 cards)
+  static const double _scrollAmount = 344;
 
-  // placeholder product data for now
-  final List<Map<String, String>> products = List.generate(10, (index) {
-    return {'name': 'Product ${index + 1}', 'price': '\$${(index + 1) * 5}.00'};
-  });
+  // placeholder product data(fetch real data from backend later in the project)
+  final List<Product> products = const [
+    Product(
+      id: '1',
+      name: 'Vintage Denim Jacket',
+      price: 24.99,
+      originalPrice: 39.99,
+      size: 'M',
+      brand: 'Levi\'s',
+      condition: 'Good',
+    ),
+    Product(
+      id: '2',
+      name: 'White Sneakers',
+      price: 18.00,
+      size: '42',
+      brand: 'Nike',
+      condition: 'Like New',
+    ),
+    Product(
+      id: '3',
+      name: 'Floral Summer Dress',
+      price: 12.50,
+      originalPrice: 22.00,
+      size: 'S',
+      brand: 'Zara',
+      condition: 'Like New',
+    ),
+    Product(
+      id: '4',
+      name: 'Wool Coat',
+      price: 45.00,
+      size: 'L',
+      brand: 'H&M',
+      condition: 'Good',
+    ),
+    Product(
+      id: '5',
+      name: 'Leather Belt',
+      price: 8.00,
+      size: 'One Size',
+      brand: 'Unbranded',
+      condition: 'Fair',
+    ),
+    Product(
+      id: '6',
+      name: 'Graphic Tee',
+      price: 6.99,
+      originalPrice: 14.99,
+      size: 'XL',
+      brand: 'ASOS',
+      condition: 'Good',
+    ),
+    Product(
+      id: '7',
+      name: 'Chino Trousers',
+      price: 15.00,
+      size: '32',
+      brand: 'Gap',
+      condition: 'Like New',
+    ),
+    Product(
+      id: '8',
+      name: 'Puffer Jacket',
+      price: 30.00,
+      size: 'M',
+      brand: 'The North Face',
+      condition: 'Good',
+    ),
+    Product(
+      id: '9',
+      name: 'Silk Blouse',
+      price: 10.00,
+      size: 'S',
+      brand: 'Reiss',
+      condition: 'Like New',
+    ),
+    Product(
+      id: '10',
+      name: 'Running Shoes',
+      price: 22.00,
+      originalPrice: 35.00,
+      size: '40',
+      brand: 'Adidas',
+      condition: 'Good',
+    ),
+  ];
 
   void _scrollLeft() {
     _scrollController.animateTo(
@@ -50,10 +134,9 @@ class _ProductCarouselState extends State<ProductCarousel> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 240,
+      height: 280,
       child: Row(
         children: [
-          // left arrow
           IconButton(
             icon: const Icon(Icons.chevron_left, size: 32),
             onPressed: _scrollLeft,
@@ -67,66 +150,10 @@ class _ProductCarouselState extends State<ProductCarousel> {
               itemCount: products.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
-                final product = products[index];
-                // ... inside itemBuilder
-              return SizedBox(
-                width: 160,
-                child: Card(
-                  clipBehavior: Clip.antiAlias, // Ensures ink splash is contained
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailScreen(product: product),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Wrapped in Hero for animation
-                          Expanded(
-                            child: Hero(
-                              tag: 'product_image_${product['name']}',
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image,
-                                    size: 48,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // ... rest of your text widgets (name, price) remain the same
-                          const SizedBox(height: 8),
-                          Text(
-                            product['name']!,
-                            // ... styles
-                          ),
-                          // ...
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
+                return ProductCard(product: products[index]);
               },
             ),
           ),
-          // right arrow
           IconButton(
             icon: const Icon(Icons.chevron_right, size: 32),
             onPressed: _scrollRight,
