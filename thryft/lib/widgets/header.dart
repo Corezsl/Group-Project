@@ -66,7 +66,7 @@ class Header extends StatelessWidget {
                               Icons.favorite_outline,
                               color: Colors.white,
                             ),
-                            onPressed: null,
+                            onPressed: () => context.push('/wishlist'),
                           ),
                           IconButton(
                             icon: Icon(
