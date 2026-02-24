@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'widgets/footer.dart';
 import 'widgets/header.dart';
 
@@ -57,7 +58,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 60),
-                  
+
                   // Mission Section
                   Center(
                     child: const Text(
@@ -142,7 +143,7 @@ class AboutPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => context.go('/contact'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF47A4F5),
                             foregroundColor: Colors.white,

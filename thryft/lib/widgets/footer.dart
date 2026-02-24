@@ -26,7 +26,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -34,7 +34,7 @@ class Footer extends StatelessWidget {
                       'Your trusted marketplace for sustainable and affordable second-hand goods.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -52,7 +52,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -73,7 +73,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -96,7 +96,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -104,7 +104,7 @@ class Footer extends StatelessWidget {
                       'Email: info@thryft.com',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -112,7 +112,15 @@ class Footer extends StatelessWidget {
                       'Phone: +44 123 456 7890',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Business Hours:\n\nMonday - Friday: 9am - 6pm\nWeekend: 10am - 4pm',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -121,14 +129,14 @@ class Footer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 40),
-          const Divider(color: Colors.black26),
+          const Divider(color: Colors.white),
           const SizedBox(height: 20),
           // Copyright Section
           const Text(
             '© 2026 Thryft. All rights reserved.',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.black54,
+              color: Colors.white,
             ),
           ),
         ],
@@ -147,7 +155,7 @@ class Footer extends StatelessWidget {
           text,
           style: const TextStyle(
             fontSize: 14,
-            color: Colors.black54,
+            color: Colors.white,
             decoration: TextDecoration.none,
           ),
         ),
@@ -161,7 +169,7 @@ class Footer extends StatelessWidget {
         context.go('/about');
         break;
       case 'Contact':
-        _showComingSoonMessage(context, 'Contact');
+        context.go('/contact');
         break;
       case 'Help Center':
         _showComingSoonMessage(context, 'Help Center');
