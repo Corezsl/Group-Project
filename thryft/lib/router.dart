@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:thryft/screens/account_screen.dart';
+import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
 
@@ -10,6 +11,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/create-listing',
+      builder: (context, state) => const CreateListingScreen(),
     ),
     GoRoute(
       path: '/product/:id',
