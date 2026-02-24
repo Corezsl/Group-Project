@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/router.dart';
 import 'package:thryft/widgets/category_section.dart';
 import 'package:thryft/widgets/header.dart';
@@ -6,7 +8,12 @@ import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';
 
 void main() {
-  runApp(const ThryftApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => CartProvider(),
+      child: const ThryftApp(),
+    ),
+  );
 }
 
 class ThryftApp extends StatelessWidget {

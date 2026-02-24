@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thryft/models/product.dart';
+import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -66,7 +69,33 @@ class ProductDetailScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: FilledButton(
-                onPressed: () {}, // Cart logic goes here later
+                onPressed: () {
+                  final cartProvider = context.read<CartProvider>();
+                  cartProvider.addItem(
+                    Product(
+                      id: product['id'] ?? product['name']!,
+                      name: product['name']!,
+                      price: double.tryParse(product['price'] ?? '0') ?? 0,
+                      originalPrice: product['originalPrice'] != null
+                          ? double.tryParse(product['originalPrice']!)
+                          : null,
+                      size: product['size'] ?? '',
+                      brand: product['brand'] ?? '',
+                      condition: product['condition'] ?? '',
+                      imageUrl: product['imageUrl'],
+                    ),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${product['name']} added to cart'),
+                      duration: const Duration(seconds: 2),
+                      action: SnackBarAction(
+                        label: 'View Cart',
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  );
+                },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: const Color.fromARGB(255, 71, 164, 245),

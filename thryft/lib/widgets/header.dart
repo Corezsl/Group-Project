@@ -73,7 +73,7 @@ class Header extends StatelessWidget {
                               Icons.shopping_cart_outlined,
                               color: Colors.white,
                             ),
-                            onPressed: null,
+                            onPressed: () => context.push('/cart'),
                           ),
                           IconButton(
                             icon: Icon(
