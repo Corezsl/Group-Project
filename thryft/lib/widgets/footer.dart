@@ -158,7 +158,7 @@ class Footer extends StatelessWidget {
   void _handleFooterLinkTap(BuildContext context, String linkText) {
     switch (linkText) {
       case 'About Us':
-        _showComingSoonMessage(context, 'About Us');
+        context.go('/about');
         break;
       case 'Contact':
         _showComingSoonMessage(context, 'Contact');
