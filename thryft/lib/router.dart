@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:thryft/about_page.dart';
 import 'package:thryft/screens/account_screen.dart';
 import 'package:thryft/screens/cart_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
@@ -10,6 +11,10 @@ final GoRouter router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     GoRoute(path: '/cart', builder: (context, state) => const CartScreen()),
+    GoRoute(
+      path: '/about',
+      builder: (context, state) => const AboutPage(),
+    ),
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),

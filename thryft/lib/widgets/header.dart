@@ -126,7 +126,7 @@ class Header extends StatelessWidget {
                 ),
                 SizedBox(width: 16),
                 TextButton(
-                  onPressed: null,
+                  onPressed: () => context.go('/about'),
                   child: Text(
                     'About Us',
                     style: TextStyle(color: Colors.white),
