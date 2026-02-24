@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:thryft/widgets/header.dart';
-import 'package:thryft/widgets/product_carousel.dart';
+import 'package:thryft/router.dart';
 import 'package:thryft/widgets/category_section.dart';
+import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/hero_banner.dart';
+import 'package:thryft/widgets/product_carousel.dart';
 
 void main() {
   runApp(const ThryftApp());
@@ -12,7 +14,7 @@ class ThryftApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Thryft',
       theme: ThemeData(
@@ -24,7 +26,7 @@ class ThryftApp extends StatelessWidget {
           primary: const Color.fromARGB(255, 71, 164, 245),
         ),
       ),
-      home: const HomePage(),
+      routerConfig: router,
     );
   }
 }
@@ -40,7 +42,7 @@ class HomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Header(),
-            
+            const HeroBanner(),
             const SizedBox(height: 20),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -71,4 +73,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
