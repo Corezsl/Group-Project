@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Footer extends StatelessWidget {
   const Footer({super.key});
@@ -55,10 +56,8 @@ class Footer extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildFooterLink('Home'),
-                    _buildFooterLink('Shop'),
-                    _buildFooterLink('About Us'),
-                    _buildFooterLink('Contact'),
+                    _buildFooterLink(context, 'About Us'),
+                    _buildFooterLink(context, 'Contact'),
                   ],
                 ),
               ),
@@ -78,10 +77,10 @@ class Footer extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildFooterLink('Help Center'),
-                    _buildFooterLink('Terms of Service'),
-                    _buildFooterLink('Privacy Policy'),
-                    _buildFooterLink('Returns'),
+                    _buildFooterLink(context, 'Help Center'),
+                    _buildFooterLink(context, 'Terms of Service'),
+                    _buildFooterLink(context, 'Privacy Policy'),
+                    _buildFooterLink(context, 'Returns'),
                   ],
                 ),
               ),
@@ -137,11 +136,13 @@ class Footer extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterLink(String text) {
+  Widget _buildFooterLink(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          _handleFooterLinkTap(context, text);
+        },
         child: Text(
           text,
           style: const TextStyle(
@@ -151,6 +152,62 @@ class Footer extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _handleFooterLinkTap(BuildContext context, String linkText) {
+    switch (linkText) {
+      case 'About Us':
+        _showComingSoonMessage(context, 'About Us');
+        break;
+      case 'Contact':
+        _showComingSoonMessage(context, 'Contact');
+        break;
+      case 'Help Center':
+        _showComingSoonMessage(context, 'Help Center');
+        break;
+      case 'Terms of Service':
+        _showInfoDialog(context, 'Terms of Service',
+            'Terms of Service content will be displayed here.');
+        break;
+      case 'Privacy Policy':
+        _showInfoDialog(context, 'Privacy Policy',
+            'Privacy Policy content will be displayed here.');
+        break;
+      case 'Returns':
+        _showInfoDialog(context, 'Returns Policy',
+            'Returns policy information will be displayed here.');
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _showComingSoonMessage(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature - Coming Soon!'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
