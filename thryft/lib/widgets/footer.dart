@@ -115,6 +115,14 @@ class Footer extends StatelessWidget {
                         color: Colors.black54,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Business Hours:\n\nMonday - Friday: 9am - 6pm\nWeekend: 10am - 4pm',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -161,7 +169,7 @@ class Footer extends StatelessWidget {
         context.go('/about');
         break;
       case 'Contact':
-        _showComingSoonMessage(context, 'Contact');
+        context.go('/contact');
         break;
       case 'Help Center':
         _showComingSoonMessage(context, 'Help Center');
