@@ -12,6 +12,7 @@ class CreateListingScreen extends StatefulWidget {
 class _CreateListingScreenState extends State<CreateListingScreen> {
   int _selectedIndex = 0;
   String? _selectedCategory;
+  String? _selectedSize;
 
   final List<String> _categories = [
     'Shirt',
@@ -21,6 +22,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     'Shoes',
     'Accessories',
   ];
+
+  final List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
   Widget _buildMainPreview() {
     return Container(
@@ -197,6 +200,37 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                       .toList(),
                                   onChanged: (val) =>
                                       setState(() => _selectedCategory = val),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                const Text(
+                                  'Size',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedSize,
+                                  hint: const Text('Select a size'),
+                                  items: _sizes
+                                      .map(
+                                        (s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedSize = val),
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
