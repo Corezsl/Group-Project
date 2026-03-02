@@ -55,6 +55,50 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  Widget _buildThumbnail(int index) {
+    final bool isSelected = index == _selectedIndex;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color.fromARGB(255, 71, 164, 245)
+                : Colors.grey[300]!,
+            width: isSelected ? 2.5 : 1.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              index == 0 ? Icons.star_outline : Icons.add_photo_alternate_outlined,
+              size: 22,
+              color: isSelected
+                  ? const Color.fromARGB(255, 71, 164, 245)
+                  : Colors.grey[400],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              index == 0 ? 'Main' : 'Photo ${index + 1}',
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected
+                    ? const Color.fromARGB(255, 71, 164, 245)
+                    : Colors.grey[500],
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,6 +149,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 _buildMainPreview(),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(5, (i) => _buildThumbnail(i)),
+                                ),
                               ],
                             ),
                           ),
