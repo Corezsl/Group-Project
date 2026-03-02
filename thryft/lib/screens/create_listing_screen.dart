@@ -13,6 +13,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   int _selectedIndex = 0;
   String? _selectedCategory;
   String? _selectedSize;
+  String? _selectedCondition;
 
   final List<String> _categories = [
     'Shirt',
@@ -24,6 +25,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   ];
 
   final List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+  final List<String> _conditions = [
+    'New with tags',
+    'Like new',
+    'Good',
+    'Fair',
+    'Poor',
+  ];
 
   Widget _buildMainPreview() {
     return Container(
@@ -229,6 +238,35 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                       .toList(),
                                   onChanged: (val) =>
                                       setState(() => _selectedSize = val),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                const Text(
+                                  'Condition',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedCondition,
+                                  hint: const Text('Select a condition'),
+                                  items: _conditions
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: c,
+                                          child: Text(c),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedCondition = val),
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
