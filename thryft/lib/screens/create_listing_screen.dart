@@ -14,6 +14,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedCategory;
   String? _selectedSize;
   String? _selectedCondition;
+  final TextEditingController _priceController = TextEditingController();
 
   final List<String> _categories = [
     'Shirt',
@@ -33,6 +34,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     'Fair',
     'Poor',
   ];
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
 
   Widget _buildMainPreview() {
     return Container(
@@ -268,6 +275,30 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   onChanged: (val) =>
                                       setState(() => _selectedCondition = val),
                                   decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                const Text(
+                                  'Price',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _priceController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: InputDecoration(
+                                    hintText: '0.00',
+                                    prefixText: '£ ',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
