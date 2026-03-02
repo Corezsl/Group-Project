@@ -27,11 +27,17 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+flutter_export_environment.sh
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +49,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android local configuration (machine-specific)
+android/local.properties
+android/GeneratedPluginRegistrant.java
+
+# iOS/macOS CocoaPods lock file
+/ios/Podfile.lock
+/macos/Podfile.lock
+
+# Environment Variables
+.env
