@@ -11,6 +11,16 @@ class CreateListingScreen extends StatefulWidget {
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
   int _selectedIndex = 0;
+  String? _selectedCategory;
+
+  final List<String> _categories = [
+    'Shirt',
+    'Pants',
+    'Dresses',
+    'Shorts',
+    'Shoes',
+    'Accessories',
+  ];
 
   Widget _buildMainPreview() {
     return Container(
@@ -76,7 +86,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              index == 0 ? Icons.star_outline : Icons.add_photo_alternate_outlined,
+              index == 0
+                  ? Icons.star_outline
+                  : Icons.add_photo_alternate_outlined,
               size: 22,
               color: isSelected
                   ? const Color.fromARGB(255, 71, 164, 245)
@@ -151,15 +163,53 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                 _buildMainPreview(),
                                 const SizedBox(height: 12),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: List.generate(5, (i) => _buildThumbnail(i)),
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(
+                                    5,
+                                    (i) => _buildThumbnail(i),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 40),
-                          // RIGHT SIDE - form fields (coming later)
-                          const Expanded(child: SizedBox()),
+                          // RIGHT SIDE - form fields
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Category',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedCategory,
+                                  hint: const Text('Select a category'),
+                                  items: _categories
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: c,
+                                          child: Text(c),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedCategory = val),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 60),
