@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Footer extends StatelessWidget {
   const Footer({super.key});
@@ -25,7 +26,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -33,7 +34,7 @@ class Footer extends StatelessWidget {
                       'Your trusted marketplace for sustainable and affordable second-hand goods.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -51,14 +52,12 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildFooterLink('Home'),
-                    _buildFooterLink('Shop'),
-                    _buildFooterLink('About Us'),
-                    _buildFooterLink('Contact'),
+                    _buildFooterLink(context, 'About Us'),
+                    _buildFooterLink(context, 'Contact'),
                   ],
                 ),
               ),
@@ -74,14 +73,14 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildFooterLink('Help Center'),
-                    _buildFooterLink('Terms of Service'),
-                    _buildFooterLink('Privacy Policy'),
-                    _buildFooterLink('Returns'),
+                    _buildFooterLink(context, 'Help Center'),
+                    _buildFooterLink(context, 'Terms of Service'),
+                    _buildFooterLink(context, 'Privacy Policy'),
+                    _buildFooterLink(context, 'Returns'),
                   ],
                 ),
               ),
@@ -97,7 +96,7 @@ class Footer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -105,7 +104,7 @@ class Footer extends StatelessWidget {
                       'Email: info@thryft.com',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -113,7 +112,15 @@ class Footer extends StatelessWidget {
                       'Phone: +44 123 456 7890',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Business Hours:\n\nMonday - Friday: 9am - 6pm\nWeekend: 10am - 4pm',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -122,14 +129,14 @@ class Footer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 40),
-          const Divider(color: Colors.black26),
+          const Divider(color: Colors.white),
           const SizedBox(height: 20),
           // Copyright Section
           const Text(
             '© 2026 Thryft. All rights reserved.',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.black54,
+              color: Colors.white,
             ),
           ),
         ],
@@ -137,20 +144,78 @@ class Footer extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterLink(String text) {
+  Widget _buildFooterLink(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          _handleFooterLinkTap(context, text);
+        },
         child: Text(
           text,
           style: const TextStyle(
             fontSize: 14,
-            color: Colors.black54,
+            color: Colors.white,
             decoration: TextDecoration.none,
           ),
         ),
       ),
+    );
+  }
+
+  void _handleFooterLinkTap(BuildContext context, String linkText) {
+    switch (linkText) {
+      case 'About Us':
+        context.go('/about');
+        break;
+      case 'Contact':
+        context.go('/contact');
+        break;
+      case 'Help Center':
+        _showComingSoonMessage(context, 'Help Center');
+        break;
+      case 'Terms of Service':
+        _showInfoDialog(context, 'Terms of Service',
+            'Terms of Service content will be displayed here.');
+        break;
+      case 'Privacy Policy':
+        _showInfoDialog(context, 'Privacy Policy',
+            'Privacy Policy content will be displayed here.');
+        break;
+      case 'Returns':
+        _showInfoDialog(context, 'Returns Policy',
+            'Returns policy information will be displayed here.');
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _showComingSoonMessage(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature - Coming Soon!'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

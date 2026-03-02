@@ -1,5 +1,8 @@
 import 'package:go_router/go_router.dart';
+import 'package:thryft/about_page.dart';
+import 'package:thryft/contact_page.dart';
 import 'package:thryft/screens/account_screen.dart';
+import 'package:thryft/screens/cart_screen.dart';
 import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
@@ -8,6 +11,9 @@ final GoRouter router = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/cart', builder: (context, state) => const CartScreen()),
+    GoRoute(path: '/about', builder: (context, state) => const AboutPage()),
+    GoRoute(path: '/contact', builder: (context, state) => const ContactPage()),
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
@@ -21,8 +27,6 @@ final GoRouter router = GoRouter(
       builder: (context, state) {
         final product = state.extra as Map<String, String>?;
         if (product == null) {
-          // If product data is missing (e.g. direct URL access),
-          // redirect to home since we don't have a way to fetch product by ID yet.
           return const HomeScreen();
         }
         return ProductDetailScreen(product: product);

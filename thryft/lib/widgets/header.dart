@@ -66,14 +66,14 @@ class Header extends StatelessWidget {
                               Icons.favorite_outline,
                               color: Colors.white,
                             ),
-                            onPressed: null,
+                            onPressed: () => context.push('/wishlist'),
                           ),
                           IconButton(
                             icon: Icon(
                               Icons.shopping_cart_outlined,
                               color: Colors.white,
                             ),
-                            onPressed: null,
+                            onPressed: () => context.push('/cart'),
                           ),
                           IconButton(
                             icon: Icon(
@@ -126,7 +126,7 @@ class Header extends StatelessWidget {
                 ),
                 SizedBox(width: 16),
                 TextButton(
-                  onPressed: null,
+                  onPressed: () => context.go('/about'),
                   child: Text(
                     'About Us',
                     style: TextStyle(color: Colors.white),
