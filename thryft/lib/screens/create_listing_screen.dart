@@ -1,7 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
-
+//TO DO:MAKE THE STYLING OF FIELDS INTO CLASS SO IT CAN BE REUSABLE FOR BETTER READABILITY AND CLEANER CODE
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
 
