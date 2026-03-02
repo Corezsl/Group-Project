@@ -213,9 +213,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                 const SizedBox(height: 20),
                                 const Text(
                                   'Size',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: TextStyle(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 6),
                                 DropdownButtonFormField<String>(
