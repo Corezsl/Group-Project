@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HeroBanner extends StatelessWidget {
   const HeroBanner({super.key});
@@ -55,7 +56,7 @@ class HeroBanner extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: FilledButton(
-                      onPressed: () {},
+                      onPressed: () => context.push('/create-listing'),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color.fromARGB(
                           255,
