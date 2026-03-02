@@ -10,6 +10,51 @@ class CreateListingScreen extends StatefulWidget {
 }
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
+  int _selectedIndex = 0;
+
+  Widget _buildMainPreview() {
+    return Container(
+      width: double.infinity,
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color.fromARGB(255, 71, 164, 245),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_photo_alternate_outlined,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _selectedIndex == 0
+                ? 'Click to upload main photo'
+                : 'Click to upload photo ${_selectedIndex + 1}',
+            style: TextStyle(color: Colors.grey[500], fontSize: 15),
+          ),
+          if (_selectedIndex == 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Required',
+              style: TextStyle(
+                color: Colors.red[400],
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,6 +103,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                     fontSize: 13,
                                   ),
                                 ),
+                                const SizedBox(height: 12),
+                                _buildMainPreview(),
                               ],
                             ),
                           ),
