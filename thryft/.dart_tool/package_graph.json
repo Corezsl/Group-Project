@@ -458,11 +458,9 @@
     },
     {
       "name": "path_provider_foundation",
-      "version": "2.6.0",
+      "version": "2.5.1",
       "dependencies": [
-        "ffi",
         "flutter",
-        "objective_c",
         "path_provider_platform_interface"
       ]
     },
@@ -685,19 +683,6 @@
       ]
     },
     {
-      "name": "objective_c",
-      "version": "9.3.0",
-      "dependencies": [
-        "code_assets",
-        "collection",
-        "ffi",
-        "hooks",
-        "logging",
-        "native_toolchain_c",
-        "pub_semver"
-      ]
-    },
-    {
       "name": "retry",
       "version": "3.1.2",
       "dependencies": []
@@ -743,45 +728,6 @@
       ]
     },
     {
-      "name": "pub_semver",
-      "version": "2.2.0",
-      "dependencies": [
-        "collection"
-      ]
-    },
-    {
-      "name": "native_toolchain_c",
-      "version": "0.17.4",
-      "dependencies": [
-        "code_assets",
-        "glob",
-        "hooks",
-        "logging",
-        "meta",
-        "pub_semver"
-      ]
-    },
-    {
-      "name": "hooks",
-      "version": "1.0.1",
-      "dependencies": [
-        "collection",
-        "crypto",
-        "logging",
-        "meta",
-        "pub_semver",
-        "yaml"
-      ]
-    },
-    {
-      "name": "code_assets",
-      "version": "1.0.0",
-      "dependencies": [
-        "collection",
-        "hooks"
-      ]
-    },
-    {
       "name": "web_socket",
       "version": "1.0.1",
       "dependencies": [
@@ -811,26 +757,6 @@
       "dependencies": [
         "collection",
         "convert"
-      ]
-    },
-    {
-      "name": "glob",
-      "version": "2.1.3",
-      "dependencies": [
-        "async",
-        "collection",
-        "file",
-        "path",
-        "string_scanner"
-      ]
-    },
-    {
-      "name": "yaml",
-      "version": "3.1.3",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner"
       ]
     },
     {
