@@ -38,24 +38,29 @@ class _DesktopHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 500,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search, color: Colors.white),
-                      hintText: 'Search',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white,
+                        ),
+                        hintText: 'Search',
+                        hintStyle: const TextStyle(color: Colors.white70),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        border: const OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: const Color.fromARGB(50, 255, 255, 255),
                       ),
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: const Color.fromARGB(50, 255, 255, 255),
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
                 Expanded(

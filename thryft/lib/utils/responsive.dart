@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Responsive {
-  static const double mobileBreakpoint = 768;
+  static const double mobileBreakpoint = 860;
 
   /// Returns true when the screen width is below the mobile breakpoint.
   static bool isMobile(BuildContext context) =>
