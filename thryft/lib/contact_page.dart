@@ -35,7 +35,7 @@ class _ContactPageState extends State<ContactPage> {
           duration: Duration(seconds: 3),
         ),
       );
-      
+
       // Clear form
       _nameController.clear();
       _emailController.clear();
@@ -47,6 +47,7 @@ class _ContactPageState extends State<ContactPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -69,13 +70,10 @@ class _ContactPageState extends State<ContactPage> {
                   const Text(
                     'We\'d love to hear from you! Send us a message and we\'ll get back to you as soon as possible.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.black54),
                   ),
                   const SizedBox(height: 60),
-                  
+
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -99,7 +97,7 @@ class _ContactPageState extends State<ContactPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 30),
-                                  
+
                                   TextFormField(
                                     controller: _nameController,
                                     decoration: const InputDecoration(
@@ -115,7 +113,7 @@ class _ContactPageState extends State<ContactPage> {
                                     },
                                   ),
                                   const SizedBox(height: 20),
-                                  
+
                                   TextFormField(
                                     controller: _emailController,
                                     decoration: const InputDecoration(
@@ -134,7 +132,7 @@ class _ContactPageState extends State<ContactPage> {
                                     },
                                   ),
                                   const SizedBox(height: 20),
-                                  
+
                                   TextFormField(
                                     controller: _subjectController,
                                     decoration: const InputDecoration(
@@ -150,7 +148,7 @@ class _ContactPageState extends State<ContactPage> {
                                     },
                                   ),
                                   const SizedBox(height: 20),
-                                  
+
                                   TextFormField(
                                     controller: _messageController,
                                     decoration: const InputDecoration(
@@ -167,13 +165,15 @@ class _ContactPageState extends State<ContactPage> {
                                     },
                                   ),
                                   const SizedBox(height: 30),
-                                  
+
                                   ElevatedButton(
                                     onPressed: _submitForm,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF47A4F5),
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 20),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 20,
+                                      ),
                                       textStyle: const TextStyle(fontSize: 18),
                                     ),
                                     child: const Text('Send Message'),
@@ -195,5 +195,4 @@ class _ContactPageState extends State<ContactPage> {
       ),
     );
   }
-
 }

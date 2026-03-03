@@ -11,6 +11,7 @@ class CartScreen extends StatelessWidget {
     final cart = context.watch<CartProvider>();
 
     return Scaffold(
+      drawer: const AppDrawer(),
       body: Column(
         children: [
           const Header(),

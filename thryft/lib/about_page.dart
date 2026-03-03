@@ -9,6 +9,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -31,7 +32,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   // Story Section
                   Center(
                     child: const Text(
@@ -82,7 +83,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 60),
-                  
+
                   // Values Section
                   Center(
                     child: const Text(
@@ -95,7 +96,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -103,7 +104,7 @@ class AboutPage extends StatelessWidget {
                         child: _buildValueCard(
                           'Sustainability',
                           'We promote circular fashion by giving clothes a second life, '
-                          'reducing environmental impact.',
+                              'reducing environmental impact.',
                           Icons.eco,
                         ),
                       ),
@@ -112,7 +113,7 @@ class AboutPage extends StatelessWidget {
                         child: _buildValueCard(
                           'Affordability',
                           'Quality fashion shouldn\'t break the bank. We make style '
-                          'accessible to everyone.',
+                              'accessible to everyone.',
                           Icons.attach_money,
                         ),
                       ),
@@ -121,14 +122,14 @@ class AboutPage extends StatelessWidget {
                         child: _buildValueCard(
                           'Trust',
                           'We ensure a safe and reliable platform for buyers and sellers '
-                          'to connect.',
+                              'to connect.',
                           Icons.verified_user,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 60),
-                  
+
                   // Contact CTA
                   Center(
                     child: Column(
@@ -175,11 +176,7 @@ class AboutPage extends StatelessWidget {
         padding: const EdgeInsets.all(30),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 60,
-              color: const Color(0xFF47A4F5),
-            ),
+            Icon(icon, size: 60, color: const Color(0xFF47A4F5)),
             const SizedBox(height: 20),
             Text(
               title,
