@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:thryft/utils/responsive.dart';
 
 class HeroBanner extends StatelessWidget {
   const HeroBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return Responsive.isMobile(context)
+        ? _MobileHeroBanner()
+        : _DesktopHeroBanner();
+  }
+}
+
+// ─── Desktop ─────────────────────────────────────────────────────────────────
+
+class _DesktopHeroBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 400,
       decoration: BoxDecoration(
-        color: Colors.grey[200], // Fallback if image isn't available
+        color: Colors.grey[200],
         image: const DecorationImage(
-          image: AssetImage(
-            'assets/images/hero_background.jpg',
-          ), // Ensure this exists or use network image
+          image: AssetImage('assets/images/hero_background.jpg'),
           fit: BoxFit.cover,
         ),
       ),
@@ -38,64 +48,103 @@ class HeroBanner extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Ready to declutter your wardrobe?',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: FilledButton(
-                      onPressed: () => context.push('/create-listing'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(
-                          255,
-                          71,
-                          164,
-                          245,
-                        ),
-                        foregroundColor: Colors.white,
-                        textStyle: const TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text('Sell now'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Learn how it works',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 71, 164, 245),
-                          fontSize: 16,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: _HeroBannerContent(),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Mobile ──────────────────────────────────────────────────────────────────
+
+class _MobileHeroBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        image: const DecorationImage(
+          image: AssetImage('assets/images/hero_background.jpg'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: _HeroBannerContent(),
+      ),
+    );
+  }
+}
+
+// ─── Shared content ──────────────────────────────────────────────────────────
+
+class _HeroBannerContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Ready to declutter your wardrobe?',
+          style: TextStyle(
+            fontSize: Responsive.isMobile(context) ? 24 : 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton(
+            onPressed: () => context.push('/create-listing'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 71, 164, 245),
+              foregroundColor: Colors.white,
+              textStyle: const TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: const Text('Sell now'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Learn how it works',
+              style: TextStyle(
+                color: Color.fromARGB(255, 71, 164, 245),
+                fontSize: 15,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
