@@ -26,6 +26,7 @@ migrate_working_dir/
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
+**/.dart_tool/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -52,7 +53,14 @@ app.*.map.json
 
 # Android local configuration (machine-specific)
 android/local.properties
-android/GeneratedPluginRegistrant.java
+
+# Flutter generated plugin registrant files (all platforms)
+**/GeneratedPluginRegistrant.java
+**/GeneratedPluginRegistrant.m
+**/GeneratedPluginRegistrant.swift
+**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.h
+**/generated_plugins.cmake
 
 # iOS/macOS CocoaPods lock file
 /ios/Podfile.lock
