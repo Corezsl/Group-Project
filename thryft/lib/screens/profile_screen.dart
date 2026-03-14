@@ -15,7 +15,7 @@ class ProfileScreen extends StatelessWidget {
             Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
             SizedBox(
               height: 500,
-            ), // Gives it some empty space between header and footer
+            ), 
             Footer(),
           ],
         ),
