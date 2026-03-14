@@ -6,12 +6,17 @@ import 'package:thryft/screens/cart_screen.dart';
 import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
+import 'package:thryft/screens/wishlist_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     GoRoute(path: '/cart', builder: (context, state) => const CartScreen()),
+    GoRoute(
+      path: '/wishlist',
+      builder: (context, state) => const WishlistPage(),
+    ),
     GoRoute(path: '/about', builder: (context, state) => const AboutPage()),
     GoRoute(path: '/contact', builder: (context, state) => const ContactPage()),
     GoRoute(
