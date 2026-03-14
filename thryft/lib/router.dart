@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/about_page.dart';
 import 'package:thryft/contact_page.dart';
 import 'package:thryft/screens/account_screen.dart';
+import 'package:thryft/screens/profile_settings_screen.dart';
 import 'package:thryft/screens/cart_screen.dart';
 import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
@@ -26,6 +27,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/create-listing',
       builder: (context, state) => const CreateListingScreen(),
+    ),
+    GoRoute(
+      path: '/profile-settings',
+      builder: (context, state) => const ProfileSettingsScreen(),
     ),
     GoRoute(
       path: '/product/:id',
