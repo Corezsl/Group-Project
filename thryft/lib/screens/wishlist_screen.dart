@@ -11,12 +11,21 @@ class WishlistPage extends StatefulWidget {
 
 class _WishlistPageState extends State<WishlistPage> {
   String? _selectedSortOption;
+  String? _selectedFilterOption;
 
   final List<String> _sortOptions = [
     'Price: High to Low',
     'Price: Low to High',
     'A-Z',
     'Z-A',
+  ];
+
+  final List<String> _filterOptions = [
+    'Still active',
+    'Shirts',
+    'Trousers',
+    'Shoes',
+    'Accessories',
   ];
 
   @override
@@ -77,6 +86,49 @@ class _WishlistPageState extends State<WishlistPage> {
                                 .toList(),
                             onChanged: (value) {
                               setState(() => _selectedSortOption = value);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 36),
+                        const Text(
+                          'FILTER BY',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.6,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedFilterOption,
+                            hint: const Text(
+                              'Still active',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down,
+                              size: 20,
+                              color: Color(0xFF111827),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            items: _filterOptions
+                                .map(
+                                  (option) => DropdownMenuItem(
+                                    value: option,
+                                    child: Text(
+                                      option,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() => _selectedFilterOption = value);
                             },
                           ),
                         ),
