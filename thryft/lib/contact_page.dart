@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thryft/utils/responsive.dart';
 import 'widgets/footer.dart';
 import 'widgets/header.dart';
 
@@ -27,7 +28,6 @@ class _ContactPageState extends State<ContactPage> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Thank you! Your message has been sent.'),
@@ -36,7 +36,6 @@ class _ContactPageState extends State<ContactPage> {
         ),
       );
 
-      // Clear form
       _nameController.clear();
       _emailController.clear();
       _subjectController.clear();
@@ -46,6 +45,12 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final hPadding = isMobile ? 16.0 : 80.0;
+    final titleSize = isMobile ? 28.0 : 48.0;
+    final subtitleSize = isMobile ? 15.0 : 18.0;
+    final cardPadding = isMobile ? 20.0 : 40.0;
+
     return Scaffold(
       drawer: const AppDrawer(),
       body: SingleChildScrollView(
@@ -54,25 +59,31 @@ class _ContactPageState extends State<ContactPage> {
             const Header(),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 80),
+              padding: EdgeInsets.symmetric(
+                vertical: isMobile ? 32 : 60,
+                horizontal: hPadding,
+              ),
               child: Column(
                 children: [
                   // Page Title
-                  const Text(
+                  Text(
                     'Contact Us',
                     style: TextStyle(
-                      fontSize: 48,
+                      fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'We\'d love to hear from you! Send us a message and we\'ll get back to you as soon as possible.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: Colors.black54),
+                    style: TextStyle(
+                      fontSize: subtitleSize,
+                      color: Colors.black54,
+                    ),
                   ),
-                  const SizedBox(height: 60),
+                  SizedBox(height: isMobile ? 32 : 60),
 
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,21 +93,21 @@ class _ContactPageState extends State<ContactPage> {
                         child: Card(
                           elevation: 3,
                           child: Padding(
-                            padding: const EdgeInsets.all(40),
+                            padding: EdgeInsets.all(cardPadding),
                             child: Form(
                               key: _formKey,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Send Us a Message',
                                     style: TextStyle(
-                                      fontSize: 24,
+                                      fontSize: isMobile ? 20 : 24,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black87,
                                     ),
                                   ),
-                                  const SizedBox(height: 30),
+                                  SizedBox(height: isMobile ? 20 : 30),
 
                                   TextFormField(
                                     controller: _nameController,
@@ -164,17 +175,19 @@ class _ContactPageState extends State<ContactPage> {
                                       return null;
                                     },
                                   ),
-                                  const SizedBox(height: 30),
+                                  SizedBox(height: isMobile ? 20 : 30),
 
                                   ElevatedButton(
                                     onPressed: _submitForm,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF47A4F5),
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 20,
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isMobile ? 16 : 20,
                                       ),
-                                      textStyle: const TextStyle(fontSize: 18),
+                                      textStyle: TextStyle(
+                                        fontSize: isMobile ? 16 : 18,
+                                      ),
                                     ),
                                     child: const Text('Send Message'),
                                   ),
