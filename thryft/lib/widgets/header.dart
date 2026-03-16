@@ -67,14 +67,6 @@ class _DesktopHeader extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      FilledButton.tonal(
-                        onPressed: null,
-                        style: FilledButton.styleFrom(
-                          textStyle: const TextStyle(fontSize: 16.0),
-                        ),
-                        child: const Text('SELL NOW'),
-                      ),
-                      const SizedBox(width: 16),
                       IconButton(
                         icon: const Icon(
                           Icons.favorite_outline,
