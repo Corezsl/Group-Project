@@ -41,28 +41,44 @@ class _DesktopHeader extends StatelessWidget {
                 Flexible(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 500),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-                        hintText: 'Search',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        border: const OutlineInputBorder(
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: const Color.fromARGB(50, 255, 255, 255),
+                    child: Row(
+                      children: [
+                        IconButton(icon: const Icon(Icons.filter_alt_outlined, color: Colors.white),
+                        tooltip: 'Filters',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Filter options not yet implemented')),
+                          );
+                        },
                       ),
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                            hintText: 'Search',
+                            hintStyle: const TextStyle(color: Colors.white70),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            border: const OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: const Color.fromARGB(50, 255, 255, 255),
+                          ),
+                          style: const TextStyle(color: Colors.white
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),     //child: Text
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
