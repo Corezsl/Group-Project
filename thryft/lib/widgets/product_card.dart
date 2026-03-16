@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:thryft/models/product.dart';
+import 'package:thryft/providers/wishlist_provider.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -61,15 +63,20 @@ class ProductCard extends StatelessWidget {
                           color: Colors.white.withOpacity(0.9),
                           shape: BoxShape.circle,
                         ),
-                        child: IconButton(
-                          padding: const EdgeInsets.all(6),
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.favorite_border,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () {},
+                        child: Consumer<WishlistProvider>(
+                          builder: (context, wishlist, _) {
+                            final wishlisted = wishlist.isWishlisted(product.id);
+                            return IconButton(
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                wishlisted ? Icons.favorite : Icons.favorite_border,
+                                size: 20,
+                                color: wishlisted ? Colors.red : Colors.grey,
+                              ),
+                              onPressed: () => wishlist.toggleWishlist(product),
+                            );
+                          },
                         ),
                       ),
                     ),

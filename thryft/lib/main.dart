@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thryft/providers/cart_provider.dart';
+import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/router.dart';
 import 'package:thryft/widgets/category_section.dart';
 import 'package:thryft/widgets/header.dart';
@@ -16,8 +17,11 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CartProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => WishlistProvider()),
+      ],
       child: const ThryftApp(),
     ),
   );
