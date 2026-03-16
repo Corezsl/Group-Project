@@ -36,6 +36,7 @@ class _CartScreenState extends State<CartScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [

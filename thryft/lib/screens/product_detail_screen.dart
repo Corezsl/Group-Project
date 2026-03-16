@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/header.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, String> product;
@@ -12,6 +13,7 @@ class ProductDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: Text(product['name']!),
         backgroundColor: Colors.white,

@@ -33,6 +33,7 @@ class _WishlistPageState extends State<WishlistPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
