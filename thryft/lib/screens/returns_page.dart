@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
-import 'widgets/footer.dart';
-import 'widgets/header.dart';
+import '../widgets/footer.dart';
+import '../widgets/header.dart';
 
 class ReturnsPage extends StatelessWidget {
   const ReturnsPage({super.key});
