@@ -13,7 +13,16 @@ class Header extends StatelessWidget {
 
 // ─── Desktop ────────────────────────────────────────────────────────────────
 
-class _DesktopHeader extends StatelessWidget {
+class _DesktopHeader extends StatefulWidget {
+  const _DesktopHeader();
+
+  @override
+  State<_DesktopHeader> createState() => _DesktopHeaderState();
+}
+
+class _DesktopHeaderState extends State<_DesktopHeader> {
+  bool _showCategories = true;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,42 +52,46 @@ class _DesktopHeader extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 500),
                     child: Row(
                       children: [
-                        IconButton(icon: const Icon(Icons.filter_alt_outlined, color: Colors.white),
-                        tooltip: 'Filters',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Filter options not yet implemented')),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: Colors.white,
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                              ),
+                              hintText: 'Search',
+                              hintStyle: const TextStyle(color: Colors.white70),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              border: const OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: const Color.fromARGB(50, 255, 255, 255),
                             ),
-                            hintText: 'Search',
-                            hintStyle: const TextStyle(color: Colors.white70),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            border: const OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: const Color.fromARGB(50, 255, 255, 255),
-                          ),
-                          style: const TextStyle(color: Colors.white
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(
+                            // show outlined when categories are visible, filled when hidden
+                            _showCategories ? Icons.filter_alt_outlined : Icons.filter_alt,
+                            color: Colors.white,
+                          ),
+                          tooltip: 'Filters',
+                          onPressed: () {
+                            setState(() {
+                              _showCategories = !_showCategories;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),     //child: Text
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -110,55 +123,62 @@ class _DesktopHeader extends StatelessWidget {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () => context.go('/'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.white),
-                  child: const Text('Home'),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: null,
-                  child: const Text(
-                    'Shirts',
-                    style: TextStyle(color: Colors.white),
+            // keep the category row's space even when hidden so header items don't move
+            Visibility(
+              visible: _showCategories,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => context.go('/'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Home'),
                   ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: null,
-                  child: const Text(
-                    'Trousers',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Shirts',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: null,
-                  child: const Text(
-                    'Shoes',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Trousers',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: null,
-                  child: const Text(
-                    'Accessories',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Shoes',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: () => context.go('/about'),
-                  child: const Text(
-                    'About Us',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Accessories',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: () => context.go('/about'),
+                    child: const Text(
+                      'About Us',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
