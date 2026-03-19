@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/providers/cart_provider.dart';
-import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 
@@ -288,104 +285,6 @@ class _CartScreenState extends State<CartScreen> {
               ),
             );
           },
-        ),
-      ],
-    );
-  }
-}
-
-class _QuantitySelector extends StatelessWidget {
-  final CartItem item;
-
-  const _QuantitySelector({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final cart = context.read<CartProvider>();
-    final isMobile = Responsive.isMobile(context);
-    final btnSize = isMobile ? 28.0 : 32.0;
-    final iconSize = isMobile ? 16.0 : 20.0;
-
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Subtotal'),
-                  Text(
-                    '£${cart.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  '${item.quantity}',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: isMobile ? 14 : 16),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'Proceed to Checkout',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final String amount;
-  final bool isTotal;
-
-  const _SummaryRow(this.label, this.amount, {this.isTotal = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            color: isTotal ? Colors.black : Colors.grey[700],
-          ),
-        ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-          ),
         ),
       ],
     );
