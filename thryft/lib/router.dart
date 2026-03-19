@@ -1,9 +1,9 @@
 import 'package:go_router/go_router.dart';
-import 'package:thryft/about_page.dart';
-import 'package:thryft/contact_page.dart';
-import 'package:thryft/help_center_page.dart';
-import 'package:thryft/privacy_policy_page.dart';
-import 'package:thryft/returns_page.dart';
+import 'package:thryft/screens/about_page.dart';
+import 'package:thryft/screens/contact_page.dart';
+import 'package:thryft/screens/help_center_page.dart';
+import 'package:thryft/screens/privacy_policy_page.dart';
+import 'package:thryft/screens/returns_page.dart';
 import 'package:thryft/screens/account_screen.dart';
 import 'package:thryft/screens/profile_settings_screen.dart';
 import 'package:thryft/screens/cart_screen.dart';
