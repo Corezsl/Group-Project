@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thryft/providers/cart_provider.dart';
-import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/footer.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -36,7 +36,6 @@ class _CartScreenState extends State<CartScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -287,50 +286,7 @@ class _CartScreenState extends State<CartScreen> {
             );
           },
         ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Subtotal', style: TextStyle(fontSize: 16)),
-                  Text(
-                    '£${cart.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'Proceed to Checkout',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
 }
-
