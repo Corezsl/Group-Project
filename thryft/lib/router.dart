@@ -11,7 +11,7 @@ import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
 import 'package:thryft/screens/wishlist_screen.dart';
-import 'package:thryft/terms_of_service_page.dart';
+import 'package:thryft/screens/terms_of_service_page.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
