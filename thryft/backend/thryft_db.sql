@@ -53,6 +53,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     email_notifications BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE
+    
 );
 
 CREATE TABLE address (
