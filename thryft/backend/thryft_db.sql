@@ -99,17 +99,29 @@ CREATE TABLE message (
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE message_attachment (
-    attachment_id SERIAL PRIMARY KEY,
-    message_id INT NOT NULL REFERENCES message(message_id),
-    file_url VARCHAR(255) NOT NULL
-);
 
 CREATE TABLE orders (
     order_id SERIAL PRIMARY KEY,
     buyer_id INT NOT NULL REFERENCES users(user_id),
-    listing_id INT NOT NULL REFERENCES listings(listing_id),
-    status_id INT NOT NULL REFERENCES order_status(status_id),
+    order_status order_status_name NOT NULL DEFAULT 'pending',
     shipping_address_id INT NOT NULL REFERENCES address(address_id),
+    total_amount DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_items (
+    order_id INT NOT NULL REFERENCES orders(order_id),
+    listing_id INT NOT NULL REFERENCES listings(listing_id),
+    price_at_purchase DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (order_id, listing_id)
+);
+
+CREATE TABLE reviews (
+    review_id SERIAL PRIMARY KEY,
+    reviewer_id INT NOT NULL REFERENCES users(user_id),
+    reviewee_id INT NOT NULL REFERENCES users(user_id),
+    order_id INT NOT NULL REFERENCES orders(order_id),
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
