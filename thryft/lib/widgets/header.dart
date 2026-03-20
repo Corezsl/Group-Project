@@ -115,7 +115,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           Icons.person_outline,
                           color: Colors.white,
                         ),
-                        onPressed: () => context.push('/account'),
+                        onPressed: () => context.push('/auth'),
                       ),
                       const SizedBox(width: 16),
                     ],
@@ -322,7 +322,7 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Account'),
             onTap: () {
               Navigator.pop(context);
-              context.push('/account');
+              context.push('/auth');
             },
           ),
           const Divider(),

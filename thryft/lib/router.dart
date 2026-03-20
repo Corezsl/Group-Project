@@ -12,6 +12,7 @@ import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
 import 'package:thryft/screens/wishlist_screen.dart';
 import 'package:thryft/screens/terms_of_service_page.dart';
+import 'package:thryft/screens/auth_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -40,6 +41,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/auth',
+      builder: (context, state) => const AuthScreen(),
     ),
     GoRoute(
       path: '/create-listing',
