@@ -149,6 +149,15 @@ class _AuthScreenState extends State<AuthScreen> {
                               border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                                return 'Please enter a valid email address';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -170,6 +179,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                 },
                               ),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
                           ),
                           if (!_isLogin) ...[
                             const SizedBox(height: 16),
@@ -180,6 +198,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                 labelText: 'Confirm Password',
                                 border: OutlineInputBorder(),
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
                             ),
                           ],
                           if (_isLogin) ...[
@@ -208,7 +235,9 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             onPressed: () {
-                              // Validation and submit logic (Step 5/6)
+                              if (_formKey.currentState!.validate()) {
+                                // Validation and submit logic (Step 6)
+                              }
                             },
                             child: Text(
                               _isLogin ? 'Log in' : 'Sign up',
