@@ -119,7 +119,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                         onPressed: () {
                           final session = Supabase.instance.client.auth.currentSession;
                           if (session != null) {
-                            context.push('/profile');
+                            context.push('/account');
                           } else {
                             context.push('/auth');
                           }
@@ -250,7 +250,7 @@ class _MobileHeader extends StatelessWidget {
             onPressed: () {
               final session = Supabase.instance.client.auth.currentSession;
               if (session != null) {
-                context.push('/profile');
+                context.push('/account');
               } else {
                 context.push('/auth');
               }
@@ -343,7 +343,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               final session = Supabase.instance.client.auth.currentSession;
               if (session != null) {
-                context.push('/profile');
+                context.push('/account');
               } else {
                 context.push('/auth');
               }

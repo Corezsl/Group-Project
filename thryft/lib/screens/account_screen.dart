@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
@@ -30,7 +31,10 @@ class AccountScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      // Login Status Pill
+                      _buildUserStatus(),
+                      const SizedBox(height: 24),
                       // Placeholder buttons for account management options
                       Card(
                         child: ListTile(
@@ -83,6 +87,34 @@ class AccountScreen extends StatelessWidget {
                           },
                         ),
                       ),
+                      const SizedBox(height: 32),
+                      // Logout Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            await Supabase.instance.client.auth.signOut();
+                            if (context.mounted) {
+                              context.go('/');
+                            }
+                          },
+                          icon: const Icon(Icons.logout, color: Colors.red),
+                          label: const Text(
+                            'Log out',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: Colors.red.shade200),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -93,6 +125,54 @@ class AccountScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+  Widget _buildUserStatus() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Logged In',
+                style: TextStyle(
+                  color: Colors.green.shade700,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          user.email ?? '',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 14,
+          ),
+        ),
+      ],
     );
   }
 }

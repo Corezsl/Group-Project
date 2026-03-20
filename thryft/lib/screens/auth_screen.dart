@@ -40,7 +40,7 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
       if (mounted) {
-        context.go('/profile');
+        context.go('/account');
       }
     } on AuthException catch (e) {
       if (mounted) {
