@@ -8,7 +8,20 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
   bool _isLogin = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +137,90 @@ class _AuthScreenState extends State<AuthScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    Text(_isLogin ? 'Login form placeholder' : 'Signup form placeholder'),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          if (!_isLogin) ...[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscurePassword,
+                              decoration: const InputDecoration(
+                                labelText: 'Confirm Password',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ],
+                          if (_isLogin) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {},
+                                child: const Text(
+                                  'Forgot password?',
+                                  style: TextStyle(color: Color(0xFF47A4F5)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ] else ...[
+                            const SizedBox(height: 32),
+                          ],
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF47A4F5),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              // Validation and submit logic (Step 5/6)
+                            },
+                            child: Text(
+                              _isLogin ? 'Log in' : 'Sign up',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
