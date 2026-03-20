@@ -10,10 +10,46 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       body: Center(
-        child: Text('Auth Screen Skeleton'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo centered above the form card
+              Image.asset(
+                'assets/images/thyrft_logo.png',
+                height: 48,
+              ),
+              const SizedBox(height: 32),
+              
+              // Auth Card
+              Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Card Content'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
