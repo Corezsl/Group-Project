@@ -21,15 +21,28 @@ class _DesktopHeroBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 400,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        image: const DecorationImage(
-          image: AssetImage('assets/images/hero_background.jpg'),
-          fit: BoxFit.cover,
-        ),
-      ),
+      color: Colors.grey[200],
       child: Stack(
         children: [
+          Positioned.fill(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Image.asset(
+                    'assets/images/selling_image_1.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Expanded(
+                  child: Image.asset(
+                    'assets/images/selling_image_2.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ],
+            ),
+          ),
           Positioned(
             left: 50,
             top: 50,
@@ -64,28 +77,47 @@ class _MobileHeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        image: const DecorationImage(
-          image: AssetImage('assets/images/hero_background.jpg'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+      color: Colors.grey[200],
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Image.asset(
+                    'assets/images/selling_image_1.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Expanded(
+                  child: Image.asset(
+                    'assets/images/selling_image_2.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: _HeroBannerContent(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: _HeroBannerContent(),
+            ),
+          ),
+        ],
       ),
     );
   }
