@@ -1,59 +1,27 @@
 CREATE DATABASE thryft_db;
 
-CREATE TABLE notification_type (
-    type_id SERIAL PRIMARY KEY,
-    type_name VARCHAR(20) UNIQUE NOT NULL
-);
-
-CREATE TABLE listing_state (
-    state_id SERIAL PRIMARY KEY,
-    listing_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE listing_fitting (
-    fitting_id SERIAL PRIMARY KEY,
-    fitting_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE brand (
-    brand_id SERIAL PRIMARY KEY,
-    brand_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE category (
-    category_id SERIAL PRIMARY KEY,
-    category_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE tag (
-    tag_id SERIAL PRIMARY KEY,
-    tag_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE listing_size (
-    size_id SERIAL PRIMARY KEY,
-    size_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE listing_condition (
-    condition_id SERIAL PRIMARY KEY,
-    condition_name VARCHAR(40) UNIQUE NOT NULL
-);
-
-CREATE TABLE role (
-    role_id SERIAL PRIMARY KEY,
-    role_name VARCHAR(40) UNIQUE NOT NULL
-);
+CREATE TYPE listing_state AS ENUM ('active', 'sold', 'pending','on_sale');
+CREATE TYPE brand_name AS ENUM ('Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Asics', 'Vans', 
+'Converse', 'Jordan', 'Fila', 'Skechers', 'Brooks', 'Saucony', 'Mizuno',
+ 'Hoka One One', 'Salomon', 'Merrell', 'Columbia', 'The North Face', 'Patagonia','other');
+CREATE TYPE category_name AS ENUM ('Footwear','Accessories','Shirt','Shorts',
+'Trousers','Other','Hoodie','Jacket','Dress','Skirt','Outerwear');
+CREATE TYPE listing_size AS ENUM ('XS', 'S', 'M', 'L', 'XL', 'XXL');
+CREATE TYPE listing_fitting AS ENUM ('Slim', 'Regular', 'Loose');
+CREATE TYPE condition_name AS ENUM ('New with tags', 'New without tags','Very good','Good','Okay','Worn');
+CREATE TYPE notification_type AS ENUM ('new_message', 'listing_sold', 'price_drop','other');
+CREATE TYPE order_status_name AS ENUM ('pending', 'shipped', 'delivered');
 
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    role_id INT NOT NULL REFERENCES role(role_id),
+    username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    user_password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    email_notifications BOOLEAN DEFAULT TRUE,
-    email_verified BOOLEAN DEFAULT FALSE
-    
+    user_rating DECIMAL(2, 1) NOT NULL DEFAULT 0.0,
+    total_reviews INT NOT NULL DEFAULT 0,
+    total_listings INT NOT NULL DEFAULT 0
+
 );
 
 CREATE TABLE address (
@@ -65,32 +33,28 @@ CREATE TABLE address (
     country VARCHAR(30) NOT NULL
 );
 
-CREATE TABLE order_status (
-    status_id SERIAL PRIMARY KEY,
-    status_name VARCHAR(40) UNIQUE NOT NULL
-);
 
 CREATE TABLE listings (
     listing_id SERIAL PRIMARY KEY,
     seller_id INT NOT NULL REFERENCES users(user_id),
-    category_id INT NOT NULL REFERENCES category(category_id),
-    brand_id INT NOT NULL REFERENCES brand(brand_id),
-    size_id INT NOT NULL REFERENCES listing_size(size_id),
-    condition_id INT NOT NULL REFERENCES listing_condition(condition_id),
-    fitting_id INT NOT NULL REFERENCES listing_fitting(fitting_id),
-    state_id INT NOT NULL REFERENCES listing_state(state_id),
     title VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    brand brand_name NOT NULL,
+    category category_name NOT NULL,
+    size listing_size NOT NULL,
+    fitting listing_fitting NOT NULL,
+    condition condition_name NOT NULL,
+    state listing_state NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    shoe_size DECIMAL(4, 1)
 );
 
 CREATE TABLE price_history (
     history_id SERIAL PRIMARY KEY,
     listing_id INT NOT NULL REFERENCES listings(listing_id),
     old_price DECIMAL(10, 2) NOT NULL,
-    new_price DECIMAL(10, 2) NOT NULL,
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    new_price DECIMAL(10, 2) NOT NULL
 );
 
 CREATE TABLE images (
@@ -99,12 +63,6 @@ CREATE TABLE images (
     image_url VARCHAR(255) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
     sort_order INT NOT NULL
-);
-
-CREATE TABLE listings_tag (
-    listing_id INT NOT NULL REFERENCES listings(listing_id),
-    tag_id INT NOT NULL REFERENCES tag(tag_id),
-    PRIMARY KEY (listing_id, tag_id)
 );
 
 CREATE TABLE wishlist (
@@ -117,7 +75,7 @@ CREATE TABLE wishlist (
 CREATE TABLE notification (
     notification_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(user_id),
-    type_id INT NOT NULL REFERENCES notification_type(type_id),
+    notif_type notification_type NOT NULL,
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -129,6 +87,7 @@ CREATE TABLE cart_item (
     listing_id INT NOT NULL REFERENCES listings(listing_id),
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE message (
     message_id SERIAL PRIMARY KEY,
@@ -153,12 +112,4 @@ CREATE TABLE orders (
     status_id INT NOT NULL REFERENCES order_status(status_id),
     shipping_address_id INT NOT NULL REFERENCES address(address_id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE shipment (
-    shipment_id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL REFERENCES orders(order_id),
-    tracking_number VARCHAR(50) NOT NULL,
-    carrier VARCHAR(50) NOT NULL,
-    shipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
