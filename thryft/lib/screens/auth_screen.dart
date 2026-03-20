@@ -8,6 +8,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  bool _isLogin = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,10 +42,89 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ],
                 ),
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Card Content'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isLogin = true;
+                              });
+                            },
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: _isLogin
+                                        ? const Color(0xFF47A4F5)
+                                        : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Log in',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: _isLogin
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                    color: _isLogin
+                                        ? const Color(0xFF47A4F5)
+                                        : Colors.grey.shade500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isLogin = false;
+                              });
+                            },
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: !_isLogin
+                                        ? const Color(0xFF47A4F5)
+                                        : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Sign up',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: !_isLogin
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                    color: !_isLogin
+                                        ? const Color(0xFF47A4F5)
+                                        : Colors.grey.shade500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    Text(_isLogin ? 'Login form placeholder' : 'Signup form placeholder'),
                   ],
                 ),
               ),
