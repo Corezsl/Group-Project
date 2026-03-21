@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/models/product.dart';
-import 'package:thryft/data/dummy_data.dart';
-
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;
   final List<CartItem> _items = [];
@@ -35,13 +33,26 @@ class CartProvider extends ChangeNotifier {
             .select('product_id')
             .eq('user_id', userId);
             
-        for (var row in data) {
-          final pId = row['product_id'] as String;
-          try {
-            final product = dummyProducts.firstWhere((p) => p.id == pId);
+        if (data.isNotEmpty) {
+          final productIds = data.map((row) => row['product_id'] as String).toList();
+          
+          final productsData = await Supabase.instance.client
+              .from('products')
+              .select()
+              .inFilter('id', productIds);
+              
+          for (var pData in productsData) {
+            final product = Product(
+              id: pData['id'].toString(),
+              name: pData['name'].toString(),
+              price: (pData['price'] as num).toDouble(),
+              originalPrice: pData['original_price'] != null ? (pData['original_price'] as num).toDouble() : null,
+              size: pData['size'].toString(),
+              brand: pData['brand'].toString(),
+              condition: pData['condition'].toString(),
+              imageUrl: pData['image_url']?.toString(),
+            );
             _items.add(CartItem(product: product));
-          } catch (_) {
-            // Ignore if product ID not found in dummy data
           }
         }
       } catch (e) {
