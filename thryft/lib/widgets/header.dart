@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/utils/responsive.dart';
 
 class Header extends StatelessWidget {
@@ -115,7 +116,14 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           Icons.person_outline,
                           color: Colors.white,
                         ),
-                        onPressed: () => context.push('/account'),
+                        onPressed: () {
+                          final session = Supabase.instance.client.auth.currentSession;
+                          if (session != null) {
+                            context.push('/account');
+                          } else {
+                            context.push('/auth');
+                          }
+                        },
                       ),
                       const SizedBox(width: 16),
                     ],
@@ -237,6 +245,17 @@ class _MobileHeader extends StatelessWidget {
             icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
             onPressed: () => context.push('/cart'),
           ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.white),
+            onPressed: () {
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/account');
+              } else {
+                context.push('/auth');
+              }
+            },
+          ),
           // Hamburger
           Builder(
             builder: (ctx) => IconButton(
@@ -322,7 +341,12 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Account'),
             onTap: () {
               Navigator.pop(context);
-              context.push('/account');
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/account');
+              } else {
+                context.push('/auth');
+              }
             },
           ),
           const Divider(),
