@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
@@ -14,6 +16,7 @@ class CreateListingScreen extends StatefulWidget {
 }
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
+  bool _isLoading = false;
   int _selectedIndex = 0;
   final TextEditingController _titleController = TextEditingController();
   String? _selectedCategory;
@@ -68,6 +71,106 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       }
     } catch (e) {
       debugPrint("Error picking image: $e");
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_titleController.text.isEmpty ||
+        _selectedCategory == null ||
+        _selectedCondition == null ||
+        _selectedBrand == null ||
+        _priceController.text.isEmpty ||
+        _images[0] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields and upload a main photo.')),
+      );
+      return;
+    }
+    
+    if (_selectedCategory != 'Accessories' && _selectedSize == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a size.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('You must be logged in to create a listing.');
+      }
+
+      String? publicImageUrl;
+
+      // Upload main image
+      final mainImage = _images[0]!;
+      final fileExt = mainImage.name.split('.').last;
+      final fileName = '${const Uuid().v4()}.$fileExt';
+      final bytes = await mainImage.readAsBytes();
+      
+      await supabase.storage.from('product-images').uploadBinary(
+        fileName,
+        bytes,
+        fileOptions: FileOptions(contentType: 'image/$fileExt'),
+      );
+      
+      publicImageUrl = supabase.storage.from('product-images').getPublicUrl(fileName);
+
+      // Upload any additional images
+      for (int i = 1; i < 5; i++) {
+        final img = _images[i];
+        if (img != null) {
+          final ext = img.name.split('.').last;
+          final name = '${const Uuid().v4()}.$ext';
+          final b = await img.readAsBytes();
+          await supabase.storage.from('product-images').uploadBinary(
+            name,
+            b,
+            fileOptions: FileOptions(contentType: 'image/$ext'),
+          );
+        }
+      }
+
+      // Insert to database
+      final double price = double.parse(_priceController.text);
+      await supabase.from('products').insert({
+        'user_id': user.id,
+        'name': _titleController.text,
+        'price': price,
+        'size': _selectedSize ?? 'One Size',
+        'brand': _selectedBrand,
+        'condition': _selectedCondition,
+        'image_url': publicImageUrl,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Listing created successfully!')),
+      );
+      
+      _titleController.clear();
+      _priceController.clear();
+      setState(() {
+        _selectedCategory = null;
+        _selectedSize = null;
+        _selectedCondition = null;
+        _selectedBrand = null;
+        _images.fillRange(0, 5, null);
+        _selectedIndex = 0;
+      });
+
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -373,22 +476,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         width: double.infinity,
                         height: 52,
                         child: FilledButton(
-                          onPressed: () {
-                            // TO DO: validate and submit listing
-                          },
+                          onPressed: _isLoading ? null : _submit,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFF1565C0),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                            'Upload Listing',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Upload Listing',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 60),
