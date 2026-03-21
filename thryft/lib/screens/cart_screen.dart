@@ -261,25 +261,13 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                   // Quantity stepper
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () => context
-                            .read<CartProvider>()
-                            .updateQuantity(product.id, item.quantity - 1),
-                      ),
-                      Text(
-                        '${item.quantity}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () => context
-                            .read<CartProvider>()
-                            .updateQuantity(product.id, item.quantity + 1),
-                      ),
-                    ],
+                  // Remove button
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    tooltip: 'Remove from cart',
+                    onPressed: () => context
+                        .read<CartProvider>()
+                        .removeItem(product.id),
                   ),
                 ],
               ),
