@@ -38,6 +38,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          data: {'username': _usernameController.text.trim()},
         );
       }
       if (mounted) {
