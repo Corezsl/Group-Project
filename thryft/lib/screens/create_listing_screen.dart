@@ -15,7 +15,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedCategory;
   String? _selectedSize;
   String? _selectedCondition;
+  String? _selectedBrand;
   final TextEditingController _priceController = TextEditingController();
+
+  final List<String> _brands = [
+    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Asics', 
+    'Vans', 'Converse', 'Jordan', 'Fila', 'Skechers', 'Brooks', 'Saucony', 
+    'Mizuno', 'Hoka One One', 'Salomon', 'Merrell', 'Columbia', 
+    'The North Face', 'Patagonia', 'Other'
+  ];
 
   final List<String> _categories = [
     'Shirt',
@@ -227,6 +235,24 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
               .toList(),
           onChanged: (val) => setState(() => _selectedCondition = val),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('Brand', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: _selectedBrand,
+          hint: const Text('Select a brand'),
+          items: _brands
+              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+              .toList(),
+          onChanged: (val) => setState(() => _selectedBrand = val),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(

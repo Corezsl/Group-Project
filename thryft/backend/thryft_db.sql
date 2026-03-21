@@ -6,7 +6,7 @@ CREATE TYPE brand_name AS ENUM ('Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armou
  'Hoka One One', 'Salomon', 'Merrell', 'Columbia', 'The North Face', 'Patagonia','other');
 CREATE TYPE category_name AS ENUM ('Footwear','Accessories','Shirt','Shorts',
 'Trousers','Other','Hoodie','Jacket','Dress','Skirt','Outerwear');
-CREATE TYPE listing_size AS ENUM ('XS', 'S', 'M', 'L', 'XL', 'XXL');
+CREATE TYPE listing_size AS ENUM ('XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL');
 CREATE TYPE listing_fitting AS ENUM ('Slim', 'Regular', 'Loose');
 CREATE TYPE condition_name AS ENUM ('New with tags', 'New without tags','Very good','Good','Okay','Worn');
 CREATE TYPE notification_type AS ENUM ('new_message', 'listing_sold', 'price_drop','other');
