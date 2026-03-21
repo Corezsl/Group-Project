@@ -3,14 +3,14 @@ import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
 import '../widgets/header.dart';
 
-class ContactPage extends StatefulWidget {
-  const ContactPage({super.key});
+class ContactScreen extends StatefulWidget {
+  const ContactScreen({super.key});
 
   @override
-  State<ContactPage> createState() => _ContactPageState();
+  State<ContactScreen> createState() => _ContactPageState();
 }
 
-class _ContactPageState extends State<ContactPage> {
+class _ContactPageState extends State<ContactScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();

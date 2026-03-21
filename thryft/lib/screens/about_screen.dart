@@ -4,8 +4,8 @@ import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

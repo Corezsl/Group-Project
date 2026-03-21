@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 
-class MyListingsPage extends StatelessWidget {
-  const MyListingsPage({super.key});
+class MyListingsScreen extends StatelessWidget {
+  const MyListingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

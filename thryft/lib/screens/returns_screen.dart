@@ -3,8 +3,8 @@ import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
 import '../widgets/header.dart';
 
-class PrivacyPolicyPage extends StatelessWidget {
-  const PrivacyPolicyPage({super.key});
+class ReturnsScreen extends StatelessWidget {
+  const ReturnsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 children: [
                   Center(
                     child: Text(
-                      'Privacy Policy',
+                      'Returns Policy',
                       style: TextStyle(
                         fontSize: titleSize,
                         fontWeight: FontWeight.bold,
@@ -39,10 +39,10 @@ class PrivacyPolicyPage extends StatelessWidget {
                   ),
                   SizedBox(height: isMobile ? 24 : 40),
                   const Text(
-                    'We collect basic account and transaction information to provide and improve Thryft services.\n\n'
-                    'Information is used for account management, order processing, customer support, and security monitoring.\n\n'
-                    'We do not sell your personal data to third parties. Data may be shared with trusted service providers solely to operate the platform.\n\n'
-                    'You may request account data updates or deletion by contacting support through the Contact page.',
+                    'Return requests must be submitted within 7 days of delivery.\n\n'
+                    'Items must be returned in the same condition as received, with all original details and accessories included.\n\n'
+                    'Refunds are processed after item inspection and may take several business days to appear in your account.\n\n'
+                    'For return assistance, contact support from the Contact page and include your order reference.',
                     style: TextStyle(
                       fontSize: 16,
                       height: 1.7,

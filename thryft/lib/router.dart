@@ -1,9 +1,9 @@
 import 'package:go_router/go_router.dart';
-import 'package:thryft/screens/about_page.dart';
-import 'package:thryft/screens/contact_page.dart';
-import 'package:thryft/screens/help_center_page.dart';
-import 'package:thryft/screens/privacy_policy_page.dart';
-import 'package:thryft/screens/returns_page.dart';
+import 'package:thryft/screens/about_screen.dart';
+import 'package:thryft/screens/contact_screen.dart';
+import 'package:thryft/screens/help_center_screen.dart';
+import 'package:thryft/screens/privacy_policy_screen.dart';
+import 'package:thryft/screens/returns_screen.dart';
 import 'package:thryft/screens/account_screen.dart';
 import 'package:thryft/screens/profile_settings_screen.dart';
 import 'package:thryft/screens/cart_screen.dart';
@@ -11,9 +11,9 @@ import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
 import 'package:thryft/screens/wishlist_screen.dart';
-import 'package:thryft/screens/my_listings_page.dart';
+import 'package:thryft/screens/my_listings_screen.dart';
 import 'package:thryft/screens/my_orders_screen.dart';
-import 'package:thryft/screens/terms_of_service_page.dart';
+import 'package:thryft/screens/terms_of_service_screen.dart';
 import 'package:thryft/screens/auth_screen.dart';
 
 final GoRouter router = GoRouter(
@@ -23,23 +23,23 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/cart', builder: (context, state) => const CartScreen()),
     GoRoute(
       path: '/wishlist',
-      builder: (context, state) => const WishlistPage(),
+      builder: (context, state) => const WishlistScreen(),
     ),
-    GoRoute(path: '/about', builder: (context, state) => const AboutPage()),
-    GoRoute(path: '/contact', builder: (context, state) => const ContactPage()),
+    GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
+    GoRoute(path: '/contact', builder: (context, state) => const ContactScreen()),
     GoRoute(
       path: '/help-center',
-      builder: (context, state) => const HelpCenterPage(),
+      builder: (context, state) => const HelpCenterScreen(),
     ),
     GoRoute(
       path: '/terms-of-service',
-      builder: (context, state) => const TermsOfServicePage(),
+      builder: (context, state) => const TermsOfServiceScreen(),
     ),
     GoRoute(
       path: '/privacy-policy',
-      builder: (context, state) => const PrivacyPolicyPage(),
+      builder: (context, state) => const PrivacyPolicyScreen(),
     ),
-    GoRoute(path: '/returns', builder: (context, state) => const ReturnsPage()),
+    GoRoute(path: '/returns', builder: (context, state) => const ReturnsScreen()),
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
@@ -51,7 +51,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/my-listings',
-      builder: (context, state) => const MyListingsPage(),
+      builder: (context, state) => const MyListingsScreen(),
     ),
     GoRoute(
       path: '/my-orders',
