@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
+import 'package:thryft/data/dummy_data.dart';
 
 class ProductCarousel extends StatefulWidget {
   const ProductCarousel({super.key});
@@ -16,92 +17,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
   static const double _scrollAmount = 344;
 
   // placeholder product data(fetch real data from backend later in the project)
-  final List<Product> products = const [
-    Product(
-      id: '1',
-      name: 'Vintage Denim Jacket',
-      price: 24.99,
-      originalPrice: 39.99,
-      size: 'M',
-      brand: 'Levi\'s',
-      condition: 'Good',
-    ),
-    Product(
-      id: '2',
-      name: 'White Sneakers',
-      price: 18.00,
-      size: '42',
-      brand: 'Nike',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '3',
-      name: 'Floral Summer Dress',
-      price: 12.50,
-      originalPrice: 22.00,
-      size: 'S',
-      brand: 'Zara',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '4',
-      name: 'Wool Coat',
-      price: 45.00,
-      size: 'L',
-      brand: 'H&M',
-      condition: 'Good',
-    ),
-    Product(
-      id: '5',
-      name: 'Leather Belt',
-      price: 8.00,
-      size: 'One Size',
-      brand: 'Unbranded',
-      condition: 'Fair',
-    ),
-    Product(
-      id: '6',
-      name: 'Graphic Tee',
-      price: 6.99,
-      originalPrice: 14.99,
-      size: 'XL',
-      brand: 'ASOS',
-      condition: 'Good',
-    ),
-    Product(
-      id: '7',
-      name: 'Chino Trousers',
-      price: 15.00,
-      size: '32',
-      brand: 'Gap',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '8',
-      name: 'Puffer Jacket',
-      price: 30.00,
-      size: 'M',
-      brand: 'The North Face',
-      condition: 'Good',
-    ),
-    Product(
-      id: '9',
-      name: 'Silk Blouse',
-      price: 10.00,
-      size: 'S',
-      brand: 'Reiss',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '10',
-      name: 'Running Shoes',
-      price: 22.00,
-      originalPrice: 35.00,
-      size: '40',
-      brand: 'Adidas',
-      condition: 'Good',
-    ),
-  ];
+  final List<Product> products = dummyProducts;
 
   void _scrollLeft() {
     _scrollController.animateTo(
