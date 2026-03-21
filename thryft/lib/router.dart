@@ -42,10 +42,7 @@ final GoRouter router = GoRouter(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
     ),
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) => const AuthScreen(),
-    ),
+    GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
     GoRoute(
       path: '/create-listing',
       builder: (context, state) => const CreateListingScreen(),
