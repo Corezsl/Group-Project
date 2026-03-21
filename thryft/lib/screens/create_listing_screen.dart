@@ -55,16 +55,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   List<String> get _currentSizes {
     switch (_selectedCategory) {
       case 'Shoes':
-        return [
-          'UK 5',
-          'UK 6',
-          'UK 7',
-          'UK 8',
-          'UK 9',
-          'UK 10',
-          'UK 11',
-          'UK 12',
-        ];
+        return List.generate(19, (i) => (i + 30).toString());
       case 'Accessories':
         return ["Woman's One Size", "Man's One Size", 'Unisex One Size'];
       default:
