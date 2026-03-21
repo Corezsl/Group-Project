@@ -35,10 +35,28 @@ class _AuthScreenState extends State<AuthScreen> {
           password: _passwordController.text,
         );
       } else {
+        final username = _usernameController.text.trim();
+        
+        // Check if username is already taken
+        final existingProfile = await Supabase.instance.client
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .maybeSingle();
+
+        if (existingProfile != null) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Username "$username" is already taken';
+            });
+          }
+          return;
+        }
+
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          data: {'username': _usernameController.text.trim()},
+          data: {'username': username},
         );
       }
       if (mounted) {
