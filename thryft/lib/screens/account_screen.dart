@@ -83,7 +83,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('View your saved items'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement favourites view
+                            context.push('/wishlist');
                           },
                         ),
                       ),
