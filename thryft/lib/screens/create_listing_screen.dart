@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
@@ -12,44 +15,25 @@ class CreateListingScreen extends StatefulWidget {
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
   int _selectedIndex = 0;
+  final TextEditingController _titleController = TextEditingController();
   String? _selectedCategory;
   String? _selectedSize;
   String? _selectedCondition;
   String? _selectedBrand;
   final TextEditingController _priceController = TextEditingController();
 
+  final List<XFile?> _images = List.filled(5, null);
+  final ImagePicker _picker = ImagePicker();
+
   final List<String> _brands = [
-    'Nike',
-    'Adidas',
-    'Puma',
-    'Reebok',
-    'Under Armour',
-    'New Balance',
-    'Asics',
-    'Vans',
-    'Converse',
-    'Jordan',
-    'Fila',
-    'Skechers',
-    'Brooks',
-    'Saucony',
-    'Mizuno',
-    'Hoka One One',
-    'Salomon',
-    'Merrell',
-    'Columbia',
-    'The North Face',
-    'Patagonia',
-    'Other',
+    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance',
+    'Asics', 'Vans', 'Converse', 'Jordan', 'Fila', 'Skechers', 'Brooks',
+    'Saucony', 'Mizuno', 'Hoka One One', 'Salomon', 'Merrell', 'Columbia',
+    'The North Face', 'Patagonia', 'Other',
   ];
 
   final List<String> _categories = [
-    'Shirt',
-    'Pants',
-    'Dresses',
-    'Shorts',
-    'Shoes',
-    'Accessories',
+    'Shirt', 'Pants', 'Dresses', 'Shorts', 'Shoes', 'Accessories',
   ];
 
   List<String> get _currentSizes {
@@ -64,65 +48,92 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   final List<String> _conditions = [
-    'New with tags',
-    'New without tags',
-    'Very good',
-    'Good',
-    'Okay',
-    'Worn',
+    'New with tags', 'New without tags', 'Very good', 'Good', 'Okay', 'Worn',
   ];
 
   @override
   void dispose() {
+    _titleController.dispose();
     _priceController.dispose();
     super.dispose();
   }
 
+  Future<void> _pickImage(int index) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _images[index] = image;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
+    }
+  }
+
+  Widget _buildImagePreview(XFile file) {
+    if (kIsWeb) {
+      return Image.network(file.path, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+    } else {
+      return Image.file(File(file.path), fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+    }
+  }
+
   Widget _buildMainPreview() {
-    return Container(
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color.fromARGB(255, 71, 164, 245),
-          width: 2,
+    final XFile? currentImage = _images[_selectedIndex];
+    
+    return GestureDetector(
+      onTap: () => _pickImage(_selectedIndex),
+      child: Container(
+        width: double.infinity,
+        height: 300,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color.fromARGB(255, 71, 164, 245),
+            width: 2,
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.add_photo_alternate_outlined,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _selectedIndex == 0
-                ? 'Click to upload main photo'
-                : 'Click to upload photo ${_selectedIndex + 1}',
-            style: TextStyle(color: Colors.grey[500], fontSize: 15),
-          ),
-          if (_selectedIndex == 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Required',
-              style: TextStyle(
-                color: Colors.red[400],
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+        clipBehavior: Clip.hardEdge,
+        child: currentImage != null
+            ? _buildImagePreview(currentImage)
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _selectedIndex == 0
+                        ? 'Click to upload main photo'
+                        : 'Click to upload photo ${_selectedIndex + 1}',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                  ),
+                  if (_selectedIndex == 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Required',
+                      style: TextStyle(
+                        color: Colors.red[400],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-          ],
-        ],
       ),
     );
   }
 
   Widget _buildThumbnail(int index) {
     final bool isSelected = index == _selectedIndex;
+    final XFile? currentImage = _images[index];
+    
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: Container(
@@ -138,36 +149,37 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             width: isSelected ? 2.5 : 1.5,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              index == 0
-                  ? Icons.star_outline
-                  : Icons.add_photo_alternate_outlined,
-              size: 22,
-              color: isSelected
-                  ? const Color.fromARGB(255, 71, 164, 245)
-                  : Colors.grey[400],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              index == 0 ? 'Main' : 'Photo ${index + 1}',
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected
-                    ? const Color.fromARGB(255, 71, 164, 245)
-                    : Colors.grey[500],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        clipBehavior: Clip.hardEdge,
+        child: currentImage != null
+            ? _buildImagePreview(currentImage)
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    index == 0
+                        ? Icons.star_outline
+                        : Icons.add_photo_alternate_outlined,
+                    size: 22,
+                    color: isSelected
+                        ? const Color.fromARGB(255, 71, 164, 245)
+                        : Colors.grey[400],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    index == 0 ? 'Main' : 'Photo ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isSelected
+                          ? const Color.fromARGB(255, 71, 164, 245)
+                          : Colors.grey[500],
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
-
-  // ─── Photo section (shared between layouts) ─────────────────────────────
 
   Widget _buildPhotoSection() {
     return Column(
@@ -193,12 +205,24 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
-  // ─── Form fields section (shared between layouts) ───────────────────────
-
   Widget _buildFormSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text('Title', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _titleController,
+          decoration: InputDecoration(
+            hintText: 'e.g. Vintage Nike Hoodie',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
         const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
@@ -210,7 +234,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           onChanged: (val) {
             setState(() {
               _selectedCategory = val;
-              // Reset size when category changes
               _selectedSize = null;
             });
           },
