@@ -74,10 +74,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   final List<String> _conditions = [
     'New with tags',
-    'Like new',
+    'New without tags',
+    'Very good',
     'Good',
-    'Fair',
-    'Poor',
+    'Okay',
+    'Worn',
   ];
 
   @override

@@ -47,7 +47,7 @@ CREATE TABLE listings (
     condition condition_name NOT NULL,
     state listing_state NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    shoe_size DECIMAL(4, 1)
+    shoe_size DECIMAL(2, 1)
 );
 
 CREATE TABLE price_history (
