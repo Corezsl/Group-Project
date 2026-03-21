@@ -24,6 +24,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/thyrft_logo.png
+    - assets/images/selling_image_1.jpg
+    - assets/images/selling_image_2.jpg
     - .env
 
 
