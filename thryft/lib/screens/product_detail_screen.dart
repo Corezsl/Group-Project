@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/widgets/footer.dart';
@@ -35,6 +36,30 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (product['sellerId'] != null) ...[
+                    InkWell(
+                      onTap: () {
+                        context.push('/user/${product['sellerId']}');
+                      },
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[200],
+                            child: const Icon(Icons.person, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            product['sellerName'] ?? 'Unknown Seller',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 32),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

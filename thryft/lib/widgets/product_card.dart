@@ -28,6 +28,30 @@ class ProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Seller Info ─────────────────────────────────────────
+              if (product.sellerName != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor: Colors.grey[200],
+                        child: const Icon(Icons.person, size: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          product.sellerName!,
+                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               // ── Image area ──────────────────────────────────────────
               Expanded(
                 child: Stack(
