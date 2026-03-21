@@ -8,6 +8,8 @@ class Product {
   final String brand;
   final String condition;
   final DateTime? createdAt; // used for sorting lists
+  final String? sellerId;
+  final String? sellerName;
 
   const Product({
     required this.id,
@@ -19,6 +21,8 @@ class Product {
     required this.brand,
     required this.condition,
     this.createdAt,
+    this.sellerId,
+    this.sellerName,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -31,5 +35,7 @@ class Product {
     'size': size,
     'brand': brand,
     'condition': condition,
+    if (sellerId != null) 'sellerId': sellerId!,
+    if (sellerName != null) 'sellerName': sellerName!,
   };
 }

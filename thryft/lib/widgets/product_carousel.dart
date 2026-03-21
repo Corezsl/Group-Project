@@ -27,7 +27,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
   Future<List<Product>> _fetchProducts() async {
     final response = await Supabase.instance.client
         .from('products')
-        .select()
+        .select('*, profiles(username)')
         .order('created_at', ascending: false);
     
     return (response as List).map((data) => Product(
@@ -39,6 +39,8 @@ class _ProductCarouselState extends State<ProductCarousel> {
       brand: data['brand'].toString(),
       condition: data['condition'].toString(),
       imageUrl: data['image_url']?.toString(),
+      sellerId: data['user_id']?.toString(),
+      sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
     )).toList();
   }
 
