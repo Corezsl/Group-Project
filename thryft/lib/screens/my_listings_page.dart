@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 
-class WishlistPage extends StatelessWidget {
-  const WishlistPage({super.key});
+class MyListingsPage extends StatelessWidget {
+  const MyListingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final allItems = context.watch<WishlistProvider>().wishlistItems;
-    final products = allItems.map((i) => i.product).toList();
+    final List<Product> listings = []; // TODO: Fetch from provider/backend
 
     return StandardProductGrid(
-      items: products,
-      emptyIcon: Icons.favorite_border,
-      emptyTitle: 'Your wishlist is empty',
-      emptySubtitle: 'Save your favorite items to keep track of them.',
-      dateFilterLabel: 'DATE SAVED',
+      items: listings,
+      emptyIcon: Icons.inventory_2_outlined,
+      emptyTitle: 'You have no listings',
+      emptySubtitle: 'Start selling your items today.',
+      dateFilterLabel: 'DATE LISTED',
       extraButton: ElevatedButton(
-        onPressed: () => context.go('/'),
+        onPressed: () => context.go('/add-listing'), // Or wherever to add listing
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -30,7 +28,7 @@ class WishlistPage extends StatelessWidget {
           elevation: 0,
         ),
         child: const Text(
-          'Start Shopping',
+          'Create a Listing',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),

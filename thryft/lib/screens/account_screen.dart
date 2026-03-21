@@ -59,7 +59,7 @@ class AccountScreen extends StatelessWidget {
                           ),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement listings management
+                            context.push('/my-listings');
                           },
                         ),
                       ),
@@ -71,7 +71,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('Track your purchases'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement order tracking
+                            context.push('/my-orders');
                           },
                         ),
                       ),
@@ -83,7 +83,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('View your saved items'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement favourites view
+                            context.push('/wishlist');
                           },
                         ),
                       ),
@@ -127,6 +127,7 @@ class AccountScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildUserStatus() {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return const SizedBox.shrink();
@@ -177,10 +178,7 @@ class AccountScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           user.email ?? '',
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
       ],
     );
