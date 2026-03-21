@@ -131,9 +131,19 @@ class AccountScreen extends StatelessWidget {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return const SizedBox.shrink();
 
+    final username = user.userMetadata?['username'] ?? 'No Username Provided';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          username,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
