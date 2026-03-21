@@ -26,7 +26,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     'Accessories',
   ];
 
-  final List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  List<String> get _currentSizes {
+    switch (_selectedCategory) {
+      case 'Shoes':
+        return ['UK 5','UK 6','UK 7','UK 8','UK 9','UK 10','UK 11','UK 12',];
+      case 'Accessories':
+        return ["Woman's One Size", "Man's One Size", 'Unisex One Size'];
+      default:
+        return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    }
+  }
 
   final List<String> _conditions = [
     'New with tags',
@@ -171,29 +180,43 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           items: _categories
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
               .toList(),
-          onChanged: (val) => setState(() => _selectedCategory = val),
+          onChanged: (val) {
+            setState(() {
+              _selectedCategory = val;
+              // Reset size when category changes
+              _selectedSize = null;
+            });
+          },
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
           ),
         ),
-        const SizedBox(height: 20),
-        const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          value: _selectedSize,
-          hint: const Text('Select a size'),
-          items: _sizes
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedSize = val),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        if (_selectedCategory != 'Accessories') ...[
+          const SizedBox(height: 20),
+          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            value: _selectedSize,
+            hint: const Text('Select a size'),
+            items: _currentSizes
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
+            onChanged: (val) => setState(() => _selectedSize = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 20),
         const Text('Condition', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
@@ -206,8 +229,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           onChanged: (val) => setState(() => _selectedCondition = val),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -215,14 +240,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 6),
         TextFormField(
           controller: _priceController,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             hintText: '0.00',
             prefixText: '£ ',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -268,10 +294,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: 400,
-                              child: _buildPhotoSection(),
-                            ),
+                            SizedBox(width: 400, child: _buildPhotoSection()),
                             const SizedBox(width: 40),
                             Expanded(child: _buildFormSection()),
                           ],
