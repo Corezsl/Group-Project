@@ -15,6 +15,7 @@ import 'package:thryft/screens/my_listings_screen.dart';
 import 'package:thryft/screens/my_orders_screen.dart';
 import 'package:thryft/screens/terms_of_service_screen.dart';
 import 'package:thryft/screens/auth_screen.dart';
+import 'package:thryft/screens/user_profile_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -69,6 +70,14 @@ final GoRouter router = GoRouter(
           return const HomeScreen();
         }
         return ProductDetailScreen(product: product);
+      },
+    ),
+    GoRoute(
+      path: '/user/:id',
+      builder: (context, state) {
+        final userId = state.pathParameters['id'];
+        if (userId == null) return const HomeScreen();
+        return UserProfileScreen(userId: userId);
       },
     ),
   ],
