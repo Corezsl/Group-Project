@@ -71,7 +71,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('Track your purchases'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement order tracking
+                            context.push('/my-orders');
                           },
                         ),
                       ),
