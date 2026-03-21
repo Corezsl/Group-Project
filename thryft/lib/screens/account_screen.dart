@@ -59,7 +59,7 @@ class AccountScreen extends StatelessWidget {
                           ),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            // TODO: Implement listings management
+                            context.push('/my-listings');
                           },
                         ),
                       ),
