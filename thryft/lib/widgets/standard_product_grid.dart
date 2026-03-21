@@ -32,16 +32,37 @@ class _StandardProductGridState extends State<StandardProductGrid> {
   String? _selectedDateSort;
 
   static const List<String> _priceRanges = [
-    'Under £25',
-    '£25 – £50',
-    '£50 – £100',
-    'Over £100',
+    'Under ï¿½25',
+    'ï¿½25 ï¿½ ï¿½50',
+    'ï¿½50 ï¿½ ï¿½100',
+    'Over ï¿½100',
   ];
 
   static const List<String> _sizeOrder = [
-    'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
-    '6', '8', '10', '12', '14', '16', '18', '20',
-    '28', '30', '32', '34', '36', '38', '40', 'One Size',
+    'XXS',
+    'XS',
+    'S',
+    'M',
+    'L',
+    'XL',
+    'XXL',
+    'XXXL',
+    '6',
+    '8',
+    '10',
+    '12',
+    '14',
+    '16',
+    '18',
+    '20',
+    '28',
+    '30',
+    '32',
+    '34',
+    '36',
+    '38',
+    '40',
+    'One Size',
   ];
 
   int _compareSizes(String a, String b) {
@@ -66,13 +87,13 @@ class _StandardProductGridState extends State<StandardProductGrid> {
       result = result.where((p) {
         final price = p.price;
         switch (_selectedPriceRange) {
-          case 'Under £25':
+          case 'Under ï¿½25':
             return price < 25;
-          case '£25 – £50':
+          case 'ï¿½25 ï¿½ ï¿½50':
             return price >= 25 && price < 50;
-          case '£50 – £100':
+          case 'ï¿½50 ï¿½ ï¿½100':
             return price >= 50 && price < 100;
-          case 'Over £100':
+          case 'Over ï¿½100':
             return price >= 100;
           default:
             return true;
@@ -81,9 +102,17 @@ class _StandardProductGridState extends State<StandardProductGrid> {
     }
 
     if (_selectedDateSort == 'Oldest first') {
-      result.sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+      result.sort(
+        (a, b) => (a.createdAt ?? DateTime.now()).compareTo(
+          b.createdAt ?? DateTime.now(),
+        ),
+      );
     } else {
-      result.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+      result.sort(
+        (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+          a.createdAt ?? DateTime.now(),
+        ),
+      );
     }
 
     return result;
@@ -213,7 +242,9 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                                     Icon(
                                       widget.emptyIcon,
                                       size: 80,
-                                      color: colorScheme.onSurface.withOpacity(0.3),
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.3,
+                                      ),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
