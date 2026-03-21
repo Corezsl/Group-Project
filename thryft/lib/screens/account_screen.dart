@@ -127,6 +127,7 @@ class AccountScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildUserStatus() {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return const SizedBox.shrink();
@@ -167,10 +168,7 @@ class AccountScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           user.email ?? '',
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
       ],
     );
