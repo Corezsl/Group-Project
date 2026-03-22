@@ -12,16 +12,25 @@ class UserProfileScreen extends StatefulWidget {
   State<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
+class _UserProfileScreenState extends State<UserProfileScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _profile;
   List<Product> _products = [];
+  List<Map<String, dynamic>> _ratings = [];
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _fetchProfileAndProducts();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProfileAndProducts() async {
@@ -64,10 +73,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         sellerName: profileData['username']?.toString(),
       )).toList();
 
+      // 3. Fetch Ratings
+      final ratingsData = await client
+          .from('ratings')
+          .select('*, products(name)')
+          .eq('seller_id', widget.userId)
+          .order('created_at', ascending: false);
+
       if (mounted) {
         setState(() {
           _profile = profileData;
           _products = loadedProducts;
+          _ratings = List<Map<String, dynamic>>.from(ratingsData as List);
           _isLoading = false;
         });
       }
@@ -97,16 +114,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     final username = _profile?['username'] ?? 'Unknown User';
-    final rating = _profile?['rating'] ?? 5.0;
+    final rating = _profile?['rating'] ?? 0.0;
     final ratingCount = _profile?['rating_count'] ?? 0;
     final avatarUrl = _profile?['avatar_url'];
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(username),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.grey[200]),
+        ),
       ),
       body: CustomScrollView(
         slivers: [
@@ -134,7 +156,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                        const Icon(Icons.star, color: Colors.amber, size: 20),
                        const SizedBox(width: 4),
                        Text(
-                         '$rating',
+                         rating is double ? rating.toStringAsFixed(1) : '$rating',
                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                        ),
                        const SizedBox(width: 4),
@@ -148,54 +170,140 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
-          
-          const SliverToBoxAdapter(
-            child: Divider(height: 1),
-          ),
 
-          // Listings Header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Text(
-                '${_products.length} listings',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          // Tabs
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SliverAppBarDelegate(
+              TabBar(
+                controller: _tabController,
+                labelColor: const Color.fromARGB(255, 71, 164, 245),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: const Color.fromARGB(255, 71, 164, 245),
+                tabs: [
+                  Tab(text: 'Listings (${_products.length})'),
+                  Tab(text: 'Reviews (${_ratings.length})'),
+                ],
+                onTap: (index) => setState(() {}),
               ),
             ),
           ),
 
-          // Grid
-          if (_products.isEmpty)
-             const SliverToBoxAdapter(
-               child: Padding(
-                 padding: EdgeInsets.all(32.0),
-                 child: Center(
-                   child: Text('This user has no active listings.', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                 ),
-               )
-             )
-          else
-             SliverPadding(
-               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-               sliver: SliverGrid(
-                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                   crossAxisCount: 2,
-                   mainAxisSpacing: 16.0,
-                   crossAxisSpacing: 16.0,
-                   childAspectRatio: 0.65,
-                 ),
-                 delegate: SliverChildBuilderDelegate(
-                   (context, index) {
-                     return ProductCard(product: _products[index]);
-                   },
-                   childCount: _products.length,
-                 ),
-               ),
-             ),
-             
+          // Conditional Sliver Content
+          if (_tabController.index == 0) ...[
+            if (_products.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text('This user has no active listings.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  ),
+                )
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16.0,
+                    crossAxisSpacing: 16.0,
+                    childAspectRatio: 0.65,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => ProductCard(product: _products[index]),
+                    childCount: _products.length,
+                  ),
+                ),
+              ),
+          ] else ...[
+            // Reviews Tab
+            if (_ratings.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text('No reviews yet.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final review = _ratings[index];
+                      final productName = review['products']?['name'] ?? 'Product';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.grey[200]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: List.generate(5, (starIndex) {
+                                  return Icon(
+                                    starIndex < (review['rating'] as int) ? Icons.star : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              if (review['comment'] != null && review['comment'].toString().isNotEmpty)
+                                Text(
+                                  review['comment'],
+                                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'About: $productName',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: _ratings.length,
+                  ),
+                ),
+              ),
+          ],
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar);
+
+  final TabBar _tabBar;
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }
