@@ -27,8 +27,14 @@ class ProductDetailScreen extends StatelessWidget {
               tag: 'product_image_${product['name']}',
               child: Container(
                 height: 300,
+                width: double.infinity,
                 color: Colors.grey[200],
-                child: const Icon(Icons.image, size: 100, color: Colors.grey),
+                child: product['imageUrl'] != null
+                    ? Image.network(
+                        product['imageUrl']!,
+                        fit: BoxFit.cover,
+                      )
+                    : const Icon(Icons.image, size: 100, color: Colors.grey),
               ),
             ),
             Padding(
