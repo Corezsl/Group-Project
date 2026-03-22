@@ -34,20 +34,28 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         .eq('is_sold', true)
         .order('created_at', ascending: false);
 
-    return (response as List).map((data) => Product(
-      id: data['id'].toString(),
-      name: data['name'].toString(),
-      price: (data['price'] as num).toDouble(),
-      originalPrice: data['original_price'] != null ? (data['original_price'] as num).toDouble() : null,
-      size: data['size'].toString(),
-      brand: data['brand'].toString(),
-      condition: data['condition'].toString(),
-      imageUrl: data['image_url']?.toString(),
-      sellerId: data['user_id']?.toString(),
-      sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
-      isSold: data['is_sold'] == true,
-      category: data['category']?.toString() ?? 'Other',
-    )).toList();
+    return (response as List)
+        .map(
+          (data) => Product(
+            id: data['id'].toString(),
+            name: data['name'].toString(),
+            price: (data['price'] as num).toDouble(),
+            originalPrice: data['original_price'] != null
+                ? (data['original_price'] as num).toDouble()
+                : null,
+            size: data['size'].toString(),
+            brand: data['brand'].toString(),
+            condition: data['condition'].toString(),
+            imageUrl: data['image_url']?.toString(),
+            sellerId: data['user_id']?.toString(),
+            sellerName: data['profiles'] != null
+                ? data['profiles']['username']?.toString()
+                : null,
+            isSold: data['is_sold'] == true,
+            category: data['category']?.toString() ?? 'Other',
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -74,10 +82,11 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                       const SizedBox(width: 12),
                       Text(
                         'Sold Items',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                       ),
                     ],
                   ),
@@ -96,7 +105,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         );
                       }
-                      
+
                       final soldItems = snapshot.data ?? [];
 
                       return SizedBox(
@@ -105,7 +114,8 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                           items: soldItems,
                           emptyIcon: Icons.sell_outlined,
                           emptyTitle: 'No sold items yet',
-                          emptySubtitle: 'Your sold items will appear here once they are purchased.',
+                          emptySubtitle:
+                              'Your sold items will appear here once they are purchased.',
                           dateFilterLabel: 'DATE SOLD',
                         ),
                       );
