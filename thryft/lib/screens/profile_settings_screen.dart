@@ -79,25 +79,32 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  Future<void> _updateAddressField(String field, String value) async {
+  Future<void> _updateFullAddress(
+    String street,
+    String city,
+    String postalCode,
+    String country,
+  ) async {
     setState(() => _isLoading = true);
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      // Make sure we supply defaults for required fields in case they don't exist yet
-      final data = {
+      final Map<String, dynamic> data = {
         'user_id': user.id,
-        'street': _userAddress?['street'] ?? '',
-        'city': _userAddress?['city'] ?? '',
-        'postal_code': _userAddress?['postal_code'] ?? '',
-        'country': _userAddress?['country'] ?? '',
+        'street': street,
+        'city': city,
+        'postal_code': postalCode,
+        'country': country,
       };
 
       if (_userAddress != null) {
         data.addAll(_userAddress!);
+        data['street'] = street;
+        data['city'] = city;
+        data['postal_code'] = postalCode;
+        data['country'] = country;
       }
-      data[field] = value;
 
       await _supabase.from('address').upsert(data);
       _showSnackBar('Successfully updated address');
@@ -109,6 +116,98 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showAddressDialog() {
+    final streetCtrl = TextEditingController(
+      text: _userAddress?['street'] ?? '',
+    );
+    final cityCtrl = TextEditingController(text: _userAddress?['city'] ?? '');
+    final postalCtrl = TextEditingController(
+      text: _userAddress?['postal_code'] ?? '',
+    );
+    final countryCtrl = TextEditingController(
+      text: _userAddress?['country'] ?? '',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Address'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: streetCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Street',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: cityCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'City',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: postalCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Postal Code',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: countryCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Country',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(context);
+                  await _updateFullAddress(
+                    streetCtrl.text.trim(),
+                    cityCtrl.text.trim(),
+                    postalCtrl.text.trim(),
+                    countryCtrl.text.trim(),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showEditDialog(String title, String field, String? currentValue) {
@@ -156,15 +255,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 if (formKey.currentState!.validate()) {
                   final newValue = controller.text.trim();
                   Navigator.pop(context);
-
-                  if (field == 'street' ||
-                      field == 'city' ||
-                      field == 'postal_code' ||
-                      field == 'country') {
-                    await _updateAddressField(field, newValue);
-                  } else {
-                    await _updateField(field, newValue);
-                  }
+                  await _updateField(field, newValue);
                 }
               },
               child: const Text('Save'),
@@ -279,12 +370,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 32),
-                          const Text(
-                            'Address Settings',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Address Settings',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: _showAddressDialog,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 24),
 
@@ -297,17 +400,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(
                                 _userAddress?['street'] ?? 'Not set',
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () => _showEditDialog(
-                                  'Street',
-                                  'street',
-                                  _userAddress?['street'],
-                                ),
                               ),
                             ),
                           ),
@@ -323,17 +415,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               subtitle: Text(
                                 _userAddress?['city'] ?? 'Not set',
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () => _showEditDialog(
-                                  'City',
-                                  'city',
-                                  _userAddress?['city'],
-                                ),
-                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -348,17 +429,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               subtitle: Text(
                                 _userAddress?['postal_code'] ?? 'Not set',
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () => _showEditDialog(
-                                  'Postal Code',
-                                  'postal_code',
-                                  _userAddress?['postal_code'],
-                                ),
-                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -372,17 +442,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(
                                 _userAddress?['country'] ?? 'Not set',
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () => _showEditDialog(
-                                  'Country',
-                                  'country',
-                                  _userAddress?['country'],
-                                ),
                               ),
                             ),
                           ),
