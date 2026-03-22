@@ -148,6 +148,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       return;
     }
 
+    final double? parsedPrice = double.tryParse(_priceController.text);
+    if (parsedPrice == null || parsedPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid price greater than 0.'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
