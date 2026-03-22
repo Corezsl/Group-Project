@@ -30,30 +30,37 @@ class _ProductCarouselState extends State<ProductCarousel> {
     var query = Supabase.instance.client
         .from('products')
         .select('*, profiles(username)');
-        
+
     if (userId != null) {
       // Exclude products created by the current user
       query = query.neq('user_id', userId);
     }
-    
+
     final response = await query.order('created_at', ascending: false);
-    
+
     return (response as List)
         .where((data) => data['is_sold'] != true) // Filter out sold items
-        .map((data) => Product(
-          id: data['id'].toString(),
-          name: data['name'].toString(),
-          price: (data['price'] as num).toDouble(),
-          originalPrice: data['original_price'] != null ? (data['original_price'] as num).toDouble() : null,
-          size: data['size'].toString(),
-          brand: data['brand'].toString(),
-          condition: data['condition'].toString(),
-          imageUrl: data['image_url']?.toString(),
-          sellerId: data['user_id']?.toString(),
-          sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
-          isSold: data['is_sold'] == true,
-          category: data['category']?.toString() ?? 'Other',
-        )).toList();
+        .map(
+          (data) => Product(
+            id: data['id'].toString(),
+            name: data['name'].toString(),
+            price: (data['price'] as num).toDouble(),
+            originalPrice: data['original_price'] != null
+                ? (data['original_price'] as num).toDouble()
+                : null,
+            size: data['size'].toString(),
+            brand: data['brand'].toString(),
+            condition: data['condition'].toString(),
+            imageUrl: data['image_url']?.toString(),
+            sellerId: data['user_id']?.toString(),
+            sellerName: data['profiles'] != null
+                ? data['profiles']['username']?.toString()
+                : null,
+            isSold: data['is_sold'] == true,
+            category: data['category']?.toString() ?? 'Other',
+          ),
+        )
+        .toList();
   }
 
   void _scrollLeft() {
@@ -99,9 +106,14 @@ class _ProductCarouselState extends State<ProductCarousel> {
           }
 
           final products = snapshot.data ?? [];
-          
+
           if (products.isEmpty) {
-            return const Center(child: Text('No products available right now.', style: TextStyle(color: Colors.grey)));
+            return const Center(
+              child: Text(
+                'No products available right now.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            );
           }
 
           return Row(
