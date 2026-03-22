@@ -395,7 +395,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           Card(
                             child: ListTile(
                               title: const Text(
-                                'Street',
+                                'Number/Street',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
