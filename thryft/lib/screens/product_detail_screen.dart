@@ -47,7 +47,7 @@ class ProductDetailScreen extends StatelessWidget {
                   flex: 6,
                   child: Container(
                     color: Colors.white,
-                    child: _buildImageGallery(),
+                    child: _buildImageGallery(context),
                   ),
                 ),
                 // Right Column: Info Panel (40%)
@@ -75,7 +75,7 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildImageGallery(),
+                  _buildImageGallery(context),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: _buildInfoPanel(context),
@@ -89,19 +89,37 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGallery() {
+  Widget _buildImageGallery(BuildContext context) {
     return Hero(
       tag: 'product_image_${product['name']}',
       child: Container(
         constraints: const BoxConstraints(minHeight: 400),
         width: double.infinity,
         color: Colors.grey[100],
-        child: product['imageUrl'] != null
-            ? Image.network(
-                product['imageUrl']!,
-                fit: BoxFit.contain,
-              )
-            : const Icon(Icons.image, size: 100, color: Colors.grey),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            product['imageUrl'] != null
+              ? Image.network(
+                  product['imageUrl']!,
+                  fit: BoxFit.contain,
+                )
+              : const Icon(Icons.image, size: 100, color: Colors.grey),
+            if (product['is_sold'] == 'true')
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Text(
+                  'SOLD',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4.0,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

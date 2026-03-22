@@ -60,7 +60,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
           .eq('user_id', widget.userId)
           .order('created_at', ascending: false);
 
-      final loadedProducts = (productsData as List).map((data) => Product(
+      final loadedProducts = (productsData as List)
+          .where((data) => data['is_sold'] != true) // Hide sold items from profile
+          .map((data) => Product(
         id: data['id'].toString(),
         name: data['name'].toString(),
         price: (data['price'] as num).toDouble(),
@@ -71,6 +73,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
         imageUrl: data['image_url']?.toString(),
         sellerId: widget.userId,
         sellerName: profileData['username']?.toString(),
+        isSold: data['is_sold'] == true,
       )).toList();
 
       // 3. Fetch Ratings

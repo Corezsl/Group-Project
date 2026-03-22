@@ -10,6 +10,7 @@ class Product {
   final DateTime? createdAt; // used for sorting lists
   final String? sellerId;
   final String? sellerName;
+  final bool isSold;
 
   const Product({
     required this.id,
@@ -23,6 +24,7 @@ class Product {
     this.createdAt,
     this.sellerId,
     this.sellerName,
+    this.isSold = false,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -38,5 +40,6 @@ class Product {
     if (imageUrl != null) 'imageUrl': imageUrl!,
     if (sellerId != null) 'sellerId': sellerId!,
     if (sellerName != null) 'sellerName': sellerName!,
+    'is_sold': isSold.toString(),
   };
 }
