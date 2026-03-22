@@ -66,6 +66,20 @@ class AccountScreen extends StatelessWidget {
                       const SizedBox(height: 10),
                       Card(
                         child: ListTile(
+                          leading: const Icon(Icons.sell_outlined),
+                          title: const Text('Sold Items'),
+                          subtitle: const Text(
+                            'View items you have successfully sold',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.push('/sold-items');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
                           leading: const Icon(Icons.shopping_bag_outlined),
                           title: const Text('My Orders'),
                           subtitle: const Text('Track your purchases'),
