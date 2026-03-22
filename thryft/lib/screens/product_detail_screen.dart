@@ -310,7 +310,7 @@ class ProductDetailScreen extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    "Buy now",
+                    "Add to cart",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
