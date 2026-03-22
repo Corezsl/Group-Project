@@ -26,10 +26,12 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return [];
 
+    // Only show ACTIVE (unsold) listings on this screen
     final response = await Supabase.instance.client
         .from('products')
         .select('*, profiles(username)')
         .eq('user_id', userId)
+        .eq('is_sold', false)
         .order('created_at', ascending: false);
 
     return (response as List).map((data) => Product(
@@ -43,7 +45,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       imageUrl: data['image_url']?.toString(),
       sellerId: data['user_id']?.toString(),
       sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
-      isSold: data['is_sold'] == true,
+      isSold: false,
       category: data['category']?.toString() ?? 'Other',
     )).toList();
   }
@@ -70,7 +72,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Items you are currently selling.',
+                    'Your active listings (sold items appear in Sold Items).',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
@@ -83,7 +85,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         );
                       }
-                      
+
                       final listings = snapshot.data ?? [];
 
                       return SizedBox(
@@ -91,7 +93,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         child: StandardProductGrid(
                           items: listings,
                           emptyIcon: Icons.inventory_2_outlined,
-                          emptyTitle: 'You have no listings',
+                          emptyTitle: 'You have no active listings',
                           emptySubtitle: 'Start selling your items today.',
                           dateFilterLabel: 'DATE LISTED',
                           extraButton: ElevatedButton(

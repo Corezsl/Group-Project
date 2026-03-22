@@ -55,16 +55,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
         return;
       }
 
-      // 2. Fetch Products
+      // 2. Fetch Products (active only)
       final productsData = await client
           .from('products')
           .select()
           .eq('user_id', widget.userId)
+          .eq('is_sold', false)
           .order('created_at', ascending: false);
 
-      final loadedProducts = (productsData as List)
-          .where((data) => data['is_sold'] != true) // Hide sold items from profile
-          .map((data) => Product(
+      final loadedProducts = (productsData as List).map((data) => Product(
         id: data['id'].toString(),
         name: data['name'].toString(),
         price: (data['price'] as num).toDouble(),
@@ -75,14 +74,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
         imageUrl: data['image_url']?.toString(),
         sellerId: widget.userId,
         sellerName: profileData['username']?.toString(),
-        isSold: data['is_sold'] == true,
+        isSold: false,
         category: data['category']?.toString() ?? 'Other',
       )).toList();
 
-      // 3. Fetch Ratings
+      // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles)
       final ratingsData = await client
           .from('ratings')
-          .select('*, products(*)')
+          .select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')
           .eq('seller_id', widget.userId)
           .order('created_at', ascending: false);
 
@@ -92,7 +91,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
           .select('id')
           .eq('user_id', widget.userId)
           .eq('is_sold', true);
-      
+
       final soldCount = (soldData as List).length;
 
       if (mounted) {
@@ -260,7 +259,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final review = _ratings[index];
-                      // final productName = review['products']?['name'] ?? 'Product';
+                      final buyerUsername = review['profiles']?['username']?.toString() ?? 'Anonymous';
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 0,
@@ -273,6 +272,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Reviewer info row
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: Colors.grey[200],
+                                    child: const Icon(Icons.person, size: 14, color: Colors.grey),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    buyerUsername,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              // Star rating
                               Row(
                                 children: List.generate(5, (starIndex) {
                                   return Icon(
@@ -291,10 +311,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                               const SizedBox(height: 8),
                               if (review['products'] != null) ...[
                                 const Divider(height: 24),
+                                // Product preview
                                 InkWell(
                                   onTap: () {
                                     final p = review['products'];
-                                    context.push('/product/${p['id']}', extra: {
+                                    context.push('/product/${p['id']}', extra: <String, String>{
                                       'id': p['id'].toString(),
                                       'name': p['name'].toString(),
                                       'price': p['price'].toString(),
@@ -305,6 +326,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                                       'sellerId': widget.userId,
                                       'sellerName': _profile?['username'] ?? 'Unknown Seller',
                                       'is_sold': p['is_sold']?.toString() ?? 'false',
+                                      'category': p['category']?.toString() ?? 'Other',
                                     });
                                   },
                                   child: Row(
@@ -342,17 +364,30 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              '£${review['products']['price']}',
+                                              review['products']['brand'] ?? '',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '£${(review['products']['price'] as num).toStringAsFixed(2)}',
                                               style: TextStyle(
                                                 fontSize: 13,
-                                                color: Colors.grey[600],
+                                                color: Colors.grey[700],
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
+                                      Chip(
+                                        label: const Text('SOLD', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                                        backgroundColor: Colors.red[400],
+                                        padding: EdgeInsets.zero,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
                                     ],
                                   ),
                                 ),
