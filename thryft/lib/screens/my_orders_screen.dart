@@ -38,13 +38,15 @@ class MyOrdersScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   
-                  // Reusing standard grid
-                  StandardProductGrid(
-                    items: orders,
-                    emptyIcon: Icons.shopping_bag_outlined,
-                    emptyTitle: 'No orders yet',
-                    emptySubtitle: 'Your purchased items will appear here.',
-                    dateFilterLabel: 'DATE PURCHASED',
+                  SizedBox(
+                    width: double.infinity,
+                    child: StandardProductGrid(
+                      items: orders,
+                      emptyIcon: Icons.shopping_bag_outlined,
+                      emptyTitle: 'No orders yet',
+                      emptySubtitle: 'Your purchased items will appear here.',
+                      dateFilterLabel: 'DATE PURCHASED',
+                    ),
                   ),
                 ],
               ),

@@ -39,12 +39,15 @@ class SoldItemsScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   
                   // Reusing the standard grid for consistency
-                  StandardProductGrid(
-                    items: soldItems,
-                    emptyIcon: Icons.sell_outlined,
-                    emptyTitle: 'No sold items yet',
-                    emptySubtitle: 'Your sold items will appear here once they are purchased.',
-                    dateFilterLabel: 'DATE SOLD',
+                  SizedBox(
+                    width: double.infinity,
+                    child: StandardProductGrid(
+                      items: soldItems,
+                      emptyIcon: Icons.sell_outlined,
+                      emptyTitle: 'No sold items yet',
+                      emptySubtitle: 'Your sold items will appear here once they are purchased.',
+                      dateFilterLabel: 'DATE SOLD',
+                    ),
                   ),
                 ],
               ),
