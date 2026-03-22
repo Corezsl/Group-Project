@@ -25,10 +25,18 @@ class _ProductCarouselState extends State<ProductCarousel> {
   }
 
   Future<List<Product>> _fetchProducts() async {
-    final response = await Supabase.instance.client
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    var query = Supabase.instance.client
         .from('products')
-        .select('*, profiles(username)')
-        .order('created_at', ascending: false);
+        .select('*, profiles(username)');
+        
+    if (userId != null) {
+      // Exclude products created by the current user
+      query = query.neq('user_id', userId);
+    }
+    
+    final response = await query.order('created_at', ascending: false);
     
     return (response as List)
         .where((data) => data['is_sold'] != true) // Filter out sold items
