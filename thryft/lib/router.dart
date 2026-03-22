@@ -48,7 +48,10 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
     GoRoute(
       path: '/create-listing',
-      builder: (context, state) => const CreateListingScreen(),
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>?;
+        return CreateListingScreen(initialData: data);
+      },
     ),
     GoRoute(
       path: '/my-listings',

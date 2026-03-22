@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
 class CreateListingScreen extends StatefulWidget {
-  const CreateListingScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const CreateListingScreen({super.key, this.initialData});
 
   @override
   State<CreateListingScreen> createState() => _CreateListingScreenState();
@@ -18,12 +20,26 @@ class CreateListingScreen extends StatefulWidget {
 class _CreateListingScreenState extends State<CreateListingScreen> {
   bool _isLoading = false;
   int _selectedIndex = 0;
-  final TextEditingController _titleController = TextEditingController();
+  late final TextEditingController _titleController;
   String? _selectedCategory;
   String? _selectedSize;
   String? _selectedCondition;
   String? _selectedBrand;
-  final TextEditingController _priceController = TextEditingController();
+  late final TextEditingController _priceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialData?['name']);
+    _priceController = TextEditingController(text: widget.initialData?['price']?.toString());
+    
+    if (widget.initialData != null) {
+      _selectedSize = widget.initialData!['size'];
+      _selectedBrand = widget.initialData!['brand'];
+      _selectedCondition = widget.initialData!['condition'];
+      // Category detection would need a mapping, but for now we'll let user re-select or add to product map
+    }
+  }
 
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
@@ -76,13 +92,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   Future<void> _submit() async {
     if (_titleController.text.isEmpty ||
-        _selectedCategory == null ||
         _selectedCondition == null ||
         _selectedBrand == null ||
         _priceController.text.isEmpty ||
-        _images[0] == null) {
+        (widget.initialData == null && _images[0] == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields and upload a main photo.')),
+        const SnackBar(content: Text('Please fill all required fields.')),
       );
       return;
     }
@@ -100,68 +115,67 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       final supabase = Supabase.instance.client;
       final user = supabase.auth.currentUser;
       if (user == null) {
-        throw Exception('You must be logged in to create a listing.');
+        throw Exception('You must be logged in to modify a listing.');
       }
 
-      String? publicImageUrl;
+      String? publicImageUrl = widget.initialData?['imageUrl'];
 
-      // Upload main image
-      final mainImage = _images[0]!;
-      final fileExt = mainImage.name.split('.').last;
-      final fileName = '${const Uuid().v4()}.$fileExt';
-      final bytes = await mainImage.readAsBytes();
-      
-      await supabase.storage.from('product-images').uploadBinary(
-        fileName,
-        bytes,
-        fileOptions: FileOptions(contentType: 'image/$fileExt'),
-      );
-      
-      publicImageUrl = supabase.storage.from('product-images').getPublicUrl(fileName);
-
-      // Upload any additional images
-      for (int i = 1; i < 5; i++) {
-        final img = _images[i];
-        if (img != null) {
-          final ext = img.name.split('.').last;
-          final name = '${const Uuid().v4()}.$ext';
-          final b = await img.readAsBytes();
-          await supabase.storage.from('product-images').uploadBinary(
-            name,
-            b,
-            fileOptions: FileOptions(contentType: 'image/$ext'),
-          );
-        }
+      // Upload main image if changed
+      if (_images[0] != null) {
+        final mainImage = _images[0]!;
+        final fileExt = mainImage.name.split('.').last;
+        final fileName = '${const Uuid().v4()}.$fileExt';
+        final bytes = await mainImage.readAsBytes();
+        
+        await supabase.storage.from('product-images').uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: FileOptions(contentType: 'image/$fileExt'),
+        );
+        
+        publicImageUrl = supabase.storage.from('product-images').getPublicUrl(fileName);
       }
 
-      // Insert to database
-      final double price = double.parse(_priceController.text);
-      await supabase.from('products').insert({
-        'user_id': user.id,
+      // Handle Database Operation
+      final double newPrice = double.parse(_priceController.text);
+      final Map<String, dynamic> productData = {
         'name': _titleController.text,
-        'price': price,
+        'price': newPrice,
         'size': _selectedSize ?? 'One Size',
         'brand': _selectedBrand,
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
-      });
+        'category': _selectedCategory,
+      };
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing created successfully!')),
-      );
-      
-      _titleController.clear();
-      _priceController.clear();
-      setState(() {
-        _selectedCategory = null;
-        _selectedSize = null;
-        _selectedCondition = null;
-        _selectedBrand = null;
-        _images.fillRange(0, 5, null);
-        _selectedIndex = 0;
-      });
+      if (widget.initialData != null) {
+        // Handle Price History Logic
+        final double? oldPrice = double.tryParse(widget.initialData!['price']?.toString() ?? '');
+        if (oldPrice != null && newPrice != oldPrice) {
+          productData['originalPrice'] = oldPrice;
+        }
 
+        await supabase
+            .from('products')
+            .update(productData)
+            .eq('id', widget.initialData!['id']);
+            
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Listing updated successfully!')),
+        );
+        context.pop(); // Go back after edit
+      } else {
+        productData['user_id'] = user.id;
+        await supabase.from('products').insert(productData);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Listing created successfully!')),
+        );
+        
+        _clearForm();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -172,6 +186,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _clearForm() {
+    _titleController.clear();
+    _priceController.clear();
+    setState(() {
+      _selectedCategory = null;
+      _selectedSize = null;
+      _selectedCondition = null;
+      _selectedBrand = null;
+      _images.fillRange(0, 5, null);
+      _selectedIndex = 0;
+    });
   }
 
   Widget _buildImagePreview(XFile file) {
@@ -447,9 +474,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Create a Listing',
-                        style: TextStyle(
+                      Text(
+                        widget.initialData != null ? 'Edit Listing' : 'Create a Listing',
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                         ),
@@ -492,9 +519,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'Upload Listing',
-                                  style: TextStyle(
+                              : Text(
+                                  widget.initialData != null ? 'Update Listing' : 'Upload Listing',
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),

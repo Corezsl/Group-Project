@@ -205,9 +205,7 @@ class ProductDetailScreen extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Edit functionality coming in next step')),
-                  );
+                  context.push('/create-listing', extra: product);
                 },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
