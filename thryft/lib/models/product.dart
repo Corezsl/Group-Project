@@ -35,6 +35,7 @@ class Product {
     'size': size,
     'brand': brand,
     'condition': condition,
+    if (imageUrl != null) 'imageUrl': imageUrl!,
     if (sellerId != null) 'sellerId': sellerId!,
     if (sellerName != null) 'sellerName': sellerName!,
   };
