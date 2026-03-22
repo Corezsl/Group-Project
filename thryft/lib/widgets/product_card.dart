@@ -84,7 +84,7 @@ class ProductCard extends StatelessWidget {
                       right: 8,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Consumer<WishlistProvider>(

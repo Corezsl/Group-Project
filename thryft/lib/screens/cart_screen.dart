@@ -228,11 +228,11 @@ class _CartScreenState extends State<CartScreen> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_cart_outlined, size: 80, color: colorScheme.onSurface.withOpacity(0.3)),
+          Icon(Icons.shopping_cart_outlined, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text('Your cart is empty', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.5))),
+          Text('Your cart is empty', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
           const SizedBox(height: 8),
-          Text('Add items you love to find them later', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.4))),
+          Text('Add items you love to find them later', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.4))),
         ],
       ),
     );

@@ -190,11 +190,11 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(widget.emptyIcon, size: 80, color: colorScheme.onSurface.withOpacity(0.3)),
+                            Icon(widget.emptyIcon, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.3)),
                             const SizedBox(height: 16),
-                            Text(widget.emptyTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.5))),
+                            Text(widget.emptyTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
                             const SizedBox(height: 8),
-                            Text(widget.emptySubtitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.4))),
+                            Text(widget.emptySubtitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.4))),
                             if (widget.extraButton != null) ...[
                               const SizedBox(height: 24),
                               widget.extraButton!,
@@ -207,7 +207,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                       ? SizedBox(
                           height: 200,
                           child: Center(
-                            child: Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.5))),
+                            child: Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
                           ),
                         )
                       : Wrap(

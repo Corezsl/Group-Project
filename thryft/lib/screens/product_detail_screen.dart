@@ -107,7 +107,7 @@ class ProductDetailScreen extends StatelessWidget {
               : const Icon(Icons.image, size: 100, color: Colors.grey),
             if (product['is_sold'] == 'true')
               Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
                   'SOLD',

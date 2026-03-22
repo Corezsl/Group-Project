@@ -356,7 +356,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           hint: const Text('Select a category'),
           items: _categories
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -380,7 +380,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: _selectedSize,
+            initialValue: _selectedSize,
             hint: const Text('Select a size'),
             items: _currentSizes
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -401,7 +401,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Condition', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedCondition,
+          initialValue: _selectedCondition,
           hint: const Text('Select a condition'),
           items: _conditions
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -419,7 +419,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Brand', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedBrand,
+          initialValue: _selectedBrand,
           hint: const Text('Select a brand'),
           items: _brands
               .map((b) => DropdownMenuItem(value: b, child: Text(b)))
