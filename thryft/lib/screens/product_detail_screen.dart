@@ -10,8 +10,8 @@ class ProductDetailScreen extends StatelessWidget {
 
   const ProductDetailScreen({super.key, required this.product});
 
-  // Vinted's primary brand color
-  static const Color vintedTeal = Color(0xFF09B1BA);
+  // App primary brand color
+  static const Color brandColor = Color.fromARGB(255, 71, 164, 245);
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +136,7 @@ class ProductDetailScreen extends StatelessWidget {
         Text(
           "£${product['price'] ?? '0.00'}",
           style: const TextStyle(
-            color: vintedTeal,
+            color: brandColor,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -144,11 +144,11 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: const [
-            Icon(Icons.shield_outlined, color: vintedTeal, size: 16),
+            Icon(Icons.shield_outlined, color: brandColor, size: 16),
             SizedBox(width: 4),
             Text(
               "Includes Buyer Protection",
-              style: TextStyle(color: vintedTeal, fontSize: 13),
+              style: TextStyle(color: brandColor, fontSize: 13),
             ),
           ],
         ),
@@ -227,7 +227,7 @@ class ProductDetailScreen extends StatelessWidget {
             },
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: vintedTeal,
+              backgroundColor: brandColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -245,8 +245,8 @@ class ProductDetailScreen extends StatelessWidget {
             onPressed: () {},
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              foregroundColor: vintedTeal,
-              side: const BorderSide(color: vintedTeal, width: 1.5),
+              foregroundColor: brandColor,
+              side: const BorderSide(color: brandColor, width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -264,8 +264,8 @@ class ProductDetailScreen extends StatelessWidget {
             onPressed: () {},
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              foregroundColor: vintedTeal,
-              side: const BorderSide(color: vintedTeal, width: 1.5),
+              foregroundColor: brandColor,
+              side: const BorderSide(color: brandColor, width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -289,7 +289,7 @@ class ProductDetailScreen extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.shield, color: vintedTeal, size: 24),
+              const Icon(Icons.shield, color: brandColor, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -307,14 +307,14 @@ class ProductDetailScreen extends StatelessWidget {
                           TextSpan(text: "Our "),
                           TextSpan(
                             text: "Buyer Protection",
-                            style: TextStyle(color: vintedTeal, decoration: TextDecoration.underline),
+                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
                           ),
                           TextSpan(
                             text: " is added for a fee to every purchase made with the \"Buy now\" button. Buyer Protection includes our ",
                           ),
                           TextSpan(
                             text: "Refund Policy",
-                            style: TextStyle(color: vintedTeal, decoration: TextDecoration.underline),
+                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
                           ),
                           TextSpan(text: "."),
                         ],
@@ -402,7 +402,7 @@ class ProductDetailScreen extends StatelessWidget {
           child: Text(
             value,
             style: TextStyle(
-              color: isLink ? vintedTeal : Colors.black87,
+              color: isLink ? brandColor : Colors.black87,
               fontWeight: isLink ? FontWeight.w600 : FontWeight.normal,
               fontSize: 14,
             ),
