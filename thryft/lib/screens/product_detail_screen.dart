@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/cart_provider.dart';
+import 'package:thryft/router.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
@@ -24,56 +25,13 @@ class ProductDetailScreen extends StatelessWidget {
             const Header(),
             LayoutBuilder(
               builder: (context, constraints) {
-                final isDesktop = constraints.maxWidth >= 800;
-
-                if (isDesktop) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left Column: Image Gallery (60%)
-                        Expanded(
-                          flex: 6,
-                          child: Container(
-                            color: Colors.white,
-                            child: _buildImageGallery(),
-                          ),
-                        ),
-                        // Right Column: Info Panel (40%)
-                        Expanded(
-                          flex: 4,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border(
-                                left: BorderSide(color: Colors.grey[200]!),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                              child: _buildInfoPanel(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                if (constraints.maxWidth >= 800) {
+                  return _buildDesktopLayout(context);
                 } else {
-                  // Mobile: Stacked view
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildImageGallery(),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: _buildInfoPanel(context),
-                      ),
-                    ],
-                  );
+                  return _buildMobileLayout(context);
                 }
               },
             ),
-            const SizedBox(height: 40),
             const Footer(),
           ],
         ),
@@ -81,19 +39,57 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left Side: Image Gallery (60%)
+          Expanded(
+            flex: 6,
+            child: _buildImageGallery(),
+          ),
+          const SizedBox(width: 48),
+          // Right Side: Info Panel (40%)
+          Expanded(
+            flex: 4,
+            child: _buildInfoPanel(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Column(
+      children: [
+        _buildImageGallery(),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: _buildInfoPanel(context),
+        ),
+      ],
+    );
+  }
+
   Widget _buildImageGallery() {
     return Hero(
-      tag: 'product_image_${product['name']}',
+      tag: 'product_image_${product['id']}',
       child: Container(
-        constraints: const BoxConstraints(minHeight: 400),
-        width: double.infinity,
-        color: Colors.grey[100],
+        height: 500,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F3),
+          borderRadius: BorderRadius.circular(2),
+        ),
         child: product['imageUrl'] != null
             ? Image.network(
                 product['imageUrl']!,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
               )
-            : const Icon(Icons.image, size: 100, color: Colors.grey),
+            : const Center(
+                child: Icon(Icons.image, size: 80, color: Colors.grey),
+              ),
       ),
     );
   }
@@ -102,52 +98,50 @@ class ProductDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Title & Meta
+        // 1. Title & Price
         Text(
-          product['name'] ?? 'Unknown Item',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "${product['size'] ?? 'N/A'} · ${product['condition'] ?? 'N/A'} · ${product['brand'] ?? 'Unbranded'}",
-          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-        ),
-        const SizedBox(height: 16),
-
-        // 2. Pricing
-        if (product['originalPrice'] != null)
-          Text(
-            "£${product['originalPrice']}",
-            style: TextStyle(
-              color: Colors.grey[500],
-              decoration: TextDecoration.lineThrough,
-              fontSize: 14,
-            ),
-          ),
-        Text(
-          "£${product['price'] ?? '0.00'}",
+          product['name'] ?? 'Product',
           style: const TextStyle(
-            color: brandColor,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
+        Text(
+          "£${product['price'] ?? '0.00'}",
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: brandColor,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 2. Buyer Protection (Shield icon area)
         Row(
-          children: const [
-            Icon(Icons.shield_outlined, color: brandColor, size: 16),
-            SizedBox(width: 4),
-            Text(
+          children: [
+            const Icon(Icons.shield_outlined, color: brandColor, size: 20),
+            const SizedBox(width: 8),
+            const Text(
               "Includes Buyer Protection",
-              style: TextStyle(color: brandColor, fontSize: 13),
+              style: TextStyle(color: brandColor, fontWeight: FontWeight.w500),
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9F9F9),
+            border: Border.all(color: const Color(0xFFEEEEEE)),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: const Text(
+            "Buyer Protection fee: shield box detailing the protection policy.",
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+        ),
         const SizedBox(height: 24),
-        const Divider(height: 1, color: Color(0xFFEEEEEE)),
-        const SizedBox(height: 16),
 
         // 3. Details Table
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
@@ -213,7 +207,7 @@ class ProductDetailScreen extends StatelessWidget {
                   duration: const Duration(seconds: 2),
                   action: SnackBarAction(
                     label: 'View Cart',
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => router.push('/cart'),
                   ),
                 ),
               );
@@ -269,123 +263,18 @@ class ProductDetailScreen extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 32),
-
-        // 7. Buyer Protection Box
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.shield, color: brandColor, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Buyer Protection fee",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13, height: 1.4),
-                        children: const [
-                          TextSpan(text: "Our "),
-                          TextSpan(
-                            text: "Buyer Protection",
-                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
-                          ),
-                          TextSpan(
-                            text: " is added for a fee to every purchase made with the \"Buy now\" button. Buyer Protection includes our ",
-                          ),
-                          TextSpan(
-                            text: "Refund Policy",
-                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
-                          ),
-                          TextSpan(text: "."),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-
-        // 8. Seller Profile Row
-        if (product['sellerId'] != null) ...[
-          InkWell(
-            onTap: () {
-              context.push('/user/${product['sellerId']}');
-            },
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[200]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey[200],
-                    child: const Icon(Icons.person, color: Colors.grey, size: 30),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product['sellerName'] ?? 'Unknown Seller',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              "5.0 (0)",
-                              style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: Colors.grey),
-                ],
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
 
-  bool isDesktop(BuildContext context) {
-    return MediaQuery.of(context).size.width >= 800;
-  }
-
-  Widget _buildDetailRow(String key, String value, {bool isLink = false}) {
+  Widget _buildDetailRow(String label, String value, {bool isLink = false}) {
     return Row(
       children: [
         SizedBox(
           width: 100,
           child: Text(
-            key,
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ),
         Expanded(
@@ -393,8 +282,8 @@ class ProductDetailScreen extends StatelessWidget {
             value,
             style: TextStyle(
               color: isLink ? brandColor : Colors.black87,
-              fontWeight: isLink ? FontWeight.w600 : FontWeight.normal,
               fontSize: 14,
+              fontWeight: isLink ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
         ),
@@ -402,4 +291,3 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 }
-
