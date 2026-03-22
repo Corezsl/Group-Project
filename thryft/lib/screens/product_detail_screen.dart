@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/header.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, String> product;
@@ -17,73 +18,65 @@ class ProductDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(product['name'] ?? 'Product'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth >= 800;
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const Header(),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= 800;
 
-          if (isDesktop) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column: Image Gallery (60%)
-                Expanded(
-                  flex: 6,
-                  child: Container(
-                    color: Colors.white,
-                    child: _buildImageGallery(),
-                  ),
-                ),
-                // Right Column: Info Panel (40%)
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: Colors.grey[200]!),
-                      ),
+                if (isDesktop) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left Column: Image Gallery (60%)
+                        Expanded(
+                          flex: 6,
+                          child: Container(
+                            color: Colors.white,
+                            child: _buildImageGallery(),
+                          ),
+                        ),
+                        // Right Column: Info Panel (40%)
+                        Expanded(
+                          flex: 4,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(color: Colors.grey[200]!),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: _buildInfoPanel(context),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
+                  );
+                } else {
+                  // Mobile: Stacked view
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildImageGallery(),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
                         child: _buildInfoPanel(context),
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          } else {
-            // Mobile: Stacked view
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildImageGallery(),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _buildInfoPanel(context),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
+                    ],
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 40),
+            const Footer(),
+          ],
+        ),
       ),
     );
   }
@@ -377,9 +370,6 @@ class ProductDetailScreen extends StatelessWidget {
             ),
           ),
         ],
-
-        const SizedBox(height: 40),
-        if (!isDesktop(context)) const Footer(),
       ],
     );
   }
