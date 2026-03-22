@@ -1,37 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/utils/responsive.dart';
 
-class DesktopHeader extends StatefulWidget {
-  const DesktopHeader({super.key});
+class Header extends StatelessWidget {
+  const Header({super.key});
 
   @override
-  State<DesktopHeader> createState() => _DesktopHeaderState();
+  Widget build(BuildContext context) {
+    return Responsive.isMobile(context) ? _MobileHeader() : _DesktopHeader();
+  }
 }
 
-class _DesktopHeaderState extends State<DesktopHeader> {
-  final bool _showCategories = true;
+// ─── Desktop ────────────────────────────────────────────────────────────────
+
+class _DesktopHeader extends StatefulWidget {
+  const _DesktopHeader();
+
+  @override
+  State<_DesktopHeader> createState() => _DesktopHeaderState();
+}
+
+class _DesktopHeaderState extends State<_DesktopHeader> {
+  bool _showCategories = true;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color.fromARGB(255, 71, 164, 245),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Logo
-              Expanded(
-                flex: 1,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16.0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => GoRouter.of(context).go('/'),
+      height: 100,
+      color: const Color.fromARGB(255, 71, 164, 245),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
                       child: Image.asset(
                         'assets/images/thyrft_logo.png',
                         height: 60,
@@ -40,155 +48,228 @@ class _DesktopHeaderState extends State<DesktopHeader> {
                     ),
                   ),
                 ),
-              ),
-              // Search
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search for items...',
-                        prefixIcon: Icon(Icons.search, color: Colors.grey),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8),
-                      ),
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                              ),
+                              hintText: 'Search',
+                              hintStyle: const TextStyle(color: Colors.white70),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              border: const OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: const Color.fromARGB(50, 255, 255, 255),
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(
+                            // show outlined when categories are visible, filled when hidden
+                            _showCategories ? Icons.filter_alt_outlined : Icons.filter_alt,
+                            color: Colors.white,
+                          ),
+                          tooltip: 'Filters',
+                          onPressed: () {
+                            setState(() {
+                              _showCategories = !_showCategories;
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              // Actions
-              Expanded(
-                flex: 1,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                      onPressed: () => context.push('/cart'),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.person_outline, color: Colors.white),
-                      onPressed: () {
-                        final session = Supabase.instance.client.auth.currentSession;
-                        if (session != null) {
-                          context.push('/account');
-                        } else {
-                          context.push('/auth');
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                  ],
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.favorite_outline,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => context.push('/wishlist'),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => context.push('/cart'),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.person_outline,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          final session = Supabase.instance.client.auth.currentSession;
+                          if (session != null) {
+                            context.push('/account');
+                          } else {
+                            context.push('/auth');
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          // Categories
-          Visibility(
-            visible: _showCategories,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
+              ],
+            ),
+            // keep the category row's space even when hidden so header items don't move
+            Visibility(
+              visible: _showCategories,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   _navButton(context, 'Home', '/'),
+                  TextButton(
+                    onPressed: () => context.go('/'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Home'),
+                  ),
                   const SizedBox(width: 16),
-                  _navButton(context, 'Shirts', null),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Shirts',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  _navButton(context, 'Trousers', null),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Trousers',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  _navButton(context, 'Shoes', null),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Shoes',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  _navButton(context, 'Accessories', null),
+                  TextButton(
+                    onPressed: null,
+                    child: const Text(
+                      'Accessories',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  _navButton(context, 'About Us', '/about'),
+                  TextButton(
+                    onPressed: () => context.go('/about'),
+                    child: const Text(
+                      'About Us',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
-  Widget _navButton(BuildContext context, String label, String? route) {
-    return TextButton(
-      onPressed: route != null ? () => context.go(route) : null,
-      style: TextButton.styleFrom(foregroundColor: Colors.white),
-      child: Text(label),
-    );
-  }
 }
 
-class Header extends StatelessWidget {
-  const Header({super.key});
+// ─── Mobile ─────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth > 800) {
-          return const DesktopHeader();
-        } else {
-          return const MobileHeader();
-        }
-      },
-    );
-  }
-}
-
-class MobileHeader extends StatelessWidget {
-  const MobileHeader({super.key});
-
-  @override
+class _MobileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
       color: const Color.fromARGB(255, 71, 164, 245),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => GoRouter.of(context).go('/'),
-            child: Image.asset(
-              'assets/images/thyrft_logo.png',
-              height: 40,
-              fit: BoxFit.contain,
+          // Logo
+          Image.asset(
+            'assets/images/thyrft_logo.png',
+            height: 44,
+            fit: BoxFit.contain,
+          ),
+          // Expanded search bar
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: TextField(
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  hintText: 'Search',
+                  hintStyle: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  border: const OutlineInputBorder(borderSide: BorderSide.none),
+                  filled: true,
+                  fillColor: const Color.fromARGB(50, 255, 255, 255),
+                  isDense: true,
+                ),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ),
           ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.white),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                onPressed: () => context.push('/cart'),
-              ),
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
+          // Cart icon
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+            onPressed: () => context.push('/cart'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.white),
+            onPressed: () {
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/account');
+              } else {
+                context.push('/auth');
+              }
+            },
+          ),
+          // Hamburger
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+// ─── Mobile Drawer ───────────────────────────────────────────────────────────
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -203,17 +284,10 @@ class AppDrawer extends StatelessWidget {
             decoration: const BoxDecoration(
               color: Color.fromARGB(255, 71, 164, 245),
             ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                Navigator.pop(context);
-                GoRouter.of(context).go('/');
-              },
-              child: Image.asset(
-                'assets/images/thyrft_logo.png',
-                fit: BoxFit.contain,
-                alignment: Alignment.centerLeft,
-              ),
+            child: Image.asset(
+              'assets/images/thyrft_logo.png',
+              fit: BoxFit.contain,
+              alignment: Alignment.centerLeft,
             ),
           ),
           ListTile(
@@ -279,10 +353,7 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.sell_outlined),
             title: const Text('Sell now'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/create-listing');
-            },
+            onTap: () => Navigator.pop(context),
           ),
         ],
       ),
