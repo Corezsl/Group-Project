@@ -4,7 +4,9 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
 
 class ProductCarousel extends StatefulWidget {
-  const ProductCarousel({super.key});
+  final String? category;
+
+  const ProductCarousel({super.key, this.category});
 
   @override
   State<ProductCarousel> createState() => _ProductCarouselState();
@@ -34,6 +36,9 @@ class _ProductCarouselState extends State<ProductCarousel> {
     if (userId != null) {
       // Exclude products created by the current user
       query = query.neq('user_id', userId);
+    }
+    if (widget.category != null) {
+      query = query.eq('category', widget.category!);
     }
 
     final response = await query.order('created_at', ascending: false);

@@ -25,11 +25,11 @@ class HomeScreen extends StatelessWidget {
             const HeroBanner(),
             SizedBox(height: isMobile ? 16 : 24),
 
-            // ── New Arrivals ─────────────────────────────────────────────
+            // ── Shirts & Tops ───────────────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: Text(
-                'New Arrivals',
+                'Shirts & Tops',
                 style: TextStyle(
                   fontSize: headingSize,
                   fontWeight: FontWeight.bold,
@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const ProductCarousel(),
+            const ProductCarousel(category: 'Shirt'),
             SizedBox(height: sectionGap),
 
             // ── Trending Near You ────────────────────────────────────────
