@@ -152,7 +152,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         // Handle Price History Logic
         final double? oldPrice = double.tryParse(widget.initialData!['price']?.toString() ?? '');
         if (oldPrice != null && newPrice != oldPrice) {
-          productData['originalPrice'] = oldPrice;
+          productData['original_price'] = oldPrice;
         }
 
         await supabase
