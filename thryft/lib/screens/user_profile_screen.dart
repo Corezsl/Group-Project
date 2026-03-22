@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
+import 'package:go_router/go_router.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -79,7 +80,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
       // 3. Fetch Ratings
       final ratingsData = await client
           .from('ratings')
-          .select('*, products(name)')
+          .select('*, products(*)')
           .eq('seller_id', widget.userId)
           .order('created_at', ascending: false);
 
@@ -237,7 +238,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final review = _ratings[index];
-                      final productName = review['products']?['name'] ?? 'Product';
+                      // final productName = review['products']?['name'] ?? 'Product';
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 0,
@@ -266,10 +267,74 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                                   style: const TextStyle(fontSize: 14, color: Colors.black87),
                                 ),
                               const SizedBox(height: 8),
-                              Text(
-                                'About: $productName',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
-                              ),
+                              if (review['products'] != null) ...[
+                                const Divider(height: 24),
+                                InkWell(
+                                  onTap: () {
+                                    final p = review['products'];
+                                    context.push('/product/${p['id']}', extra: {
+                                      'id': p['id'].toString(),
+                                      'name': p['name'].toString(),
+                                      'price': p['price'].toString(),
+                                      'size': p['size'].toString(),
+                                      'condition': p['condition'].toString(),
+                                      'brand': p['brand'].toString(),
+                                      'imageUrl': p['image_url']?.toString() ?? '',
+                                      'sellerId': widget.userId,
+                                      'sellerName': _profile?['username'] ?? 'Unknown Seller',
+                                      'is_sold': p['is_sold']?.toString() ?? 'false',
+                                    });
+                                  },
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: SizedBox(
+                                          width: 60,
+                                          height: 60,
+                                          child: review['products']['image_url'] != null
+                                              ? Image.network(
+                                                  review['products']['image_url'],
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : Container(
+                                                  color: Colors.grey[100],
+                                                  child: const Icon(Icons.image, size: 24, color: Colors.grey),
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              review['products']['name'] ?? 'Unknown Item',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '£${review['products']['price']}',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[600],
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
