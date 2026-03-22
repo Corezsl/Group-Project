@@ -52,7 +52,10 @@ class CartProvider extends ChangeNotifier {
               condition: pData['condition'].toString(),
               imageUrl: pData['image_url']?.toString(),
               sellerId: pData['user_id']?.toString(),
-              sellerName: pData['profiles'] != null ? pData['profiles']['username']?.toString() : null,
+              sellerName: pData['profiles'] != null
+                  ? pData['profiles']['username']?.toString()
+                  : null,
+              category: pData['category']?.toString() ?? 'Other',
             );
             _items.add(CartItem(product: product));
           }

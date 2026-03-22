@@ -11,6 +11,7 @@ class Product {
   final String? sellerId;
   final String? sellerName;
   final bool isSold;
+  final String category;
 
   const Product({
     required this.id,
@@ -25,6 +26,7 @@ class Product {
     this.sellerId,
     this.sellerName,
     this.isSold = false,
+    required this.category,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -41,5 +43,6 @@ class Product {
     if (sellerId != null) 'sellerId': sellerId!,
     if (sellerName != null) 'sellerName': sellerName!,
     'is_sold': isSold.toString(),
+    'category': category,
   };
 }

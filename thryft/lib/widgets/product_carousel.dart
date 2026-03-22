@@ -44,6 +44,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
           sellerId: data['user_id']?.toString(),
           sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
           isSold: data['is_sold'] == true,
+          category: data['category']?.toString() ?? 'Other',
         )).toList();
   }
 

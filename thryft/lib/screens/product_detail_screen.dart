@@ -259,6 +259,7 @@ class ProductDetailScreen extends StatelessWidget {
                         brand: product['brand'] ?? '',
                         condition: product['condition'] ?? '',
                         imageUrl: product['imageUrl'],
+                        category: product['category'] ?? 'Other',
                       ),
                     );
                     ScaffoldMessenger.of(context).showSnackBar(

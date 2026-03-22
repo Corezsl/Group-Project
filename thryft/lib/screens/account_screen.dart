@@ -101,6 +101,21 @@ class AccountScreen extends StatelessWidget {
                           },
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.reviews_outlined),
+                          title: const Text('My Reviews'),
+                          subtitle: const Text('See what buyers are saying'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            final user = Supabase.instance.client.auth.currentUser;
+                            if (user != null) {
+                              context.push('/user/${user.id}');
+                            }
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 32),
                       // Logout Button
                       SizedBox(

@@ -75,6 +75,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
         sellerId: widget.userId,
         sellerName: profileData['username']?.toString(),
         isSold: data['is_sold'] == true,
+        category: data['category']?.toString() ?? 'Other',
       )).toList();
 
       // 3. Fetch Ratings
