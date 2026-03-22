@@ -28,20 +28,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     setState(() => _isLoading = true);
     try {
       if (field == 'username') {
-        await _supabase.auth.updateUser(UserAttributes(
-          data: {'username': value},
-        ));
+        await _supabase.auth.updateUser(
+          UserAttributes(data: {'username': value}),
+        );
       } else if (field == 'email') {
-        await _supabase.auth.updateUser(UserAttributes(
-          email: value,
-        ));
+        await _supabase.auth.updateUser(UserAttributes(email: value));
         _showSnackBar('Email updated! Please check your inbox to verify.');
       } else if (field == 'password') {
-        await _supabase.auth.updateUser(UserAttributes(
-          password: value,
-        ));
+        await _supabase.auth.updateUser(UserAttributes(password: value));
       }
-      
+
       if (field != 'email') {
         _showSnackBar('Successfully updated ${field.toLowerCase()}');
       }
@@ -158,7 +154,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(username),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
                                 onPressed: () => _showEditDialog(
                                   'Username',
                                   'username',
@@ -178,7 +177,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(email),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
                                 onPressed: () =>
                                     _showEditDialog('Email', 'email', email),
                               ),
@@ -195,9 +197,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: const Text('********'),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () =>
-                                    _showEditDialog('Password', 'password', null),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () => _showEditDialog(
+                                  'Password',
+                                  'password',
+                                  null,
+                                ),
                               ),
                             ),
                           ),
@@ -214,9 +222,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           if (_isLoading)
             Container(
               color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
