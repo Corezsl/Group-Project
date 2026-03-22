@@ -47,6 +47,18 @@ class _CartScreenState extends State<CartScreen> {
     // 1. Capture items to rate before clearing cart
     final itemsToRate = List.from(cart.items);
 
+    // 1.5 Update items as sold in database
+    try {
+      for (var item in itemsToRate) {
+        await Supabase.instance.client.from('products').update({
+          'is_sold': true,
+          'buyer_id': user.id,
+        }).eq('id', item.product.id);
+      }
+    } catch (e) {
+      debugPrint('Error marking checkout items as sold: $e');
+    }
+
     // 2. Clear cart
     await cart.clear();
 
