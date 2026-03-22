@@ -40,11 +40,15 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 16.0),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => context.go('/'),
                       child: Image.asset(
                         'assets/images/thyrft_logo.png',
                         height: 60,
                         fit: BoxFit.cover,
                       ),
+                    ),
                     ),
                   ),
                 ),
@@ -206,10 +210,14 @@ class _MobileHeader extends StatelessWidget {
       child: Row(
         children: [
           // Logo
-          Image.asset(
-            'assets/images/thyrft_logo.png',
-            height: 44,
-            fit: BoxFit.contain,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.go('/'),
+            child: Image.asset(
+              'assets/images/thyrft_logo.png',
+              height: 44,
+              fit: BoxFit.contain,
+            ),
           ),
           // Expanded search bar
           Expanded(
@@ -284,10 +292,17 @@ class AppDrawer extends StatelessWidget {
             decoration: const BoxDecoration(
               color: Color.fromARGB(255, 71, 164, 245),
             ),
-            child: Image.asset(
-              'assets/images/thyrft_logo.png',
-              fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/');
+              },
+              child: Image.asset(
+                'assets/images/thyrft_logo.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.centerLeft,
+              ),
             ),
           ),
           ListTile(

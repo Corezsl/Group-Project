@@ -3,8 +3,8 @@ import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
 import '../widgets/header.dart';
 
-class HelpCenterPage extends StatelessWidget {
-  const HelpCenterPage({super.key});
+class HelpCenterScreen extends StatelessWidget {
+  const HelpCenterScreen({super.key});
 
   static const List<Map<String, String>> _faqItems = [
     {

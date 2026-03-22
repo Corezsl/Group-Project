@@ -4,8 +4,8 @@ import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 
-class WishlistPage extends StatelessWidget {
-  const WishlistPage({super.key});
+class WishlistScreen extends StatelessWidget {
+  const WishlistScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

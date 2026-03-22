@@ -6,30 +6,31 @@ import 'package:thryft/models/product.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MyOrdersScreen extends StatefulWidget {
-  const MyOrdersScreen({super.key});
+class SoldItemsScreen extends StatefulWidget {
+  const SoldItemsScreen({super.key});
 
   @override
-  State<MyOrdersScreen> createState() => _MyOrdersScreenState();
+  State<SoldItemsScreen> createState() => _SoldItemsScreenState();
 }
 
-class _MyOrdersScreenState extends State<MyOrdersScreen> {
-  late Future<List<Product>> _ordersFuture;
+class _SoldItemsScreenState extends State<SoldItemsScreen> {
+  late Future<List<Product>> _soldItemsFuture;
 
   @override
   void initState() {
     super.initState();
-    _ordersFuture = _fetchOrders();
+    _soldItemsFuture = _fetchSoldItems();
   }
 
-  Future<List<Product>> _fetchOrders() async {
+  Future<List<Product>> _fetchSoldItems() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return [];
 
     final response = await Supabase.instance.client
         .from('products')
         .select('*, profiles(username)')
-        .eq('buyer_id', userId)
+        .eq('user_id', userId)
+        .eq('is_sold', true)
         .order('created_at', ascending: false);
 
     return (response as List).map((data) => Product(
@@ -62,7 +63,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'My Orders',
+                    'Sold Items',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
@@ -70,12 +71,12 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Items you have purchased from other sellers.',
+                    'Items you have successfully sold to other users.',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
                   FutureBuilder<List<Product>>(
-                    future: _ordersFuture,
+                    future: _soldItemsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(
@@ -84,16 +85,16 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                         );
                       }
                       
-                      final orders = snapshot.data ?? [];
+                      final soldItems = snapshot.data ?? [];
 
                       return SizedBox(
                         width: double.infinity,
                         child: StandardProductGrid(
-                          items: orders,
-                          emptyIcon: Icons.shopping_bag_outlined,
-                          emptyTitle: 'No orders yet',
-                          emptySubtitle: 'Your purchased items will appear here.',
-                          dateFilterLabel: 'DATE PURCHASED',
+                          items: soldItems,
+                          emptyIcon: Icons.sell_outlined,
+                          emptyTitle: 'No sold items yet',
+                          emptySubtitle: 'Your sold items will appear here once they are purchased.',
+                          dateFilterLabel: 'DATE SOLD',
                         ),
                       );
                     },

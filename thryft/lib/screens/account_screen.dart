@@ -66,6 +66,20 @@ class AccountScreen extends StatelessWidget {
                       const SizedBox(height: 10),
                       Card(
                         child: ListTile(
+                          leading: const Icon(Icons.sell_outlined),
+                          title: const Text('Sold Items'),
+                          subtitle: const Text(
+                            'View items you have successfully sold',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.push('/sold-items');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
                           leading: const Icon(Icons.shopping_bag_outlined),
                           title: const Text('My Orders'),
                           subtitle: const Text('Track your purchases'),
@@ -84,6 +98,21 @@ class AccountScreen extends StatelessWidget {
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
                             context.push('/wishlist');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.reviews_outlined),
+                          title: const Text('My Reviews'),
+                          subtitle: const Text('See what buyers are saying'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            final user = Supabase.instance.client.auth.currentUser;
+                            if (user != null) {
+                              context.push('/user/${user.id}');
+                            }
                           },
                         ),
                       ),

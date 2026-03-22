@@ -21,7 +21,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: Implement login logic
+                        context.push('/auth');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.lightBlue,
