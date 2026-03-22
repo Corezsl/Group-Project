@@ -220,7 +220,7 @@ class ProductDetailScreen extends StatelessWidget {
                   duration: const Duration(seconds: 2),
                   action: SnackBarAction(
                     label: 'View Cart',
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.push('/cart'),
                   ),
                 ),
               );
