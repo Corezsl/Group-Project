@@ -24,14 +24,8 @@ class ProductDetailScreen extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.favorite_border), onPressed: () {}),
         ],
       ),
       body: LayoutBuilder(
@@ -100,15 +94,15 @@ class ProductDetailScreen extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             product['imageUrl'] != null
-              ? Image.network(
-                  product['imageUrl']!,
-                  fit: BoxFit.contain,
-                )
-              : const Icon(Icons.image, size: 100, color: Colors.grey),
+                ? Image.network(product['imageUrl']!, fit: BoxFit.contain)
+                : const Icon(Icons.image, size: 100, color: Colors.grey),
             if (product['is_sold'] == 'true')
               Container(
                 color: Colors.black.withValues(alpha: 0.5),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Text(
                   'SOLD',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -131,9 +125,9 @@ class ProductDetailScreen extends StatelessWidget {
         // 1. Title & Meta
         Text(
           product['name'] ?? 'Unknown Item',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Text(
@@ -216,7 +210,8 @@ class ProductDetailScreen extends StatelessWidget {
         // 6. Action Buttons
         (() {
           final currentUser = Supabase.instance.client.auth.currentUser;
-          final isOwner = currentUser != null && product['sellerId'] == currentUser.id;
+          final isOwner =
+              currentUser != null && product['sellerId'] == currentUser.id;
           final isSold = product['is_sold'] == 'true';
 
           // Sold item: show sold banner for everyone
@@ -248,24 +243,103 @@ class ProductDetailScreen extends StatelessWidget {
           }
 
           if (isOwner) {
-            return SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  context.push('/create-listing', extra: product);
-                },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: brandColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+            return Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      context.push('/create-listing', extra: product);
+                    },
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: brandColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: const Text(
+                      "Edit listing",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  "Edit listing",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete Listing'),
+                          content: const Text(
+                            'Are you sure you want to delete this listing? This action cannot be undone.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        try {
+                          await Supabase.instance.client
+                              .from('products')
+                              .delete()
+                              .eq('id', product['id'] as Object);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Listing deleted successfully'),
+                              ),
+                            );
+                            context.go('/my-listings');
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to delete listing: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: const Text(
+                      "Delete listing",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             );
           }
 
@@ -377,24 +451,38 @@ class ProductDetailScreen extends StatelessWidget {
                   children: [
                     const Text(
                       "Buyer Protection fee",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     RichText(
                       text: TextSpan(
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13, height: 1.4),
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
                         children: const [
                           TextSpan(text: "Our "),
                           TextSpan(
                             text: "Buyer Protection",
-                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
+                            style: TextStyle(
+                              color: brandColor,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
                           TextSpan(
-                            text: " is added for a fee to every purchase made with the \"Buy now\" button. Buyer Protection includes our ",
+                            text:
+                                " is added for a fee to every purchase made with the \"Buy now\" button. Buyer Protection includes our ",
                           ),
                           TextSpan(
                             text: "Refund Policy",
-                            style: TextStyle(color: brandColor, decoration: TextDecoration.underline),
+                            style: TextStyle(
+                              color: brandColor,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
                           TextSpan(text: "."),
                         ],
@@ -426,7 +514,11 @@ class ProductDetailScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.grey[200],
-                    child: const Icon(Icons.person, color: Colors.grey, size: 30),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                      size: 30,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -435,16 +527,26 @@ class ProductDetailScreen extends StatelessWidget {
                       children: [
                         Text(
                           product['sellerName'] ?? 'Unknown Seller',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               "5.0 (0)",
-                              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -492,4 +594,3 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 }
-
