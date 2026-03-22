@@ -217,6 +217,35 @@ class ProductDetailScreen extends StatelessWidget {
         (() {
           final currentUser = Supabase.instance.client.auth.currentUser;
           final isOwner = currentUser != null && product['sellerId'] == currentUser.id;
+          final isSold = product['is_sold'] == 'true';
+
+          // Sold item: show sold banner for everyone
+          if (isSold) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.sell_outlined, color: Colors.grey[500], size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'This item has been sold',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
           if (isOwner) {
             return SizedBox(
