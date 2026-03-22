@@ -19,6 +19,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
   Map<String, dynamic>? _profile;
   List<Product> _products = [];
   List<Map<String, dynamic>> _ratings = [];
+  int _soldCount = 0;
   late TabController _tabController;
 
   @override
@@ -85,11 +86,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
           .eq('seller_id', widget.userId)
           .order('created_at', ascending: false);
 
+      // 4. Fetch Sold Items Count
+      final soldData = await client
+          .from('products')
+          .select('id')
+          .eq('user_id', widget.userId)
+          .eq('is_sold', true);
+      
+      final soldCount = (soldData as List).length;
+
       if (mounted) {
         setState(() {
           _profile = profileData;
           _products = loadedProducts;
           _ratings = List<Map<String, dynamic>>.from(ratingsData as List);
+          _soldCount = soldCount;
           _isLoading = false;
         });
       }
@@ -168,6 +179,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                        Text(
                          '($ratingCount)',
                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                       ),
+                       const SizedBox(width: 8),
+                       Text(
+                         '•',
+                         style: TextStyle(color: Colors.grey[400]),
+                       ),
+                       const SizedBox(width: 8),
+                       Text(
+                         '$_soldCount sold',
+                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                        ),
                      ],
                    )
