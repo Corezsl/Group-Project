@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/models/product.dart';
+
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;
   final List<CartItem> _items = [];
@@ -15,7 +16,6 @@ class CartProvider extends ChangeNotifier {
       final user = data.session?.user;
       _handleUserChange(user?.id);
     });
-    // Check initial state
     _handleUserChange(Supabase.instance.client.auth.currentUser?.id);
   }
 
@@ -25,7 +25,6 @@ class CartProvider extends ChangeNotifier {
     _currentUserId = userId;
     _items.clear();
     
-    // Load new user's cart from Supabase
     if (userId != null) {
       try {
         final data = await Supabase.instance.client
@@ -74,10 +73,12 @@ class CartProvider extends ChangeNotifier {
   double get totalPrice =>
       _items.fold(0, (sum, item) => sum + item.product.price * item.quantity);
 
+  bool isInCart(String productId) {
+    return _items.any((item) => item.product.id == productId);
+  }
+
   Future<void> addItem(Product product) async {
-    final index = _items.indexWhere((i) => i.product.id == product.id);
-    if (index < 0) {
-      // Optimistic update
+    if (!isInCart(product.id)) {
       _items.add(CartItem(product: product));
       notifyListeners();
 
