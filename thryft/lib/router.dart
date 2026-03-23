@@ -11,7 +11,7 @@ import 'package:thryft/screens/create_listing_screen.dart';
 import 'package:thryft/screens/home_screen.dart';
 import 'package:thryft/screens/product_detail_screen.dart';
 import 'package:thryft/screens/wishlist_screen.dart';
-import 'package:thryft/screens/my_listings_screen.dart';
+import 'package:thryft/screens/user_listings_screen.dart';
 import 'package:thryft/screens/my_orders_screen.dart';
 import 'package:thryft/screens/terms_of_service_screen.dart';
 import 'package:thryft/screens/auth_screen.dart';
