@@ -428,7 +428,9 @@ class AppDrawer extends StatelessWidget {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('You need to be logged in to create a listing'),
+                    content: Text(
+                      'You need to be logged in to create a listing',
+                    ),
                     duration: Duration(seconds: 3),
                   ),
                 );
