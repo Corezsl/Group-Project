@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/utils/responsive.dart';
 
 class HeroBanner extends StatelessWidget {
@@ -147,7 +148,22 @@ class _HeroBannerContent extends StatelessWidget {
           width: double.infinity,
           height: 48,
           child: FilledButton(
-            onPressed: () => context.push('/create-listing'),
+            onPressed: () {
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/create-listing');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'You need to be logged in to create a listing',
+                    ),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                context.push('/auth');
+              }
+            },
             style: FilledButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 71, 164, 245),
               foregroundColor: Colors.white,

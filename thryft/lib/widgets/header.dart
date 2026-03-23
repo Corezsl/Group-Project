@@ -40,15 +40,15 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 16.0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => context.go('/'),
-                      child: Image.asset(
-                        'assets/images/thyrft_logo.png',
-                        height: 60,
-                        fit: BoxFit.cover,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => context.go('/'),
+                        child: Image.asset(
+                          'assets/images/thyrft_logo.png',
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
                     ),
                   ),
                 ),
@@ -74,23 +74,74 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: const Color.fromARGB(50, 255, 255, 255),
+                              fillColor: const Color.fromARGB(
+                                50,
+                                255,
+                                255,
+                                255,
+                              ),
                             ),
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: Icon(
-                            // show outlined when categories are visible, filled when hidden
-                            _showCategories ? Icons.filter_alt_outlined : Icons.filter_alt,
+                        PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.filter_list,
                             color: Colors.white,
                           ),
-                          tooltip: 'Filters',
-                          onPressed: () {
-                            setState(() {
-                              _showCategories = !_showCategories;
-                            });
+                          tooltip: 'Filter by Category',
+                          onSelected: (String category) {
+                            // Logic to filter by category can be added here
+                          },
+                          itemBuilder: (BuildContext context) {
+                            final categories = [
+                              'Footwear',
+                              'Accessories',
+                              'Shirt',
+                              'Shorts',
+                              'Trousers',
+                              'Hoodie',
+                              'Jacket',
+                              'Dress',
+                              'Skirt',
+                              'Outerwear',
+                              'Other',
+                            ];
+                            return [
+                              PopupMenuItem<String>(
+                                enabled:
+                                    false, // Prevents default hover highlighting for the whole block
+                                padding: EdgeInsets.zero,
+                                child: SizedBox(
+                                  width: 250, // width for 2 columns
+                                  child: Wrap(
+                                    children: categories.map((String choice) {
+                                      return InkWell(
+                                        onTap: () {
+                                          Navigator.pop(context, choice);
+                                        },
+                                        child: Container(
+                                          width:
+                                              125, // Exactly half of 250 (so 2 items fit per row)
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                          child: Text(
+                                            choice,
+                                            style: const TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            ];
                           },
                         ),
                       ],
@@ -121,7 +172,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           color: Colors.white,
                         ),
                         onPressed: () {
-                          final session = Supabase.instance.client.auth.currentSession;
+                          final session =
+                              Supabase.instance.client.auth.currentSession;
                           if (session != null) {
                             context.push('/account');
                           } else {
@@ -368,7 +420,23 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.sell_outlined),
             title: const Text('Sell now'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/create-listing');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'You need to be logged in to create a listing',
+                    ),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                context.push('/auth');
+              }
+            },
           ),
         ],
       ),
