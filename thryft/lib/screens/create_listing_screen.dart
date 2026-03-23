@@ -25,18 +25,26 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedSize;
   String? _selectedCondition;
   String? _selectedBrand;
+  String? _selectedFitting;
   late final TextEditingController _priceController;
+  late final TextEditingController _descriptionController;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.initialData?['name']);
-    _priceController = TextEditingController(text: widget.initialData?['price']?.toString());
-    
+    _priceController = TextEditingController(
+      text: widget.initialData?['price']?.toString(),
+    );
+    _descriptionController = TextEditingController(
+      text: widget.initialData?['description'],
+    );
+
     if (widget.initialData != null) {
       _selectedSize = widget.initialData!['size'];
       _selectedBrand = widget.initialData!['brand'];
       _selectedCondition = widget.initialData!['condition'];
+      _selectedFitting = widget.initialData!['fitting'];
       // Category detection would need a mapping, but for now we'll let user re-select or add to product map
     }
   }
@@ -44,15 +52,40 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
 
+  final List<String> _fittings = ['Slim', 'Regular', 'Loose'];
+
   final List<String> _brands = [
-    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance',
-    'Asics', 'Vans', 'Converse', 'Jordan', 'Fila', 'Skechers', 'Brooks',
-    'Saucony', 'Mizuno', 'Hoka One One', 'Salomon', 'Merrell', 'Columbia',
-    'The North Face', 'Patagonia', 'Other',
+    'Nike',
+    'Adidas',
+    'Puma',
+    'Reebok',
+    'Under Armour',
+    'New Balance',
+    'Asics',
+    'Vans',
+    'Converse',
+    'Jordan',
+    'Fila',
+    'Skechers',
+    'Brooks',
+    'Saucony',
+    'Mizuno',
+    'Hoka One One',
+    'Salomon',
+    'Merrell',
+    'Columbia',
+    'The North Face',
+    'Patagonia',
+    'Other',
   ];
 
   final List<String> _categories = [
-    'Shirt', 'Pants', 'Dresses', 'Shorts', 'Shoes', 'Accessories',
+    'Shirt',
+    'Pants',
+    'Dresses',
+    'Shorts',
+    'Shoes',
+    'Accessories',
   ];
 
   List<String> get _currentSizes {
@@ -67,13 +100,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   final List<String> _conditions = [
-    'New with tags', 'New without tags', 'Very good', 'Good', 'Okay', 'Worn',
+    'New with tags',
+    'New without tags',
+    'Very good',
+    'Good',
+    'Okay',
+    'Worn',
   ];
 
   @override
   void dispose() {
     _titleController.dispose();
     _priceController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -101,10 +140,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       );
       return;
     }
-    
+
     if (_selectedCategory != 'Accessories' && _selectedSize == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a size.')));
+      return;
+    }
+
+    final double? parsedPrice = double.tryParse(_priceController.text);
+    if (parsedPrice == null || parsedPrice <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a size.')),
+        const SnackBar(
+          content: Text('Please enter a valid price greater than 0.'),
+        ),
       );
       return;
     }
@@ -126,14 +175,18 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final fileExt = mainImage.name.split('.').last;
         final fileName = '${const Uuid().v4()}.$fileExt';
         final bytes = await mainImage.readAsBytes();
-        
-        await supabase.storage.from('product-images').uploadBinary(
-          fileName,
-          bytes,
-          fileOptions: FileOptions(contentType: 'image/$fileExt'),
-        );
-        
-        publicImageUrl = supabase.storage.from('product-images').getPublicUrl(fileName);
+
+        await supabase.storage
+            .from('product-images')
+            .uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: FileOptions(contentType: 'image/$fileExt'),
+            );
+
+        publicImageUrl = supabase.storage
+            .from('product-images')
+            .getPublicUrl(fileName);
       }
 
       // Handle Database Operation
@@ -146,11 +199,17 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
         'category': _selectedCategory,
+        'fitting': _selectedFitting,
+        'description': _descriptionController.text.isNotEmpty
+            ? _descriptionController.text
+            : null,
       };
 
       if (widget.initialData != null) {
         // Handle Price History Logic
-        final double? oldPrice = double.tryParse(widget.initialData!['price']?.toString() ?? '');
+        final double? oldPrice = double.tryParse(
+          widget.initialData!['price']?.toString() ?? '',
+        );
         if (oldPrice != null && newPrice != oldPrice) {
           productData['original_price'] = oldPrice;
         }
@@ -159,7 +218,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .from('products')
             .update(productData)
             .eq('id', widget.initialData!['id']);
-            
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Listing updated successfully!')),
@@ -173,14 +232,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Listing created successfully!')),
         );
-        
+
         _clearForm();
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -191,11 +250,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   void _clearForm() {
     _titleController.clear();
     _priceController.clear();
+    _descriptionController.clear();
     setState(() {
       _selectedCategory = null;
       _selectedSize = null;
       _selectedCondition = null;
       _selectedBrand = null;
+      _selectedFitting = null;
       _images.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
@@ -203,15 +264,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   Widget _buildImagePreview(XFile file) {
     if (kIsWeb) {
-      return Image.network(file.path, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+      return Image.network(
+        file.path,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
     } else {
-      return Image.file(File(file.path), fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+      return Image.file(
+        File(file.path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
     }
   }
 
   Widget _buildMainPreview() {
     final XFile? currentImage = _images[_selectedIndex];
-    
+
     return GestureDetector(
       onTap: () => _pickImage(_selectedIndex),
       child: Container(
@@ -263,7 +334,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget _buildThumbnail(int index) {
     final bool isSelected = index == _selectedIndex;
     final XFile? currentImage = _images[index];
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: Container(
@@ -302,7 +373,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       color: isSelected
                           ? const Color.fromARGB(255, 71, 164, 245)
                           : Colors.grey[500],
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -434,6 +507,46 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           ),
         ),
         const SizedBox(height: 20),
+        const Text(
+          'Fitting (Optional)',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedFitting,
+          hint: const Text('Select a fitting'),
+          items: _fittings
+              .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+              .toList(),
+          onChanged: (val) => setState(() => _selectedFitting = val),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Description (Optional)',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _descriptionController,
+          maxLength: 200,
+          maxLines: 4,
+          decoration: InputDecoration(
+            hintText: 'Enter item description...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
         const Text('Price', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextFormField(
@@ -475,7 +588,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.initialData != null ? 'Edit Listing' : 'Create a Listing',
+                        widget.initialData != null
+                            ? 'Edit Listing'
+                            : 'Create a Listing',
                         style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -520,7 +635,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   ),
                                 )
                               : Text(
-                                  widget.initialData != null ? 'Update Listing' : 'Upload Listing',
+                                  widget.initialData != null
+                                      ? 'Update Listing'
+                                      : 'Upload Listing',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,

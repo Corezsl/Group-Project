@@ -25,11 +25,11 @@ class HomeScreen extends StatelessWidget {
             const HeroBanner(),
             SizedBox(height: isMobile ? 16 : 24),
 
-            // ── New Arrivals ─────────────────────────────────────────────
+            // ── Shirts & Tops ───────────────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: Text(
-                'New Arrivals',
+                'Shirts & Tops',
                 style: TextStyle(
                   fontSize: headingSize,
                   fontWeight: FontWeight.bold,
@@ -37,14 +37,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const ProductCarousel(),
+            const ProductCarousel(category: 'Shirt'),
             SizedBox(height: sectionGap),
 
-            // ── Trending Near You ────────────────────────────────────────
+            // ── Trousers ────────────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: Text(
-                'Trending Near You',
+                'Trousers',
                 style: TextStyle(
                   fontSize: headingSize,
                   fontWeight: FontWeight.bold,
@@ -52,14 +52,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const ProductCarousel(),
+            const ProductCarousel(category: 'Trousers'),
             SizedBox(height: sectionGap),
 
-            // ── Designer Brands ──────────────────────────────────────────
+            // ── Accessories ──────────────────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: Text(
-                'Designer Brands',
+                'Accessories',
                 style: TextStyle(
                   fontSize: headingSize,
                   fontWeight: FontWeight.bold,
@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const ProductCarousel(),
+            const ProductCarousel(category: 'Accessories'),
             SizedBox(height: isMobile ? 24 : 40),
 
             const Footer(),

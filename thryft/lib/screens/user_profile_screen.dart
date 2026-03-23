@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
-import 'package:go_router/go_router.dart';
+import 'package:thryft/screens/reviews_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -13,7 +13,8 @@ class UserProfileScreen extends StatefulWidget {
   State<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> with SingleTickerProviderStateMixin {
+class _UserProfileScreenState extends State<UserProfileScreen>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _profile;
@@ -63,25 +64,33 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
           .eq('is_sold', false)
           .order('created_at', ascending: false);
 
-      final loadedProducts = (productsData as List).map((data) => Product(
-        id: data['id'].toString(),
-        name: data['name'].toString(),
-        price: (data['price'] as num).toDouble(),
-        originalPrice: data['original_price'] != null ? (data['original_price'] as num).toDouble() : null,
-        size: data['size'].toString(),
-        brand: data['brand'].toString(),
-        condition: data['condition'].toString(),
-        imageUrl: data['image_url']?.toString(),
-        sellerId: widget.userId,
-        sellerName: profileData['username']?.toString(),
-        isSold: false,
-        category: data['category']?.toString() ?? 'Other',
-      )).toList();
+      final loadedProducts = (productsData as List)
+          .map(
+            (data) => Product(
+              id: data['id'].toString(),
+              name: data['name'].toString(),
+              price: (data['price'] as num).toDouble(),
+              originalPrice: data['original_price'] != null
+                  ? (data['original_price'] as num).toDouble()
+                  : null,
+              size: data['size'].toString(),
+              brand: data['brand'].toString(),
+              condition: data['condition'].toString(),
+              imageUrl: data['image_url']?.toString(),
+              sellerId: widget.userId,
+              sellerName: profileData['username']?.toString(),
+              isSold: false,
+              category: data['category']?.toString() ?? 'Other',
+            ),
+          )
+          .toList();
 
       // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles)
       final ratingsData = await client
           .from('ratings')
-          .select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')
+          .select(
+            '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+          )
           .eq('seller_id', widget.userId)
           .order('created_at', ascending: false);
 
@@ -116,15 +125,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('User Profile')),
-        body: Center(child: Text(_error!, style: const TextStyle(color: Colors.red))),
+        body: Center(
+          child: Text(_error!, style: const TextStyle(color: Colors.red)),
+        ),
       );
     }
 
@@ -153,44 +162,53 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                   CircleAvatar(
-                     radius: 40,
-                     backgroundColor: Colors.grey[200],
-                     backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) as ImageProvider : null,
-                     child: avatarUrl == null ? const Icon(Icons.person, size: 40, color: Colors.grey) : null,
-                   ),
-                   const SizedBox(height: 16),
-                   Text(
-                     username,
-                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                   ),
-                   const SizedBox(height: 8),
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.center,
-                     children: [
-                       const Icon(Icons.star, color: Colors.amber, size: 20),
-                       const SizedBox(width: 4),
-                       Text(
-                         rating is double ? rating.toStringAsFixed(1) : '$rating',
-                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                       ),
-                       const SizedBox(width: 4),
-                       Text(
-                         '($ratingCount)',
-                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                       ),
-                       const SizedBox(width: 8),
-                       Text(
-                         '•',
-                         style: TextStyle(color: Colors.grey[400]),
-                       ),
-                       const SizedBox(width: 8),
-                       Text(
-                         '$_soldCount sold',
-                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                       ),
-                     ],
-                   )
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl) as ImageProvider
+                        : null,
+                    child: avatarUrl == null
+                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    username,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating is double
+                            ? rating.toStringAsFixed(1)
+                            : '$rating',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '($ratingCount)',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('•', style: TextStyle(color: Colors.grey[400])),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$_soldCount sold',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -221,9 +239,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
                   child: Center(
-                    child: Text('This user has no active listings.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                    child: Text(
+                      'This user has no active listings.',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
                   ),
-                )
+                ),
               )
             else
               SliverPadding(
@@ -243,164 +264,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
               ),
           ] else ...[
             // Reviews Tab
-            if (_ratings.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Center(
-                    child: Text('No reviews yet.', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                  ),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.all(16.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final review = _ratings[index];
-                      final buyerUsername = review['profiles']?['username']?.toString() ?? 'Anonymous';
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.grey[200]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Reviewer info row
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 12,
-                                    backgroundColor: Colors.grey[200],
-                                    child: const Icon(Icons.person, size: 14, color: Colors.grey),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    buyerUsername,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              // Star rating
-                              Row(
-                                children: List.generate(5, (starIndex) {
-                                  return Icon(
-                                    starIndex < (review['rating'] as int) ? Icons.star : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 16,
-                                  );
-                                }),
-                              ),
-                              const SizedBox(height: 8),
-                              if (review['comment'] != null && review['comment'].toString().isNotEmpty)
-                                Text(
-                                  review['comment'],
-                                  style: const TextStyle(fontSize: 14, color: Colors.black87),
-                                ),
-                              const SizedBox(height: 8),
-                              if (review['products'] != null) ...[
-                                const Divider(height: 24),
-                                // Product preview
-                                InkWell(
-                                  onTap: () {
-                                    final p = review['products'];
-                                    context.push('/product/${p['id']}', extra: <String, String>{
-                                      'id': p['id'].toString(),
-                                      'name': p['name'].toString(),
-                                      'price': p['price'].toString(),
-                                      'size': p['size'].toString(),
-                                      'condition': p['condition'].toString(),
-                                      'brand': p['brand'].toString(),
-                                      'imageUrl': p['image_url']?.toString() ?? '',
-                                      'sellerId': widget.userId,
-                                      'sellerName': _profile?['username'] ?? 'Unknown Seller',
-                                      'is_sold': p['is_sold']?.toString() ?? 'false',
-                                      'category': p['category']?.toString() ?? 'Other',
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: review['products']['image_url'] != null
-                                              ? Image.network(
-                                                  review['products']['image_url'],
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : Container(
-                                                  color: Colors.grey[100],
-                                                  child: const Icon(Icons.image, size: 24, color: Colors.grey),
-                                                ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              review['products']['name'] ?? 'Unknown Item',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.black87,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              review['products']['brand'] ?? '',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[500],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              '£${(review['products']['price'] as num).toStringAsFixed(2)}',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey[700],
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Chip(
-                                        label: const Text('SOLD', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
-                                        backgroundColor: Colors.red[400],
-                                        padding: EdgeInsets.zero,
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: _ratings.length,
-                  ),
-                ),
-              ),
+            ReviewsScreen(
+              ratings: _ratings,
+              sellerId: widget.userId,
+              sellerName: _profile?['username'] ?? 'Unknown Seller',
+            ),
           ],
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -420,11 +288,12 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.white,
-      child: _tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: Colors.white, child: _tabBar);
   }
 
   @override
