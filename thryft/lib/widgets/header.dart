@@ -420,7 +420,21 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.sell_outlined),
             title: const Text('Sell now'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/create-listing');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('You need to be logged in to create a listing'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                context.push('/auth');
+              }
+            },
           ),
         ],
       ),
