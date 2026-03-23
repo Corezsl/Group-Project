@@ -71,7 +71,6 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const CategorySection(),
-
             const SizedBox(height: 24),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
