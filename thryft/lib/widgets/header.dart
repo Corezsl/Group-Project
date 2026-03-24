@@ -96,7 +96,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           },
                           itemBuilder: (BuildContext context) {
                             final categories = [
-                              'Footwear',
+                              'Shoes',
                               'Accessories',
                               'Shirt',
                               'Shorts',
@@ -215,7 +215,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: () => context.go('/category/Footwear'),
+                    onPressed: () => context.go('/category/Shoes'),
                     style: TextButton.styleFrom(foregroundColor: Colors.white),
                     child: const Text('Shoes'),
                   ),
@@ -378,7 +378,7 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Shoes'),
             onTap: () {
               Navigator.pop(context);
-              context.go('/category/Footwear');
+              context.go('/category/Shoes');
             },
           ),
           ListTile(
