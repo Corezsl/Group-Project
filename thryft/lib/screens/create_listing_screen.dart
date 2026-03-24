@@ -41,11 +41,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
 
     if (widget.initialData != null) {
+      _selectedCategory = widget.initialData!['category'];
       _selectedSize = widget.initialData!['size'];
       _selectedBrand = widget.initialData!['brand'];
       _selectedCondition = widget.initialData!['condition'];
       _selectedFitting = widget.initialData!['fitting'];
-      // Category detection would need a mapping, but for now we'll let user re-select or add to product map
     }
   }
 

@@ -74,10 +74,9 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/product/:id',
       builder: (context, state) {
-        final product = state.extra as Map<String, String>?;
-        if (product == null) {
-          return const HomeScreen();
-        }
+        final raw = state.extra;
+        if (raw == null) return const HomeScreen();
+        final product = Map<String, String>.from(raw as Map);
         return ProductDetailScreen(product: product);
       },
     ),
