@@ -34,11 +34,11 @@ class _StandardProductGridState extends State<StandardProductGrid> {
   String? _selectedDateSort;
 
   final List<String> _priceRanges = [
-    'Under \$25',
-    '\$25 - \$50',
-    '\$50 - \$100',
-    '\$100 - \$250',
-    'Over \$250',
+    'Under £25',
+    '£25 - £50',
+    '£50 - £100',
+    '£100 - £250',
+    'Over £250',
   ];
 
   final List<String> _dateSortOptions = [
@@ -63,11 +63,11 @@ class _StandardProductGridState extends State<StandardProductGrid> {
 
     if (_selectedPriceRange != null) {
       filtered = filtered.where((p) {
-        if (_selectedPriceRange == 'Under \$25') return p.price < 25;
-        if (_selectedPriceRange == '\$25 - \$50') return p.price >= 25 && p.price <= 50;
-        if (_selectedPriceRange == '\$50 - \$100') return p.price >= 50 && p.price <= 100;
-        if (_selectedPriceRange == '\$100 - \$250') return p.price >= 100 && p.price <= 250;
-        if (_selectedPriceRange == 'Over \$250') return p.price > 250;
+        if (_selectedPriceRange == 'Under £25') return p.price < 25;
+        if (_selectedPriceRange == '£25 - £50') return p.price >= 25 && p.price <= 50;
+        if (_selectedPriceRange == '£50 - £100') return p.price >= 50 && p.price <= 100;
+        if (_selectedPriceRange == '£100 - £250') return p.price >= 100 && p.price <= 250;
+        if (_selectedPriceRange == 'Over £250') return p.price > 250;
         return true;
       }).toList();
     }
