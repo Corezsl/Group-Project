@@ -92,7 +92,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           ),
                           tooltip: 'Filter by Category',
                           onSelected: (String category) {
-                            // Logic to filter by category can be added here
+                            context.go('/category/$category');
                           },
                           itemBuilder: (BuildContext context) {
                             final categories = [
@@ -203,35 +203,27 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Shirts',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: () => context.go('/category/Shirt'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Shirts'),
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Trousers',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: () => context.go('/category/Trousers'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Trousers'),
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Shoes',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: () => context.go('/category/Footwear'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Shoes'),
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Accessories',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: () => context.go('/category/Accessories'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Accessories'),
                   ),
                   const SizedBox(width: 16),
                   TextButton(
@@ -368,22 +360,34 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.checkroom_outlined),
             title: const Text('Shirts'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Shirt');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.accessibility_new_outlined),
             title: const Text('Trousers'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Trousers');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.directions_walk_outlined),
             title: const Text('Shoes'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Footwear');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.watch_outlined),
             title: const Text('Accessories'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Accessories');
+            },
           ),
           const Divider(),
           ListTile(
