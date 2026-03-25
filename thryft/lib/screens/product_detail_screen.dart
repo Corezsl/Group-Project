@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/cart_provider.dart';
+import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/interaction_service.dart';
@@ -29,7 +30,31 @@ class ProductDetailScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.favorite_border), onPressed: () {}),
+          Consumer<WishlistProvider>(
+            builder: (context, wishlist, _) {
+              final wishlisted = wishlist.isWishlisted(product['id'] ?? '');
+              return IconButton(
+                icon: Icon(
+                  wishlisted ? Icons.favorite : Icons.favorite_border,
+                  color: wishlisted ? Colors.red : null,
+                ),
+                onPressed: () {
+                  wishlist.toggleWishlist(Product(
+                    id: product['id'] ?? '',
+                    name: product['name'] ?? '',
+                    price: double.tryParse(product['price'] ?? '0') ?? 0,
+                    size: product['size'] ?? '',
+                    brand: product['brand'] ?? '',
+                    condition: product['condition'] ?? '',
+                    imageUrl: product['imageUrl'],
+                    sellerId: product['sellerId'],
+                    sellerName: product['sellerName'],
+                    category: product['category'] ?? 'Other',
+                  ));
+                },
+              );
+            },
+          ),
         ],
       ),
       body: LayoutBuilder(

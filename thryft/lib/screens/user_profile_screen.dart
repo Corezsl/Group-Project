@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
-import 'package:thryft/widgets/product_card.dart';
+import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/screens/reviews_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -234,34 +234,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
           // Conditional Sliver Content
           if (_tabController.index == 0) ...[
-            if (_products.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Center(
-                    child: Text(
-                      'This user has no active listings.',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  ),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.all(16.0),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16.0,
-                    crossAxisSpacing: 16.0,
-                    childAspectRatio: 0.65,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => ProductCard(product: _products[index]),
-                    childCount: _products.length,
-                  ),
-                ),
+            SliverToBoxAdapter(
+              child: StandardProductGrid(
+                items: _products,
+                emptyIcon: Icons.list_alt,
+                emptyTitle: 'No active listings',
+                emptySubtitle: 'This user has no active listings.',
               ),
+            ),
           ] else ...[
             // Reviews Tab
             ReviewsScreen(
