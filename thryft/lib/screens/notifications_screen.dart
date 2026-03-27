@@ -26,56 +26,79 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final provider = context.watch<NotificationProvider>();
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Header(),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 40,
-                    horizontal: 20,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Notifications',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                      const Header(),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE5E7EB),
                       ),
-                      const SizedBox(height: 24),
-                      if (provider.isLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else if (provider.notifications.isEmpty)
-                        _buildEmptyState()
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: provider.notifications.length,
-                          separatorBuilder: (_, __) => const Divider(
-                            height: 1,
-                            color: Color(0xFFE5E7EB),
-                          ),
-                          itemBuilder: (context, index) =>
-                              _buildNotificationTile(
-                            context,
-                            provider,
-                            provider.notifications[index],
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 40,
+                              horizontal: 20,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Notifications',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 24),
+                                if (provider.isLoading)
+                                  const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                else if (provider.notifications.isEmpty)
+                                  _buildEmptyState()
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: provider.notifications.length,
+                                    separatorBuilder: (_, __) => const Divider(
+                                      height: 1,
+                                      color: Color(0xFFE5E7EB),
+                                    ),
+                                    itemBuilder: (context, index) =>
+                                        _buildNotificationTile(
+                                          context,
+                                          provider,
+                                          provider.notifications[index],
+                                        ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
+                      ),
                     ],
                   ),
-                ),
+                  const Footer(),
+                ],
               ),
             ),
-            const Footer(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -124,8 +147,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     notif.content,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight:
-                          notif.isRead ? FontWeight.normal : FontWeight.w600,
+                      fontWeight: notif.isRead
+                          ? FontWeight.normal
+                          : FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -158,10 +182,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final (IconData icon, Color color) = switch (type) {
       NotificationType.listingSold => (Icons.sell_outlined, Colors.green),
       NotificationType.wishlistAdd => (Icons.favorite_outline, Colors.pink),
-      NotificationType.wishlistPurchased =>
-        (Icons.shopping_bag_outlined, Colors.orange),
-      NotificationType.offerReceived =>
-        (Icons.local_offer_outlined, Colors.purple),
+      NotificationType.wishlistPurchased => (
+        Icons.shopping_bag_outlined,
+        Colors.orange,
+      ),
+      NotificationType.offerReceived => (
+        Icons.local_offer_outlined,
+        Colors.purple,
+      ),
       _ => (Icons.notifications_outlined, Colors.grey),
     };
 
@@ -185,8 +213,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             onPressed: () => _handleAccept(context, provider, notif),
             style: FilledButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 71, 164, 245),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -199,8 +226,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.grey[700],
               side: BorderSide(color: Colors.grey[300]!),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -229,9 +255,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final message = e.toString().contains('already_sold')
             ? 'This item is already sold.'
             : 'Failed to accept offer. Try again.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     }
   }
