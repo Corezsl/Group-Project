@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/utils/responsive.dart';
 
 class Header extends StatelessWidget {
@@ -152,6 +154,17 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      Consumer<NotificationProvider>(
+                        builder: (context, notifProvider, _) {
+                          final session =
+                              Supabase.instance.client.auth.currentSession;
+                          if (session == null) return const SizedBox.shrink();
+                          return _NotificationBadge(
+                            count: notifProvider.unreadCount,
+                            onPressed: () => context.push('/notifications'),
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.favorite_outline,
@@ -291,6 +304,17 @@ class _MobileHeader extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
+          ),
+          // Notification bell
+          Consumer<NotificationProvider>(
+            builder: (context, notifProvider, _) {
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session == null) return const SizedBox.shrink();
+              return _NotificationBadge(
+                count: notifProvider.unreadCount,
+                onPressed: () => context.push('/notifications'),
+              );
+            },
           ),
           // Cart icon
           IconButton(
@@ -444,6 +468,53 @@ class AppDrawer extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Notification Badge ───────────────────────────────────────────────────────
+
+class _NotificationBadge extends StatelessWidget {
+  final int count;
+  final VoidCallback onPressed;
+
+  const _NotificationBadge({required this.count, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          onPressed: onPressed,
+        ),
+        if (count > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints:
+                    const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  count > 99 ? '99+' : count.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
