@@ -28,7 +28,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      height: 108,
       color: const Color.fromARGB(255, 71, 164, 245),
       child: Center(
         child: Column(
