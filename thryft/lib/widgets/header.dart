@@ -146,7 +146,10 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _filterActive
-                    ? const FilterPanel(key: ValueKey('filter'))
+                    ? FilterPanel(
+                        key: const ValueKey('filter'),
+                        onApply: (dept) => context.push('/create-listing', extra: {'department': dept}),
+                      )
                     : const SizedBox.shrink(key: ValueKey('shortcuts')),
               ),
             ),

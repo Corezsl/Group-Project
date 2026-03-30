@@ -31,7 +31,10 @@ class _FilterPanelState extends State<FilterPanel> {
               onChanged: (v) => setState(() => _department = v ?? 'All'),
             ),
             const SizedBox(width: 8),
-            TextButton(onPressed: () => widget.onApply?.call(_department), child: const Text('Apply')),
+            TextButton(
+              onPressed: () {}, // do nothing regardless of selection
+              child: const Text('Apply'),
+            ),
           ],
         ),
       );
