@@ -19,6 +19,7 @@ import 'package:thryft/screens/user_profile_screen.dart';
 import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
+import 'package:thryft/screens/forgot_password_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -49,6 +50,10 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AccountScreen(),
     ),
     GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
     GoRoute(
       path: '/create-listing',
       builder: (context, state) {
