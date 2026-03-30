@@ -18,6 +18,7 @@ import 'package:thryft/screens/auth_screen.dart';
 import 'package:thryft/screens/user_profile_screen.dart';
 import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
+import 'package:thryft/screens/notifications_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -87,6 +88,10 @@ final GoRouter router = GoRouter(
         if (userId == null) return const HomeScreen();
         return UserProfileScreen(userId: userId);
       },
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
     GoRoute(
       path: '/category/:name',
