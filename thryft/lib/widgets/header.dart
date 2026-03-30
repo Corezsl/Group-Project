@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/utils/responsive.dart';
+import 'package:thryft/widgets/filter_system.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -22,7 +23,7 @@ class _DesktopHeader extends StatefulWidget {
 }
 
 class _DesktopHeaderState extends State<_DesktopHeader> {
-  bool _showCategories = true;
+  bool _filterActive = false;
 
   @override
   Widget build(BuildContext context) {
@@ -86,9 +87,15 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                         ),
                         const SizedBox(width: 8),
                         // static filter icon (no interaction)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.0),
-                          child: Icon(Icons.filter_alt_outlined, color: Colors.white),
+                        IconButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          icon: Icon(
+                            _filterActive
+                                ? Icons.filter_alt
+                                : Icons.filter_alt_outlined,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => setState(() => _filterActive = !_filterActive),
                         ),
                       ],
                     ),
@@ -133,53 +140,14 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 ),
               ],
             ),
-            // keep the category row's space even when hidden so header items don't move
-            Visibility(
-              visible: _showCategories,
-              maintainSize: true,
-              maintainAnimation: true,
-              maintainState: true,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Home'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Shirt'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Shirts'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Trousers'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Trousers'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Shoes'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Shoes'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Accessories'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Accessories'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/about'),
-                    child: const Text(
-                      'About Us',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+            // reserved area: either shortcuts or filter panel
+            SizedBox(
+              height: 48,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _filterActive
+                    ? const FilterPanel(key: ValueKey('filter'))
+                    : const SizedBox.shrink(key: ValueKey('shortcuts')),
               ),
             ),
           ],
