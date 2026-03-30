@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/models/product.dart';
@@ -16,11 +17,15 @@ class ProductDetailScreen extends StatelessWidget {
   static const Color brandColor = Color.fromARGB(255, 71, 164, 245);
 
   // Fixed: Defined the missing helper method
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 800;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 800;
 
   @override
   Widget build(BuildContext context) {
-    InteractionService().logInteraction(productId: product['id'] ?? '', type: 'view',);
+    InteractionService().logInteraction(
+      productId: product['id'] ?? '',
+      type: 'view',
+    );
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -29,7 +34,17 @@ class ProductDetailScreen extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () {
+              final id = product['id'] ?? '';
+              final uri = Uri.base.resolve('/product/$id').toString();
+              Clipboard.setData(ClipboardData(text: uri));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Link copied to clipboard')),
+              );
+            },
+          ),
           Consumer<WishlistProvider>(
             builder: (context, wishlist, _) {
               final wishlisted = wishlist.isWishlisted(product['id'] ?? '');
@@ -39,18 +54,20 @@ class ProductDetailScreen extends StatelessWidget {
                   color: wishlisted ? Colors.red : null,
                 ),
                 onPressed: () {
-                  wishlist.toggleWishlist(Product(
-                    id: product['id'] ?? '',
-                    name: product['name'] ?? '',
-                    price: double.tryParse(product['price'] ?? '0') ?? 0,
-                    size: product['size'] ?? '',
-                    brand: product['brand'] ?? '',
-                    condition: product['condition'] ?? '',
-                    imageUrl: product['imageUrl'],
-                    sellerId: product['sellerId'],
-                    sellerName: product['sellerName'],
-                    category: product['category'] ?? 'Other',
-                  ));
+                  wishlist.toggleWishlist(
+                    Product(
+                      id: product['id'] ?? '',
+                      name: product['name'] ?? '',
+                      price: double.tryParse(product['price'] ?? '0') ?? 0,
+                      size: product['size'] ?? '',
+                      brand: product['brand'] ?? '',
+                      condition: product['condition'] ?? '',
+                      imageUrl: product['imageUrl'],
+                      sellerId: product['sellerId'],
+                      sellerName: product['sellerName'],
+                      category: product['category'] ?? 'Other',
+                    ),
+                  );
                 },
               );
             },
@@ -76,7 +93,9 @@ class ProductDetailScreen extends StatelessWidget {
                   flex: 4,
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border(left: BorderSide(color: Colors.grey[200]!)),
+                      border: Border(
+                        left: BorderSide(color: Colors.grey[200]!),
+                      ),
                     ),
                     child: SingleChildScrollView(
                       child: Padding(
@@ -123,7 +142,10 @@ class ProductDetailScreen extends StatelessWidget {
             if (product['is_sold'] == 'true')
               Container(
                 color: Colors.black.withOpacity(0.5),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Text(
                   'SOLD',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -145,7 +167,9 @@ class ProductDetailScreen extends StatelessWidget {
       children: [
         Text(
           product['name'] ?? 'Unknown Item',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Text(
@@ -156,11 +180,19 @@ class ProductDetailScreen extends StatelessWidget {
         if (product['originalPrice'] != null)
           Text(
             "£${product['originalPrice']}",
-            style: TextStyle(color: Colors.grey[500], decoration: TextDecoration.lineThrough, fontSize: 14),
+            style: TextStyle(
+              color: Colors.grey[500],
+              decoration: TextDecoration.lineThrough,
+              fontSize: 14,
+            ),
           ),
         Text(
           "£${product['price'] ?? '0.00'}",
-          style: const TextStyle(color: brandColor, fontSize: 24, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: brandColor,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 24),
         const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -176,12 +208,18 @@ class ProductDetailScreen extends StatelessWidget {
         Consumer<CartProvider>(
           builder: (context, cart, child) {
             final currentUser = Supabase.instance.client.auth.currentUser;
-            final isOwner = currentUser != null && product['sellerId'] == currentUser.id;
+            final isOwner =
+                currentUser != null && product['sellerId'] == currentUser.id;
             final isSold = product['is_sold'] == 'true';
             final isInCart = cart.isInCart(product['id'] ?? '');
 
             if (isSold) {
-              return _buildFullWidthBanner(Icons.sell_outlined, 'This item has been sold', Colors.grey[600]!, Colors.grey[100]!);
+              return _buildFullWidthBanner(
+                Icons.sell_outlined,
+                'This item has been sold',
+                Colors.grey[600]!,
+                Colors.grey[100]!,
+              );
             }
 
             if (isOwner) {
@@ -192,23 +230,31 @@ class ProductDetailScreen extends StatelessWidget {
               children: [
                 SizedBox(
                   width: double.infinity,
-                  child: isInCart 
-                    ? _buildFullWidthBanner(
-                        Icons.shopping_cart,
-                        'Already in cart',
-                        brandColor,
-                        brandColor.withOpacity(0.05),
-                        borderColor: brandColor.withOpacity(0.2),
-                      )
-                    : FilledButton(
-                        onPressed: () => _addItemToCart(context, cart),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: brandColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  child: isInCart
+                      ? _buildFullWidthBanner(
+                          Icons.shopping_cart,
+                          'Already in cart',
+                          brandColor,
+                          brandColor.withOpacity(0.05),
+                          borderColor: brandColor.withOpacity(0.2),
+                        )
+                      : FilledButton(
+                          onPressed: () => _addItemToCart(context, cart),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: brandColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          child: const Text(
+                            "Add to cart",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        child: const Text("Add to cart", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
                 ),
                 const SizedBox(height: 12),
                 _buildSecondaryButton("Make an offer", () {}),
@@ -233,7 +279,9 @@ class ProductDetailScreen extends StatelessWidget {
         id: product['id'] ?? product['name']!,
         name: product['name'] ?? 'Product',
         price: double.tryParse(product['price'] ?? '0') ?? 0,
-        originalPrice: product['originalPrice'] != null ? double.tryParse(product['originalPrice']!) : null,
+        originalPrice: product['originalPrice'] != null
+            ? double.tryParse(product['originalPrice']!)
+            : null,
         size: product['size'] ?? '',
         brand: product['brand'] ?? '',
         condition: product['condition'] ?? '',
@@ -244,12 +292,21 @@ class ProductDetailScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${product['name']} added to cart'),
-        action: SnackBarAction(label: 'View Cart', onPressed: () => context.push('/cart')),
+        action: SnackBarAction(
+          label: 'View Cart',
+          onPressed: () => context.push('/cart'),
+        ),
       ),
     );
   }
 
-  Widget _buildFullWidthBanner(IconData icon, String label, Color textColor, Color bgColor, {Color? borderColor}) {
+  Widget _buildFullWidthBanner(
+    IconData icon,
+    String label,
+    Color textColor,
+    Color bgColor, {
+    Color? borderColor,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -263,7 +320,14 @@ class ProductDetailScreen extends StatelessWidget {
         children: [
           Icon(icon, color: textColor, size: 20),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textColor)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
         ],
       ),
     );
@@ -279,9 +343,14 @@ class ProductDetailScreen extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: brandColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-            child: const Text("Edit listing", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text(
+              "Edit listing",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
@@ -299,7 +368,10 @@ class ProductDetailScreen extends StatelessWidget {
           side: const BorderSide(color: brandColor, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
-        child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -307,8 +379,23 @@ class ProductDetailScreen extends StatelessWidget {
   Widget _buildDetailRow(String key, String value, {bool isLink = false}) {
     return Row(
       children: [
-        SizedBox(width: 100, child: Text(key, style: TextStyle(color: Colors.grey[600], fontSize: 14))),
-        Expanded(child: Text(value, style: TextStyle(color: isLink ? brandColor : Colors.black87, fontWeight: isLink ? FontWeight.w600 : FontWeight.normal, fontSize: 14))),
+        SizedBox(
+          width: 100,
+          child: Text(
+            key,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: isLink ? brandColor : Colors.black87,
+              fontWeight: isLink ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -316,7 +403,11 @@ class ProductDetailScreen extends StatelessWidget {
   Widget _buildBuyerProtectionBox() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -326,9 +417,19 @@ class ProductDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Buyer Protection fee", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const Text(
+                  "Buyer Protection fee",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
                 const SizedBox(height: 4),
-                Text("Includes our Refund Policy and helps keep our community safe.", style: TextStyle(color: Colors.grey[700], fontSize: 13, height: 1.4)),
+                Text(
+                  "Includes our Refund Policy and helps keep our community safe.",
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),
@@ -344,18 +445,43 @@ class ProductDetailScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(border: Border.all(color: Colors.grey[200]!), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Row(
           children: [
-            CircleAvatar(radius: 24, backgroundColor: Colors.grey[200], child: const Icon(Icons.person, color: Colors.grey, size: 30)),
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey[200],
+              child: const Icon(Icons.person, color: Colors.grey, size: 30),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product['sellerName'] ?? 'Unknown Seller', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    product['sellerName'] ?? 'Unknown Seller',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Row(children: const [Icon(Icons.star, color: Colors.amber, size: 16), SizedBox(width: 4), Text("5.0 (0)", style: TextStyle(color: Color(0xFF6B7280), fontSize: 13))]),
+                  Row(
+                    children: const [
+                      Icon(Icons.star, color: Colors.amber, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        "5.0 (0)",
+                        style: TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
