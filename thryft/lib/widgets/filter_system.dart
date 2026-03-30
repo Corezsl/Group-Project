@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
-  final VoidCallback? onApply;
+  final ValueChanged<String>? onApply;
 
   @override
   State<FilterPanel> createState() => _FilterPanelState();
@@ -31,7 +31,7 @@ class _FilterPanelState extends State<FilterPanel> {
               onChanged: (v) => setState(() => _department = v ?? 'All'),
             ),
             const SizedBox(width: 8),
-            TextButton(onPressed: widget.onApply, child: const Text('Apply')),
+            TextButton(onPressed: () => widget.onApply?.call(_department), child: const Text('Apply')),
           ],
         ),
       );
