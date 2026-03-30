@@ -85,64 +85,10 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.filter_list,
-                            color: Colors.white,
-                          ),
-                          tooltip: 'Filter by Category',
-                          onSelected: (String category) {
-                            context.go('/category/$category');
-                          },
-                          itemBuilder: (BuildContext context) {
-                            final categories = [
-                              'Shoes',
-                              'Accessories',
-                              'Shirt',
-                              'Shorts',
-                              'Trousers',
-                              'Hoodie',
-                              'Jacket',
-                              'Dress',
-                              'Skirt',
-                              'Outerwear',
-                              'Other',
-                            ];
-                            return [
-                              PopupMenuItem<String>(
-                                enabled:
-                                    false, // Prevents default hover highlighting for the whole block
-                                padding: EdgeInsets.zero,
-                                child: SizedBox(
-                                  width: 250, // width for 2 columns
-                                  child: Wrap(
-                                    children: categories.map((String choice) {
-                                      return InkWell(
-                                        onTap: () {
-                                          Navigator.pop(context, choice);
-                                        },
-                                        child: Container(
-                                          width:
-                                              125, // Exactly half of 250 (so 2 items fit per row)
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
-                                          ),
-                                          child: Text(
-                                            choice,
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            ];
-                          },
+                        // static filter icon (no interaction)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Icon(Icons.filter_alt_outlined, color: Colors.white),
                         ),
                       ],
                     ),
