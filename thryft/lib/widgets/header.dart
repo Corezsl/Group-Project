@@ -150,7 +150,50 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                         key: const ValueKey('filter'),
                         onApply: (dept) => context.push('/create-listing', extra: {'department': dept}),
                       )
-                    : const SizedBox.shrink(key: ValueKey('shortcuts')),
+                    : Container(
+                        key: const ValueKey('shortcuts'),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Home'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shirts'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shirts'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Trousers'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Trousers'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shoes'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shoes'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Accessories'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Accessories'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/about'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('About Us'),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ],
