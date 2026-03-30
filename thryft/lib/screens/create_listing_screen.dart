@@ -26,6 +26,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedCondition;
   String? _selectedBrand;
   String? _selectedFitting;
+  String? _selectedDepartment;
   late final TextEditingController _priceController;
   late final TextEditingController _descriptionController;
 
@@ -46,6 +47,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedBrand = widget.initialData!['brand'];
       _selectedCondition = widget.initialData!['condition'];
       _selectedFitting = widget.initialData!['fitting'];
+      _selectedDepartment = widget.initialData!['department'];
     }
   }
 
@@ -195,6 +197,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'name': _titleController.text,
         'price': newPrice,
         'size': _selectedSize ?? 'One Size',
+        'department': _selectedDepartment,
         'brand': _selectedBrand,
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
@@ -440,6 +443,26 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               _selectedSize = null;
             });
           },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedDepartment ?? 'All',
+          hint: const Text('Select a department'),
+          items: const [
+            DropdownMenuItem(value: 'All', child: Text('All')),
+            DropdownMenuItem(value: 'Womens', child: Text('Womens')),
+            DropdownMenuItem(value: 'Mens', child: Text('Mens')),
+          ],
+          onChanged: (val) => setState(() => _selectedDepartment = val),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(

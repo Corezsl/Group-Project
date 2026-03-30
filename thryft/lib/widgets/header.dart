@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/utils/responsive.dart';
+import 'package:thryft/widgets/filter_system.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -22,12 +23,12 @@ class _DesktopHeader extends StatefulWidget {
 }
 
 class _DesktopHeaderState extends State<_DesktopHeader> {
-  bool _showCategories = true;
+  bool _filterActive = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      height: 108,
       color: const Color.fromARGB(255, 71, 164, 245),
       child: Center(
         child: Column(
@@ -85,64 +86,16 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.filter_list,
+                        // static filter icon (no interaction)
+                        IconButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          icon: Icon(
+                            _filterActive
+                                ? Icons.filter_alt
+                                : Icons.filter_alt_outlined,
                             color: Colors.white,
                           ),
-                          tooltip: 'Filter by Category',
-                          onSelected: (String category) {
-                            context.go('/category/$category');
-                          },
-                          itemBuilder: (BuildContext context) {
-                            final categories = [
-                              'Shoes',
-                              'Accessories',
-                              'Shirt',
-                              'Shorts',
-                              'Trousers',
-                              'Hoodie',
-                              'Jacket',
-                              'Dress',
-                              'Skirt',
-                              'Outerwear',
-                              'Other',
-                            ];
-                            return [
-                              PopupMenuItem<String>(
-                                enabled:
-                                    false, // Prevents default hover highlighting for the whole block
-                                padding: EdgeInsets.zero,
-                                child: SizedBox(
-                                  width: 250, // width for 2 columns
-                                  child: Wrap(
-                                    children: categories.map((String choice) {
-                                      return InkWell(
-                                        onTap: () {
-                                          Navigator.pop(context, choice);
-                                        },
-                                        child: Container(
-                                          width:
-                                              125, // Exactly half of 250 (so 2 items fit per row)
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
-                                          ),
-                                          child: Text(
-                                            choice,
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            ];
-                          },
+                          onPressed: () => setState(() => _filterActive = !_filterActive),
                         ),
                       ],
                     ),
@@ -187,53 +140,60 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 ),
               ],
             ),
-            // keep the category row's space even when hidden so header items don't move
-            Visibility(
-              visible: _showCategories,
-              maintainSize: true,
-              maintainAnimation: true,
-              maintainState: true,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Home'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Shirt'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Shirts'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Trousers'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Trousers'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Shoes'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Shoes'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/category/Accessories'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Accessories'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/about'),
-                    child: const Text(
-                      'About Us',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+            // reserved area: either shortcuts or filter panel
+            SizedBox(
+              height: 48,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _filterActive
+                    ? FilterPanel(
+                        key: const ValueKey('filter'),
+                        onApply: (dept) => context.push('/create-listing', extra: {'department': dept}),
+                      )
+                    : Container(
+                        key: const ValueKey('shortcuts'),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Home'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shirts'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shirts'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Trousers'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Trousers'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shoes'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shoes'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Accessories'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Accessories'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/about'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('About Us'),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ],
