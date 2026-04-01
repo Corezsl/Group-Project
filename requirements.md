@@ -5,39 +5,39 @@ Written below is a list of steps (problem decomposition) of the main requirement
 ## [1] Users Should Be Able to Filter Items
 - [✅] Add search bar to header
     - [❌] Expected behaviour: User can click on the search box and type what they want to search, and the relevant results should be displayed.
-- [ ] Add filter icon to the right of the search bar
+- [✅] Add filter icon to the right of the search bar
     - [ ] Expected behaviour: The Filter options are checkboxes that can be used to further narrow down search results. You can have 0 or many filters selected at once. These filters will interact with the associated tags from the database entries.
-- [ ] Filter Button Behaviour: Basic Dropdown into a Box filled with checklists where filters can be de/selected.
-- [ ] Filter by Size
-    - [ ] Expected Behaviour: One option out of a list of pre-existing values can be selected, ranging from values that are equivalent independent of gender. IE M / 12. (Where values are filtered either by Size M OR Size 12)
-- [ ] Filter by Brand
-    - [ ] Expected Behaviour: A small searchbox appears where you can type out the brand you are looking for, and it will appear if there is an entry in the database that matches the brand you are looking for. (Search suggestion but you can't type a brand that there is no current entries which are not closed.)
-- [ ] Filter by Condition
-    - [ ] Expected Behaviour: Conditions ranging on a scale of 5 values, From 'Acceptable - New', where it will return results that are that category or above.
-- [ ] Filter by Fitting
-    - [ ] Expected Behaviour: Search by fit
-- [ ] Filter by Price
-- [ ] Filter by Material
-- [ ] Filter by Colour
-- [ ] Filter by Style
+- [✅] Filter Button Behaviour: Basic Dropdown into a Box filled with checklists where filters can be de/selected.
+- [❌] Filter by Size
+    - [❌] Expected Behaviour: One option out of a list of pre-existing values can be selected, ranging from values that are equivalent independent of gender. IE M / 12. (Where values are filtered either by Size M OR Size 12)
+- [❌] Filter by Brand
+    - [❌] Expected Behaviour: A small searchbox appears where you can type out the brand you are looking for, and it will appear if there is an entry in the database that matches the brand you are looking for. (Search suggestion but you can't type a brand that there is no current entries which are not closed.)
+- [❌] Filter by Condition
+    - [❌] Expected Behaviour: Conditions ranging on a scale of 5 values, From 'Acceptable - New', where it will return results that are that category or above.
+- [❌] Filter by Fitting
+    - [❌] Expected Behaviour: Search by fit
+- [❌] Filter by Price
+- [❌] Filter by Material
+- [❌] Filter by Colour
+- [❌] Filter by Style
 
 ## [2] Users Should Be Able to View Seller Trust Information
-- [ ] View Public information on a profile
+- [✅] View Public information on a profile
 - [ ] Add Rating System
     - [ ] Scaling & description
     - [ ] Ranking reviews by relevant (timestamps etc)
 - [ ] Add Review System
 - [ ] Basic Account age timestamp on public profile
-- [ ] Listings View
-    - [ ] Link from Homepage
-    - [ ] Collections Page on User profile
+- [✅] Listings View
+    - [✅] Link from Homepage
+    - [✅] Collections Page on User profile
     - [ ] Previous (closed) Listings
         - Expected behaviour: View only, cannot attempt to buy a past listing.
 
 ## [3] Users Should Be Able to Create Listings Easily
-- [ ] Create "New listing" button that reroutes to different page for listing
+- [✅] Create "New listing" button that reroutes to different page for listing
 - [ ] Make dropdowns for the qualities of clothing (clothing category field, size field, colour field, brand field etc.)
-- [ ] Make option to upload picture at the top of page (or pictures if possible of product)
+- [✅] Make option to upload picture at the top of page (or pictures if possible of product)
 - [ ] Make price field that gives error message for invalid price and disables "list" button
 - [ ] Make field to enter user's address (the one listing the product)
 - [ ] Make button "list item" that lists item and sends to database
@@ -46,9 +46,9 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [ ] Price recommendation feature
 
 ## [4] Users Should Be Able to Edit and Manage Their Listings
-- [ ] Display active (Non-closed) Listings
-- [ ] Users can edit existing selling listings
-- [ ] Users can create new listings
+- [✅] Display active (Non-closed) Listings
+- [✅] Users can edit existing selling listings
+- [✅] Users can create new listings
 - [ ] Users can delete existing listings
 - [ ] Users can organise their selling listings
 
@@ -72,10 +72,10 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [ ] Users must be able to share images (e.g. additional product photos) within chat
 
 ## [8] Users Should Be Able to Save Listings (Wishlist)
-- [ ] Create "Save/Wishlist" button on each listing that adds item to user's wishlist
-- [ ] Wishlist page accessible from user profile or navigation bar/menu
-- [ ] Make button to remove items from wishlist both on product page and wishlist page
-- [ ] Display saved items in wishlist with relevant information (e.g. price, seller, etc.)
+- [✅] Create "Save/Wishlist" button on each listing that adds item to user's wishlist
+- [✅] Wishlist page accessible from user profile or navigation bar/menu
+- [✅] Make button to remove items from wishlist both on product page and wishlist page
+- [✅] Display saved items in wishlist with relevant information (e.g. price, seller, etc.)
 - [ ] Allow users to move items from wishlist to cart or directly to purchase
 - [ ] Make counter visible to sellers showing how many users have wishlisted their item
 
