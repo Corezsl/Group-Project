@@ -18,12 +18,30 @@ class _FilterPanelState extends State<FilterPanel> {
         return const [
           DropdownMenuItem(value: 'All', child: Text('All')),
           DropdownMenuItem(value: '6', child: Text('6')),
+          DropdownMenuItem(value: '8', child: Text('8')),
+          DropdownMenuItem(value: '10', child: Text('10')),
+          DropdownMenuItem(value: '12', child: Text('12')),
+          DropdownMenuItem(value: '14', child: Text('14')),
+          DropdownMenuItem(value: '16', child: Text('16')),
+          DropdownMenuItem(value: '18', child: Text('18')),
+          DropdownMenuItem(value: '20', child: Text('20')),
         ];
 
       case 'Mens':
         return const [
           DropdownMenuItem(value: 'All', child: Text('All')),
           DropdownMenuItem(value: '28R', child: Text('28R')),
+          DropdownMenuItem(value: '30R', child: Text('30R')),
+          DropdownMenuItem(value: '32R', child: Text('32R')),
+          DropdownMenuItem(value: '32R', child: Text('34R')),
+          DropdownMenuItem(value: '32R', child: Text('36R')),
+          DropdownMenuItem(value: '32R', child: Text('38R')),
+          DropdownMenuItem(value: '32R', child: Text('40R')),
+          DropdownMenuItem(value: '32R', child: Text('42R')),
+          DropdownMenuItem(value: '32R', child: Text('44R')),
+          DropdownMenuItem(value: '32R', child: Text('46R')),
+          DropdownMenuItem(value: '32R', child: Text('48R')),
+          DropdownMenuItem(value: '32R', child: Text('50R')),          
         ]; 
 
       default:
