@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thryft/utils/size_options.dart';
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
@@ -22,6 +23,8 @@ class _FilterPanelState extends State<FilterPanel> {
           DropdownMenuItem(value: 'M', child: Text('M')),
           DropdownMenuItem(value: 'L', child: Text('L')),
           DropdownMenuItem(value: 'XL', child: Text('XL')),
+          DropdownMenuItem(value: 'XXL', child: Text('XXL')),
+          DropdownMenuItem(value: 'XXXL', child: Text('XXXL')),
           DropdownMenuItem(value: '6', child: Text('6')),
           DropdownMenuItem(value: '8', child: Text('8')),
           DropdownMenuItem(value: '10', child: Text('10')),
@@ -40,6 +43,8 @@ class _FilterPanelState extends State<FilterPanel> {
           DropdownMenuItem(value: 'M', child: Text('M')),
           DropdownMenuItem(value: 'L', child: Text('L')),
           DropdownMenuItem(value: 'XL', child: Text('XL')),
+          DropdownMenuItem(value: 'XXL', child: Text('XXL')),
+          DropdownMenuItem(value: 'XXXL', child: Text('XXXL')),
           DropdownMenuItem(value: '28R', child: Text('28R')),
           DropdownMenuItem(value: '30R', child: Text('30R')),
           DropdownMenuItem(value: '32R', child: Text('32R')),
@@ -62,6 +67,8 @@ class _FilterPanelState extends State<FilterPanel> {
           DropdownMenuItem(value: 'M', child: Text('M')),
           DropdownMenuItem(value: 'L', child: Text('L')),
           DropdownMenuItem(value: 'XL', child: Text('XL')),
+          DropdownMenuItem(value: 'XL', child: Text('XXL')),
+          DropdownMenuItem(value: 'XL', child: Text('XXXL')),
         ];
     }
   }
@@ -97,7 +104,7 @@ class _FilterPanelState extends State<FilterPanel> {
            DropdownButton<String>(
              value: _size,
              underline: const SizedBox.shrink(),
-             items: _sizeOptions(),
+             items: sizeOptionsForDepartment(_department).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
              onChanged: (v) => setState(() => _size = v ?? 'Any'),
            ),
            const SizedBox(width: 12),

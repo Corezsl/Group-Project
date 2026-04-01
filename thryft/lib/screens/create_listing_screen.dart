@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/utils/size_options.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -91,13 +92,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   ];
 
   List<String> get _currentSizes {
+    final dept = _selectedDepartment ?? 'All';
+    if (dept != 'All') return sizeOptionsForDepartment(dept);
     switch (_selectedCategory) {
       case 'Shoes':
         return List.generate(19, (i) => (i + 30).toString());
       case 'Accessories':
         return ["Woman's One Size", "Man's One Size", 'Unisex One Size'];
       default:
-        return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+        return sizeOptionsForDepartment('All');
     }
   }
 
