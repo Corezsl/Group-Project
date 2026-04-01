@@ -75,12 +75,11 @@ class _FilterPanelState extends State<FilterPanel> {
                DropdownMenuItem(value: 'Mens', child: Text('Mens')),
              ],
              onChanged: (v) => setState(() {
-                   _department = v ?? 'All';
-                   // reset size if it's not available for the selected department
-                   if (!_sizeOptions().any((it) => it.value == _size)) {
-                     _size = 'Any';
-                   }
-                 }),
+              _department = v ?? 'All';
+              if (!_sizeOptions().any((items) => items.value == _size)) {
+                _size = 'All';
+              }
+            }),
            ),
            const SizedBox(width: 16),
            const Text('Size:', style: TextStyle(color: Colors.white)),
@@ -98,10 +97,14 @@ class _FilterPanelState extends State<FilterPanel> {
            ),
            const SizedBox(width: 8),
            TextButton(
-             onPressed: () => setState(() {
-               _department = 'All';
-               _size = 'Any';
-             }),
+             onPressed: () {
+               setState(() {
+                 _department = 'All';
+                 _size = 'All';
+               });
+               // close any open dropdowns so UI immediately reflects reset
+               FocusScope.of(context).unfocus();
+             },
              child: const Text('Clear'),
            ),
          ],
