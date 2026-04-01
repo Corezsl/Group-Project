@@ -20,6 +20,7 @@ import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
+import 'package:thryft/screens/search_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -97,6 +98,13 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/search',
+      builder: (context, state) {
+        final q = state.uri.queryParameters['q'] ?? '';
+        return SearchScreen(initialQuery: q);
+      },
     ),
     GoRoute(
       path: '/category/:name',

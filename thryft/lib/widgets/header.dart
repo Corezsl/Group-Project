@@ -62,6 +62,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                       children: [
                         Expanded(
                           child: TextField(
+                            readOnly: true,
+                            onTap: () => context.push('/search'),
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 Icons.search,
@@ -241,6 +243,8 @@ class _MobileHeader extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: TextField(
+                readOnly: true,
+                onTap: () => context.push('/search'),
                 decoration: InputDecoration(
                   prefixIcon: const Icon(
                     Icons.search,
