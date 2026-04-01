@@ -181,7 +181,7 @@ class _HeroBannerContent extends StatelessWidget {
         const SizedBox(height: 12),
         Center(
           child: TextButton(
-            onPressed: () {},
+            onPressed: () => context.push('/help-center'),
             child: const Text(
               'Learn how it works',
               style: TextStyle(
