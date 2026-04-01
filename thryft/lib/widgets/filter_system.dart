@@ -17,6 +17,11 @@ class _FilterPanelState extends State<FilterPanel> {
       case 'Womens':
         return const [
           DropdownMenuItem(value: 'All', child: Text('All')),
+          DropdownMenuItem(value: 'XS', child: Text('XS')),
+          DropdownMenuItem(value: 'S', child: Text('S')),
+          DropdownMenuItem(value: 'M', child: Text('M')),
+          DropdownMenuItem(value: 'L', child: Text('L')),
+          DropdownMenuItem(value: 'XL', child: Text('XL')),
           DropdownMenuItem(value: '6', child: Text('6')),
           DropdownMenuItem(value: '8', child: Text('8')),
           DropdownMenuItem(value: '10', child: Text('10')),
@@ -30,6 +35,11 @@ class _FilterPanelState extends State<FilterPanel> {
       case 'Mens':
         return const [
           DropdownMenuItem(value: 'All', child: Text('All')),
+          DropdownMenuItem(value: 'XS', child: Text('XS')),
+          DropdownMenuItem(value: 'S', child: Text('S')),
+          DropdownMenuItem(value: 'M', child: Text('M')),
+          DropdownMenuItem(value: 'L', child: Text('L')),
+          DropdownMenuItem(value: 'XL', child: Text('XL')),
           DropdownMenuItem(value: '28R', child: Text('28R')),
           DropdownMenuItem(value: '30R', child: Text('30R')),
           DropdownMenuItem(value: '32R', child: Text('32R')),
