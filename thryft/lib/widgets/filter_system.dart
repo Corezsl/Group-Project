@@ -19,7 +19,7 @@ class _FilterPanelState extends State<FilterPanel> {
         color: Colors.white24,
         child: Row(
           children: [
-            const Expanded(child: Text('Filters', style: TextStyle(color: Colors.white))),
+            const Text('Department:', style: TextStyle(color: Colors.white)),
             const SizedBox(width: 8),
             DropdownButton<String>(
               value: _department,
@@ -31,6 +31,8 @@ class _FilterPanelState extends State<FilterPanel> {
               ],
               onChanged: (v) => setState(() => _department = v ?? 'All'),
             ),
+            const SizedBox(width: 16),
+            const Text('Size:', style: TextStyle(color: Colors.white)),
             const SizedBox(width: 8),
             DropdownButton<String>(
               value: _size,
