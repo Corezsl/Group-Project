@@ -22,7 +22,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -36,7 +36,7 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       } else {
         final username = _usernameController.text.trim();
-        
+
         // Check if username is already taken
         final existingProfile = await Supabase.instance.client
             .from('profiles')
@@ -102,12 +102,9 @@ class _AuthScreenState extends State<AuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo centered above the form card
-              Image.asset(
-                'assets/images/thyrft_logo.png',
-                height: 48,
-              ),
+              Image.asset('assets/images/thyrft_logo.png', height: 48),
               const SizedBox(height: 32),
-              
+
               // Auth Card
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
@@ -238,7 +235,9 @@ class _AuthScreenState extends State<AuthScreen> {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Please enter your email';
                               }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value.trim())) {
                                 return 'Please enter a valid email address';
                               }
                               return null;
@@ -299,7 +298,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () {},
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
                                 child: const Text(
                                   'Forgot password?',
                                   style: TextStyle(color: Color(0xFF47A4F5)),

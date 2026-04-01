@@ -248,6 +248,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               ratings: _ratings,
               sellerId: widget.userId,
               sellerName: _profile?['username'] ?? 'Unknown Seller',
+              currentUserId:
+                  Supabase.instance.client.auth.currentUser?.id,
+              onReviewChanged: _fetchProfileAndProducts,
             ),
           ],
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
