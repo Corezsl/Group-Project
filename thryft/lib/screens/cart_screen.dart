@@ -155,34 +155,54 @@ class _CartScreenState extends State<CartScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Header(),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSortAndFilter(),
-                  const SizedBox(height: 20),
-                  const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1100),
-                      child: cart.items.isEmpty
-                          ? _buildEmptyCart(context, colorScheme)
-                          : _buildCartContent(context, cart),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Header(),
+                      const Divider(
+                          height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Column(
+                          children: [
+                            _buildSortAndFilter(),
+                            const SizedBox(height: 20),
+                            const Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Color(0xFFE5E7EB)),
+                            const SizedBox(height: 24),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 1100),
+                                child: cart.items.isEmpty
+                                    ? _buildEmptyCart(context, colorScheme)
+                                    : _buildCartContent(context, cart),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                  const Footer(),
                 ],
               ),
             ),
-            const Footer(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/utils/responsive.dart';
+import 'package:thryft/widgets/filter_system.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -22,12 +25,12 @@ class _DesktopHeader extends StatefulWidget {
 }
 
 class _DesktopHeaderState extends State<_DesktopHeader> {
-  bool _showCategories = true;
+  bool _filterActive = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      height: 108,
       color: const Color.fromARGB(255, 71, 164, 245),
       child: Center(
         child: Column(
@@ -40,15 +43,15 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 16.0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => context.go('/'),
-                      child: Image.asset(
-                        'assets/images/thyrft_logo.png',
-                        height: 60,
-                        fit: BoxFit.cover,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => context.go('/'),
+                        child: Image.asset(
+                          'assets/images/thyrft_logo.png',
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
                     ),
                   ),
                 ),
@@ -74,24 +77,27 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: const Color.fromARGB(50, 255, 255, 255),
+                              fillColor: const Color.fromARGB(
+                                50,
+                                255,
+                                255,
+                                255,
+                              ),
                             ),
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 8),
+                        // static filter icon (no interaction)
                         IconButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           icon: Icon(
-                            // show outlined when categories are visible, filled when hidden
-                            _showCategories ? Icons.filter_alt_outlined : Icons.filter_alt,
+                            _filterActive
+                                ? Icons.filter_alt
+                                : Icons.filter_alt_outlined,
                             color: Colors.white,
                           ),
-                          tooltip: 'Filters',
-                          onPressed: () {
-                            setState(() {
-                              _showCategories = !_showCategories;
-                            });
-                          },
+                          onPressed: () => setState(() => _filterActive = !_filterActive),
                         ),
                       ],
                     ),
@@ -101,6 +107,17 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      Consumer<NotificationProvider>(
+                        builder: (context, notifProvider, _) {
+                          final session =
+                              Supabase.instance.client.auth.currentSession;
+                          if (session == null) return const SizedBox.shrink();
+                          return _NotificationBadge(
+                            count: notifProvider.unreadCount,
+                            onPressed: () => context.push('/notifications'),
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.favorite_outline,
@@ -121,7 +138,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           color: Colors.white,
                         ),
                         onPressed: () {
-                          final session = Supabase.instance.client.auth.currentSession;
+                          final session =
+                              Supabase.instance.client.auth.currentSession;
                           if (session != null) {
                             context.push('/account');
                           } else {
@@ -135,61 +153,60 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 ),
               ],
             ),
-            // keep the category row's space even when hidden so header items don't move
-            Visibility(
-              visible: _showCategories,
-              maintainSize: true,
-              maintainAnimation: true,
-              maintainState: true,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Home'),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Shirts',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Trousers',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Shoes',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: null,
-                    child: const Text(
-                      'Accessories',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () => context.go('/about'),
-                    child: const Text(
-                      'About Us',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+            // reserved area: either shortcuts or filter panel
+            SizedBox(
+              height: 48,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _filterActive
+                    ? FilterPanel(
+                        key: const ValueKey('filter'),
+                        onApply: (dept) => context.push('/create-listing', extra: {'department': dept}),
+                      )
+                    : Container(
+                        key: const ValueKey('shortcuts'),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Home'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shirts'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shirts'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Trousers'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Trousers'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shoes'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Shoes'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Accessories'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('Accessories'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/about'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: const Text('About Us'),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ],
@@ -247,6 +264,17 @@ class _MobileHeader extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
+          ),
+          // Notification bell
+          Consumer<NotificationProvider>(
+            builder: (context, notifProvider, _) {
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session == null) return const SizedBox.shrink();
+              return _NotificationBadge(
+                count: notifProvider.unreadCount,
+                onPressed: () => context.push('/notifications'),
+              );
+            },
           ),
           // Cart icon
           IconButton(
@@ -316,22 +344,34 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.checkroom_outlined),
             title: const Text('Shirts'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Shirt');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.accessibility_new_outlined),
             title: const Text('Trousers'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Trousers');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.directions_walk_outlined),
             title: const Text('Shoes'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Shoes');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.watch_outlined),
             title: const Text('Accessories'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Accessories');
+            },
           ),
           const Divider(),
           ListTile(
@@ -368,10 +408,73 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.sell_outlined),
             title: const Text('Sell now'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              final session = Supabase.instance.client.auth.currentSession;
+              if (session != null) {
+                context.push('/create-listing');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'You need to be logged in to create a listing',
+                    ),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                context.push('/auth');
+              }
+            },
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Notification Badge ───────────────────────────────────────────────────────
+
+class _NotificationBadge extends StatelessWidget {
+  final int count;
+  final VoidCallback onPressed;
+
+  const _NotificationBadge({required this.count, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          onPressed: onPressed,
+        ),
+        if (count > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints:
+                    const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  count > 99 ? '99+' : count.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,6 +26,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedCondition;
   String? _selectedBrand;
   String? _selectedFitting;
+  String? _selectedDepartment;
   late final TextEditingController _priceController;
   late final TextEditingController _descriptionController;
 
@@ -41,11 +42,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
 
     if (widget.initialData != null) {
+      _selectedCategory = widget.initialData!['category'];
       _selectedSize = widget.initialData!['size'];
       _selectedBrand = widget.initialData!['brand'];
       _selectedCondition = widget.initialData!['condition'];
       _selectedFitting = widget.initialData!['fitting'];
-      // Category detection would need a mapping, but for now we'll let user re-select or add to product map
+      _selectedDepartment = widget.initialData!['department'];
     }
   }
 
@@ -81,7 +83,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   final List<String> _categories = [
     'Shirt',
-    'Pants',
+    'Trousers',
     'Dresses',
     'Shorts',
     'Shoes',
@@ -195,6 +197,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'name': _titleController.text,
         'price': newPrice,
         'size': _selectedSize ?? 'One Size',
+        'department': _selectedDepartment,
         'brand': _selectedBrand,
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
@@ -440,6 +443,26 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               _selectedSize = null;
             });
           },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedDepartment ?? 'All',
+          hint: const Text('Select a department'),
+          items: const [
+            DropdownMenuItem(value: 'All', child: Text('All')),
+            DropdownMenuItem(value: 'Womens', child: Text('Womens')),
+            DropdownMenuItem(value: 'Mens', child: Text('Mens')),
+          ],
+          onChanged: (val) => setState(() => _selectedDepartment = val),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(
