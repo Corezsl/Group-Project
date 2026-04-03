@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Screen allowing users to request a password reset email via Supabase.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -16,6 +17,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _emailSent = false;
   String? _errorMessage;
 
+  /// Validates the form and triggers the Supabase password reset process.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,6 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
+  /// Allows the user to re-trigger the reset email if not received.
   Future<void> _resendEmail() async {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(
@@ -76,6 +79,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
+  /// Disposes of the email controller to free up resources.
   @override
   void dispose() {
     _emailController.dispose();
@@ -93,6 +97,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               Image.asset('assets/images/thyrft_logo.png', height: 48),
               const SizedBox(height: 32),
+              // Main container that switches between the input form and success message.
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -117,6 +122,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
+  /// Initial UI state where users enter their email address.
   Widget _buildFormState() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -209,6 +215,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
+  /// UI state displayed after the reset email has been successfully sent.
   Widget _buildSuccessState() {
     return Column(
       mainAxisSize: MainAxisSize.min,
