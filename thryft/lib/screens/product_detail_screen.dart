@@ -66,6 +66,7 @@ class ProductDetailScreen extends StatelessWidget {
                       sellerId: product['sellerId'],
                       sellerName: product['sellerName'],
                       category: product['category'] ?? 'Other',
+                      department: product['department'] ?? 'All',
                     ),
                   );
                 },
@@ -287,6 +288,7 @@ class ProductDetailScreen extends StatelessWidget {
         condition: product['condition'] ?? '',
         imageUrl: product['imageUrl'],
         category: product['category'] ?? 'Other',
+        department: product['department'] ?? 'All',
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(

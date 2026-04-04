@@ -55,6 +55,7 @@ class CartProvider extends ChangeNotifier {
                   ? pData['profiles']['username']?.toString()
                   : null,
               category: pData['category']?.toString() ?? 'Other',
+              department: pData['department']?.toString() ?? 'All',
             );
             _items.add(CartItem(product: product));
           }

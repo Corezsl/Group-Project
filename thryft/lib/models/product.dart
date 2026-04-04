@@ -12,6 +12,7 @@ class Product {
   final String? sellerName;
   final bool isSold;
   final String category;
+  final String department;
 
   const Product({
     required this.id,
@@ -26,6 +27,7 @@ class Product {
     this.sellerId,
     this.sellerName,
     this.isSold = false,
+    required this.department,
     required this.category,
   });
 
@@ -44,5 +46,6 @@ class Product {
     if (sellerName != null) 'sellerName': sellerName!,
     'is_sold': isSold.toString(),
     'category': category,
+    'department': department,
   };
 }

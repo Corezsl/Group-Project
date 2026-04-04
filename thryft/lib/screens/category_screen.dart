@@ -51,6 +51,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       condition: data['condition'].toString(),
       imageUrl: data['image_url']?.toString(),
       sellerId: data['user_id']?.toString(),
+      department: data['department']?.toString() ?? 'All',
       sellerName: data['profiles'] != null
           ? data['profiles']['username']?.toString()
           : null,

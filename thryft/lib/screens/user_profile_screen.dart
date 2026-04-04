@@ -80,6 +80,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               sellerId: widget.userId,
               sellerName: profileData['username']?.toString(),
               isSold: false,
+              department: data['department']?.toString() ?? 'All',
               category: data['category']?.toString() ?? 'Other',
             ),
           )

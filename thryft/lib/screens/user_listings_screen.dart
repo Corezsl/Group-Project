@@ -44,6 +44,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       sellerId: data['user_id']?.toString(),
       sellerName: data['profiles'] != null ? data['profiles']['username']?.toString() : null,
       isSold: data['is_sold'] == true,
+      department: data['department']?.toString() ?? 'All',
       category: data['category']?.toString() ?? 'Other',
     )).toList();
   }

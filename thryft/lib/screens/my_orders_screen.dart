@@ -61,6 +61,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                   : null,
               isSold: data['is_sold'] == true,
               category: data['category']?.toString() ?? 'Other',
+              department: data['department']?.toString() ?? 'All',
             ),
           )
           .toList();
