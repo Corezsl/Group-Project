@@ -242,7 +242,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
-        if (oldPrice != null && newPrice != oldPrice) {
+        if (oldPrice != null && newPrice != oldPrice && oldPrice > newPrice) {
           productData['original_price'] = oldPrice;
         }
 

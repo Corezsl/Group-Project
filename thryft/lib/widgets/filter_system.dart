@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/size_options.dart';
 
+const List<String> brandOptions = [
+    'Nike',
+    'Adidas',
+    'Puma',
+    'Reebok',
+    'Under Armour',
+    'New Balance',
+    'Asics',
+    'Vans',
+    'Converse',
+    'Jordan',
+    'Fila',
+    'Skechers',
+    'Brooks',
+    'Saucony',
+    'Mizuno',
+    'Hoka One One',
+    'Salomon',
+    'Merrell',
+    'Columbia',
+    'The North Face',
+    'Patagonia',
+    'Other',
+  ];
+
+
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
   final ValueChanged<Map<String, String>>? onApply;
@@ -12,6 +38,7 @@ class FilterPanel extends StatefulWidget {
 class _FilterPanelState extends State<FilterPanel> {
   String _department = 'All';
   String _size = 'All';
+  String _brands = 'All';
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +75,17 @@ class _FilterPanelState extends State<FilterPanel> {
             onChanged: (v) => setState(() => _size = v ?? 'All'),
           ),
           const SizedBox(width: 12),
+          const Text('Brand:', style: TextStyle(color: Colors.white)),
+          const SizedBox(width: 8),
+          DropdownButton<String>(
+            value: _brands,
+            underline: const SizedBox.shrink(),
+            items: (['All', ...brandOptions]).map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+            onChanged: (z) => setState(() => _brands = z ?? 'All'),
+          ),
+          const SizedBox(width: 16),
           TextButton(
-            onPressed: () => widget.onApply?.call({'department': _department, 'size': _size}),
+            onPressed: () => widget.onApply?.call({'department': _department, 'size': _size, 'brand': _brands}),
             child: const Text('Apply'),
           ),
           const SizedBox(width: 8),
@@ -58,6 +94,7 @@ class _FilterPanelState extends State<FilterPanel> {
               setState(() {
                 _department = 'All';
                 _size = 'All';
+                _brands = 'All';
               });
               // close any open dropdowns so UI immediately reflects reset
               FocusScope.of(context).unfocus();
