@@ -61,8 +61,21 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedBrand = data['brand']?.toString();
       _selectedCondition = data['condition']?.toString();
       _selectedFitting = data['fitting']?.toString();
-      _selectedDepartment = data['department']?.toString();
+      // Use normalized department so it matches dropdown items
+      _selectedDepartment = _normalizeDepartment(data['department']?.toString());
     }
+  }
+
+  // Helper to map incoming department variants to the dropdown values
+  String? _normalizeDepartment(String? input) {
+    if (input == null) return null;
+    final lower = input.trim().toLowerCase();
+    if (lower.isEmpty) return null;
+    if (lower == 'all') return 'All';
+    if (lower.contains('women')) return 'Womens';
+    if (lower.contains('men')) return 'Mens';
+    // Fallback: title-case the value so it more likely matches an item
+    return input[0].toUpperCase() + input.substring(1);
   }
 
   final List<XFile?> _images = List.filled(5, null);
@@ -475,12 +488,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 6),
         Builder(builder: (context) {
           const deptItems = ['All', 'Womens', 'Mens'];
-          final safeDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
+          // Use the stored _selectedDepartment as the controlled value,
+          // but only if it matches one of the dropdown items.
+          final validDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
               ? _selectedDepartment
-              : 'All';
+              : null;
 
           return DropdownButtonFormField<String>(
-            initialValue: safeDept,
+            value: validDept,
             hint: const Text('Select a department'),
             items: const [
               DropdownMenuItem(value: 'All', child: Text('All')),
