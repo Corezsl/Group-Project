@@ -26,6 +26,14 @@ const List<String> brandOptions = [
     'Other',
   ];
 
+  const List<String> _conditionOptions = [
+    'New with tags',
+    'New without tags',
+    'Very good',
+    'Good',
+    'Okay',
+    'Worn',
+  ];
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
@@ -39,6 +47,7 @@ class _FilterPanelState extends State<FilterPanel> {
   String _department = 'All';
   String _size = 'All';
   String _brands = 'All';
+  String _condition = 'All';
 
   @override
   Widget build(BuildContext context) {
@@ -83,9 +92,17 @@ class _FilterPanelState extends State<FilterPanel> {
             items: (['All', ...brandOptions]).map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
             onChanged: (z) => setState(() => _brands = z ?? 'All'),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
+          const Text('Condition:', style: TextStyle(color: Colors.white)),
+          const SizedBox(width: 8),
+          DropdownButton<String>(
+            value: _condition,
+            items: (['All', ..._conditionOptions]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (y) => setState(() => _condition = y ?? 'All')
+            ),
+          const SizedBox(width: 8),
           TextButton(
-            onPressed: () => widget.onApply?.call({'department': _department, 'size': _size, 'brand': _brands}),
+            onPressed: () => widget.onApply?.call({'department': _department, 'size': _size, 'brand': _brands, 'condition': _condition}),
             child: const Text('Apply'),
           ),
           const SizedBox(width: 8),
@@ -95,6 +112,7 @@ class _FilterPanelState extends State<FilterPanel> {
                 _department = 'All';
                 _size = 'All';
                 _brands = 'All';
+                _condition = 'All';
               });
               // close any open dropdowns so UI immediately reflects reset
               FocusScope.of(context).unfocus();
