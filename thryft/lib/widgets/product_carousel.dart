@@ -64,6 +64,8 @@ class _ProductCarouselState extends State<ProductCarousel> {
             isSold: data['is_sold'] == true,
             category: data['category']?.toString() ?? 'Other',
             department: data['department']?.toString() ?? 'All',
+            material: data['material'].toString(),
+            colour: data['colour'].toString(),
           ),
         )
         .toList();
