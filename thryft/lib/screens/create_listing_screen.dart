@@ -28,6 +28,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedBrand;
   String? _selectedFitting;
   String? _selectedDepartment;
+  String? _selectedMaterial;
+  String? _selectedColour;
   late final TextEditingController _priceController;
   late final TextEditingController _descriptionController;
 
@@ -61,6 +63,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedBrand = data['brand']?.toString();
       _selectedCondition = data['condition']?.toString();
       _selectedFitting = data['fitting']?.toString();
+      _selectedMaterial = data['material']?.toString();
+      _selectedColour = data['colour']?.toString();
       // Use normalized department so it matches dropdown items
       _selectedDepartment = _normalizeDepartment(data['department']?.toString());
     }
@@ -80,6 +84,35 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
+
+  final List<String> _materials = [
+    'Cotton',
+    'Polyester',
+    'Wool',
+    'Silk',
+    'Denim',
+    'Leather',
+    'Linen',
+    'Rayon',
+    'Nylon',
+    'Acrylic',
+    'Other',
+  ];
+
+  final List<String> _colours = [
+    'Black',
+    'White',
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Purple',
+    'Pink',
+    'Brown',
+    'Grey',
+    'Orange',
+    'Other',
+  ];
 
   final List<String> _fittings = ['Slim', 'Regular', 'Loose'];
 
@@ -164,6 +197,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (_titleController.text.isEmpty ||
         _selectedCondition == null ||
         _selectedBrand == null ||
+        _selectedDepartment == null ||
+        _selectedMaterial == null ||
+        _selectedColour == null ||
         _priceController.text.isEmpty ||
         (widget.initialData == null && _images[0] == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -232,6 +268,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'image_url': publicImageUrl,
         'category': _selectedCategory,
         'fitting': _selectedFitting,
+        'material' : _selectedMaterial,
+        'colour' : _selectedColour, 
         'description': _descriptionController.text.isNotEmpty
             ? _descriptionController.text
             : null,
@@ -289,6 +327,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedCondition = null;
       _selectedBrand = null;
       _selectedFitting = null;
+      _selectedDepartment = null;
+      _selectedMaterial = null;
+      _selectedColour = null;
       _images.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
@@ -600,6 +641,50 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             hint: const Text('Select a fitting'),
             items: _fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
             onChanged: (val) => setState(() => _selectedFitting = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Material (Optional)', style: TextStyle(fontWeight: FontWeight.w600)
+        ),
+        Builder(builder: (context) {
+          // defensive copy / null-safety: ensure we always work with a List<String>
+          final List<String> materialsList = _materials;
+          final safeMaterial = _selectedMaterial != null && materialsList.contains(_selectedMaterial)
+              ? _selectedMaterial
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeMaterial,
+            hint: const Text('Select a material'),
+            items: materialsList.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+            onChanged: (val) => setState(() => _selectedMaterial = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Colour (Optional)', style: TextStyle(fontWeight: FontWeight.w600)),
+        Builder(builder: (context) {
+          final List<String> coloursList = _colours;
+          final safeColour = _selectedColour != null && coloursList.contains(_selectedColour)
+              ? _selectedColour
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeColour,
+            hint: const Text('Select a colour'),
+            items: coloursList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (val) => setState(() => _selectedColour = val),
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               contentPadding: const EdgeInsets.symmetric(
