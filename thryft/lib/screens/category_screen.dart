@@ -52,6 +52,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
       imageUrl: data['image_url']?.toString(),
       sellerId: data['user_id']?.toString(),
       department: data['department']?.toString() ?? 'All',
+      material: data['material'].toString(),
+      colour: data['colour'].toString(),
       sellerName: data['profiles'] != null
           ? data['profiles']['username']?.toString()
           : null,

@@ -59,6 +59,8 @@ class WishlistProvider extends ChangeNotifier {
             isSold: pData['is_sold'] == true,
             category: pData['category']?.toString() ?? 'Other',
             department: pData['department']?.toString() ?? 'All',
+            material: pData['material'].toString(),
+            colour: pData['colour'].toString(),
           );
           return WishlistItem(
             product: p,

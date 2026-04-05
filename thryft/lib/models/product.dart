@@ -13,6 +13,8 @@ class Product {
   final bool isSold;
   final String category;
   final String department;
+  final String material;
+  final String colour;
 
   const Product({
     required this.id,
@@ -29,6 +31,8 @@ class Product {
     this.isSold = false,
     required this.department,
     required this.category,
+    required this.material,
+    required this.colour,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -47,5 +51,7 @@ class Product {
     'is_sold': isSold.toString(),
     'category': category,
     'department': department,
+    'material': material,
+    'colour': colour,
   };
 }

@@ -82,6 +82,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               isSold: false,
               department: data['department']?.toString() ?? 'All',
               category: data['category']?.toString() ?? 'Other',
+              material: data['material'].toString(),
+              colour: data['colour'].toString(),
             ),
           )
           .toList();

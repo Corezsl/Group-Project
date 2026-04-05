@@ -67,6 +67,8 @@ class ProductDetailScreen extends StatelessWidget {
                       sellerName: product['sellerName'],
                       category: product['category'] ?? 'Other',
                       department: product['department'] ?? 'All',
+                      material: product['material'] ?? '',
+                      colour: product['colour'] ?? '',
                     ),
                   );
                 },
@@ -289,6 +291,8 @@ class ProductDetailScreen extends StatelessWidget {
         imageUrl: product['imageUrl'],
         category: product['category'] ?? 'Other',
         department: product['department'] ?? 'All',
+        material: product['material'] ?? '',
+        colour: product['colour'] ?? '',
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(
