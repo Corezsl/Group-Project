@@ -28,6 +28,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedBrand;
   String? _selectedFitting;
   String? _selectedDepartment;
+  String? _selectedMaterial;
+  String? _selectedColour;
   late final TextEditingController _priceController;
   late final TextEditingController _descriptionController;
 
@@ -61,12 +63,56 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedBrand = data['brand']?.toString();
       _selectedCondition = data['condition']?.toString();
       _selectedFitting = data['fitting']?.toString();
-      _selectedDepartment = data['department']?.toString();
+      _selectedMaterial = data['material']?.toString();
+      _selectedColour = data['colour']?.toString();
+      // Use normalized department so it matches dropdown items
+      _selectedDepartment = _normalizeDepartment(data['department']?.toString());
     }
+  }
+
+  // Helper to map incoming department variants to the dropdown values
+  String? _normalizeDepartment(String? input) {
+    if (input == null) return null;
+    final lower = input.trim().toLowerCase();
+    if (lower.isEmpty) return null;
+    if (lower == 'all') return 'All';
+    if (lower.contains('women')) return 'Womens';
+    if (lower.contains('men')) return 'Mens';
+    // Fallback: title-case the value so it more likely matches an item
+    return input[0].toUpperCase() + input.substring(1);
   }
 
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
+
+  final List<String> _materials = [
+    'Cotton',
+    'Polyester',
+    'Wool',
+    'Silk',
+    'Denim',
+    'Leather',
+    'Linen',
+    'Rayon',
+    'Nylon',
+    'Acrylic',
+    'Other',
+  ];
+
+  final List<String> _colours = [
+    'Black',
+    'White',
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Purple',
+    'Pink',
+    'Brown',
+    'Grey',
+    'Orange',
+    'Other',
+  ];
 
   final List<String> _fittings = ['Slim', 'Regular', 'Loose'];
 
@@ -151,6 +197,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (_titleController.text.isEmpty ||
         _selectedCondition == null ||
         _selectedBrand == null ||
+        _selectedDepartment == null ||
+        _selectedMaterial == null ||
+        _selectedColour == null ||
         _priceController.text.isEmpty ||
         (widget.initialData == null && _images[0] == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,10 +216,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
 
     final double? parsedPrice = double.tryParse(_priceController.text);
-    if (parsedPrice == null || parsedPrice <= 0) {
+    if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid price greater than 0.'),
+          content: Text('Please enter a valid price greater than 0 or less than 10000.'),
         ),
       );
       return;
@@ -219,6 +268,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'image_url': publicImageUrl,
         'category': _selectedCategory,
         'fitting': _selectedFitting,
+        'material' : _selectedMaterial,
+        'colour' : _selectedColour, 
         'description': _descriptionController.text.isNotEmpty
             ? _descriptionController.text
             : null,
@@ -229,7 +280,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
-        if (oldPrice != null && newPrice != oldPrice) {
+        if (oldPrice != null && newPrice != oldPrice && oldPrice > newPrice) {
           productData['original_price'] = oldPrice;
         }
 
@@ -276,6 +327,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedCondition = null;
       _selectedBrand = null;
       _selectedFitting = null;
+      _selectedDepartment = null;
+      _selectedMaterial = null;
+      _selectedColour = null;
       _images.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
@@ -475,12 +529,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 6),
         Builder(builder: (context) {
           const deptItems = ['All', 'Womens', 'Mens'];
-          final safeDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
+          // Use the stored _selectedDepartment as the controlled value,
+          // but only if it matches one of the dropdown items.
+          final validDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
               ? _selectedDepartment
-              : 'All';
+              : null;
 
           return DropdownButtonFormField<String>(
-            initialValue: safeDept,
+            value: validDept,
             hint: const Text('Select a department'),
             items: const [
               DropdownMenuItem(value: 'All', child: Text('All')),
@@ -585,6 +641,50 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             hint: const Text('Select a fitting'),
             items: _fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
             onChanged: (val) => setState(() => _selectedFitting = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Material (Optional)', style: TextStyle(fontWeight: FontWeight.w600)
+        ),
+        Builder(builder: (context) {
+          // defensive copy / null-safety: ensure we always work with a List<String>
+          final List<String> materialsList = _materials;
+          final safeMaterial = _selectedMaterial != null && materialsList.contains(_selectedMaterial)
+              ? _selectedMaterial
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeMaterial,
+            hint: const Text('Select a material'),
+            items: materialsList.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+            onChanged: (val) => setState(() => _selectedMaterial = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Colour (Optional)', style: TextStyle(fontWeight: FontWeight.w600)),
+        Builder(builder: (context) {
+          final List<String> coloursList = _colours;
+          final safeColour = _selectedColour != null && coloursList.contains(_selectedColour)
+              ? _selectedColour
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeColour,
+            hint: const Text('Select a colour'),
+            items: coloursList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (val) => setState(() => _selectedColour = val),
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               contentPadding: const EdgeInsets.symmetric(
