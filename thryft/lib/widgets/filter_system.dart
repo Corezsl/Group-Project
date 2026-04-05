@@ -50,6 +50,20 @@ class _FilterPanelState extends State<FilterPanel> {
   String _condition = 'All';
   String _fitting = 'All';
 
+  // New: controller for the price input
+  final TextEditingController _priceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Makes the filter panel horizontally scrollable for future controls addition.
@@ -133,11 +147,31 @@ class _FilterPanelState extends State<FilterPanel> {
                 onChanged: (x) => setState(() => _fitting = x ?? 'All'),
               ),
 
+                            // New Price input
+              const Text('Price:', style: TextStyle(color: Colors.white)),
+              SizedBox(
+                width: 120,
+                child: TextField(
+                  controller: _priceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: 'Enter Max price',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(6))),
+                  ),
+                  onChanged: (_) => setState(() {}), // keep UI reactive if needed
+                ),
+              ),
+
               TextButton(
                 onPressed: () => widget.onApply?.call({
                   'department': _department,
                   'size': _size,
                   'brand': _brands,
+                  'price': _priceController.text.trim(), // include price
                   'condition': _condition,
                   'fitting': _fitting,
                 }),
@@ -152,6 +186,7 @@ class _FilterPanelState extends State<FilterPanel> {
                     _brands = 'All';
                     _condition = 'All';
                     _fitting = 'All';
+                    _priceController.clear(); // clear price input
                   });
                   // close any open dropdowns so UI immediately reflects reset
                   FocusScope.of(context).unfocus();
