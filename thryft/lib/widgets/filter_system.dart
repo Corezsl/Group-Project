@@ -49,6 +49,21 @@ const List<String> brandOptions = [
     'Other',
   ];
 
+  const List<String> _colourOptions = [
+    'Black',
+    'White',
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Purple',
+    'Pink',
+    'Brown',
+    'Grey',
+    'Orange',
+    'Other',
+  ];
+
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
   final ValueChanged<Map<String, String>>? onApply;
@@ -63,6 +78,8 @@ class _FilterPanelState extends State<FilterPanel> {
   String _brands = 'All';
   String _condition = 'All';
   String _fitting = 'All';
+  String _material = 'All';
+  String _colour = 'All';
 
   // Controller for price input field to manage its state and clear it when needed
   final TextEditingController _priceController = TextEditingController();
@@ -181,14 +198,25 @@ class _FilterPanelState extends State<FilterPanel> {
                   ),
                 ),
 
-                const Text('material:', style: TextStyle(color: Colors.white)),
+                const Text('Material:', style: TextStyle(color: Colors.white)),
                 DropdownButton<String>(
-                  value: 'All',
+                  value: _material,
                   isDense: true,
                   underline: const SizedBox.shrink(),
                   items: (['All', ..._materialsOptions]).map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                  onChanged: (materials) => setState(() => materials ?? 'All'),
+                  onChanged: (materials) => setState(() => _material = materials ?? 'All'),
                 ),
+
+                const Text('Color:', style: TextStyle(color: Colors.white)),
+                DropdownButton<String>(
+                  value: _colour,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: (['All', ..._colourOptions]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (color) => setState(() => _colour = color ?? 'All'),
+                ),
+
+
                 TextButton(
                   onPressed: () => widget.onApply?.call({
                     'department': _department,
@@ -197,6 +225,8 @@ class _FilterPanelState extends State<FilterPanel> {
                     'price': _priceController.text.trim(),
                     'condition': _condition,
                     'fitting': _fitting,
+                    'material': _material,
+                    'colour': _colour,
                   }),
                   child: const Text('Apply'),
                 ),
@@ -210,6 +240,8 @@ class _FilterPanelState extends State<FilterPanel> {
                       _condition = 'All';
                       _fitting = 'All';
                       _priceController.clear();
+                      _material = 'All';
+                      _colour = 'All';
                     });
                     // close any open dropdowns so UI immediately reflects reset
                     FocusScope.of(context).unfocus();
