@@ -12,7 +12,9 @@ class Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Responsive.isMobile(context) ? const _MobileHeader() : const _DesktopHeader();
+    return Responsive.isMobile(context)
+        ? const _MobileHeader()
+        : const _DesktopHeader();
   }
 }
 
@@ -118,15 +120,19 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               textInputAction: TextInputAction.search,
-                              onChanged: (v) =>
-                                  context.read<SearchProvider>().onQueryChanged(v),
+                              onChanged: (v) => context
+                                  .read<SearchProvider>()
+                                  .onQueryChanged(v),
                               onSubmitted: (v) {
                                 final q = v.trim();
                                 if (q.isNotEmpty) {
-                                  context.read<SearchProvider>().submitSearch(q);
+                                  context.read<SearchProvider>().submitSearch(
+                                    q,
+                                  );
                                   _searchFocusNode.unfocus();
                                   context.push(
-                                      '/search?q=${Uri.encodeComponent(q)}');
+                                    '/search?q=${Uri.encodeComponent(q)}',
+                                  );
                                 }
                               },
                               decoration: InputDecoration(
@@ -135,8 +141,9 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                                   color: Colors.white,
                                 ),
                                 hintText: 'Search',
-                                hintStyle:
-                                    const TextStyle(color: Colors.white70),
+                                hintStyle: const TextStyle(
+                                  color: Colors.white70,
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 8,
@@ -145,8 +152,12 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                                   borderSide: BorderSide.none,
                                 ),
                                 filled: true,
-                                fillColor:
-                                    const Color.fromARGB(50, 255, 255, 255),
+                                fillColor: const Color.fromARGB(
+                                  50,
+                                  255,
+                                  255,
+                                  255,
+                                ),
                               ),
                               style: const TextStyle(color: Colors.white),
                             ),
@@ -154,8 +165,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 4.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           icon: Icon(
                             _filterActive
                                 ? Icons.filter_alt
@@ -227,8 +237,10 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 child: _filterActive
                     ? FilterPanel(
                         key: const ValueKey('filter'),
-                        onApply: (dept) => context.push('/create-listing',
-                            extra: {'department': dept}),
+                        onApply: (dept) => context.push(
+                          '/create-listing',
+                          extra: {'department': dept},
+                        ),
                       )
                     : Container(
                         key: const ValueKey('shortcuts'),
@@ -239,31 +251,32 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                             TextButton(
                               onPressed: () => context.go('/'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Home'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () =>
-                                  context.go('/category/Shirts'),
+                              onPressed: () => context.go('/category/Shirts'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Shirts'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () =>
-                                  context.go('/category/Trousers'),
+                              onPressed: () => context.go('/category/Trousers'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Trousers'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () =>
-                                  context.go('/category/Shoes'),
+                              onPressed: () => context.go('/category/Shoes'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Shoes'),
                             ),
                             const SizedBox(width: 12),
@@ -271,14 +284,16 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                               onPressed: () =>
                                   context.go('/category/Accessories'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Accessories'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
                               onPressed: () => context.go('/about'),
                               style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white),
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('About Us'),
                             ),
                           ],
@@ -408,7 +423,8 @@ class _MobileHeaderState extends State<_MobileHeader> {
                       vertical: 6,
                     ),
                     border: const OutlineInputBorder(
-                        borderSide: BorderSide.none),
+                      borderSide: BorderSide.none,
+                    ),
                     filled: true,
                     fillColor: const Color.fromARGB(50, 255, 255, 255),
                     isDense: true,
@@ -431,8 +447,7 @@ class _MobileHeaderState extends State<_MobileHeader> {
           ),
           // Cart icon
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined,
-                color: Colors.white),
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
             onPressed: () => context.push('/cart'),
           ),
           IconButton(
@@ -528,7 +543,9 @@ class _SearchDropdown extends StatelessWidget {
                           child: Text(
                             'No results for "${provider.query}"',
                             style: TextStyle(
-                                color: Colors.grey[600], fontSize: 14),
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
                           ),
                         );
                       }
@@ -565,30 +582,33 @@ class _SearchDropdown extends StatelessWidget {
             children: [
               const Text(
                 'Recent searches',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
               TextButton(
                 onPressed: provider.clearRecentSearches,
                 style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                child: const Text('Clear all',
-                    style: TextStyle(fontSize: 12)),
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Clear all', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
         ),
-        ...provider.recentSearches.take(5).map(
+        ...provider.recentSearches
+            .take(5)
+            .map(
               (q) => ListTile(
                 dense: true,
-                leading: const Icon(Icons.history,
-                    size: 18, color: Colors.grey),
+                leading: const Icon(
+                  Icons.history,
+                  size: 18,
+                  color: Colors.grey,
+                ),
                 title: Text(q, style: const TextStyle(fontSize: 14)),
                 trailing: IconButton(
-                  icon: const Icon(Icons.close,
-                      size: 16, color: Colors.grey),
+                  icon: const Icon(Icons.close, size: 16, color: Colors.grey),
                   onPressed: () => provider.removeRecentSearch(q),
                 ),
                 onTap: () {
@@ -620,13 +640,17 @@ class _SearchDropdown extends StatelessWidget {
                         product.imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
-                            Icons.image_not_supported,
-                            size: 24,
-                            color: Colors.grey),
+                          Icons.image_not_supported,
+                          size: 24,
+                          color: Colors.grey,
+                        ),
                       ),
                     )
-                  : const Icon(Icons.image_not_supported,
-                      size: 24, color: Colors.grey),
+                  : const Icon(
+                      Icons.image_not_supported,
+                      size: 24,
+                      color: Colors.grey,
+                    ),
             ),
             title: Text(
               product.name,
@@ -654,11 +678,13 @@ class _SearchDropdown extends StatelessWidget {
             title: Text(
               'See all ${provider.results.length} results for '
               '"${provider.query}"',
-              style: const TextStyle(
-                  fontSize: 13, color: _brandBlue),
+              style: const TextStyle(fontSize: 13, color: _brandBlue),
             ),
-            trailing: const Icon(Icons.arrow_forward_ios,
-                size: 14, color: _brandBlue),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: _brandBlue,
+            ),
             onTap: () {
               final q = provider.query;
               provider.submitSearch(q);
@@ -827,8 +853,7 @@ class _NotificationBadge extends StatelessWidget {
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),
-                constraints:
-                    const BoxConstraints(minWidth: 16, minHeight: 16),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 child: Text(
                   count > 99 ? '99+' : count.toString(),
                   style: const TextStyle(
