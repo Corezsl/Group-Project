@@ -483,8 +483,6 @@ class _SearchDropdown extends StatelessWidget {
   final VoidCallback onDismiss;
   final VoidCallback onNavigate;
 
-  static const _brandBlue = Color.fromARGB(255, 71, 164, 245);
-
   const _SearchDropdown({
     required this.layerLink,
     required this.controller,
@@ -671,28 +669,7 @@ class _SearchDropdown extends StatelessWidget {
             },
           ),
         ),
-        if (provider.results.length > 0) ...[
-          const Divider(height: 1),
-          ListTile(
-            dense: true,
-            title: Text(
-              'See all ${provider.results.length} results for '
-              '"${provider.query}"',
-              style: const TextStyle(fontSize: 13, color: _brandBlue),
-            ),
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: _brandBlue,
-            ),
-            onTap: () {
-              final q = provider.query;
-              provider.submitSearch(q);
-              onDismiss();
-              context.push('/search?q=${Uri.encodeComponent(q)}');
-            },
-          ),
-        ],
+
       ],
     );
   }
