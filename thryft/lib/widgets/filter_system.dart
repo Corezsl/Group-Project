@@ -1,69 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/size_options.dart';
 
-const List<String> brandOptions = [
-  'Nike',
-  'Adidas',
-  'Puma',
-  'Reebok',
-  'Under Armour',
-  'New Balance',
-  'Asics',
-  'Vans',
-  'Converse',
-  'Jordan',
-  'Fila',
-  'Skechers',
-  'Brooks',
-  'Saucony',
-  'Mizuno',
-  'Hoka One One',
-  'Salomon',
-  'Merrell',
-  'Columbia',
-  'The North Face',
-  'Patagonia',
-  'Other',
-];
-
-const List<String> _conditionOptions = [
-  'New with tags',
-  'New without tags',
-  'Very good',
-  'Good',
-  'Okay',
-  'Worn',
-];
-
-const List<String> _materialsOptions = [
-  'Cotton',
-  'Polyester',
-  'Wool',
-  'Silk',
-  'Denim',
-  'Leather',
-  'Linen',
-  'Rayon',
-  'Nylon',
-  'Acrylic',
-  'Other',
-];
-
-const List<String> _colourOptions = [
-  'Black',
-  'White',
-  'Red',
-  'Blue',
-  'Green',
-  'Yellow',
-  'Purple',
-  'Pink',
-  'Brown',
-  'Grey',
-  'Orange',
-  'Other',
-];
-
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
   final ValueChanged<Map<String, String>>? onApply;
@@ -95,9 +32,8 @@ class _FilterPanelState extends State<FilterPanel> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      height: 72, 
+      height: 72,
       color: Colors.white24,
-      // Scrollbar Aligned to the top edge of the container
       alignment: Alignment.topCenter,
       child: Scrollbar(
         controller: _scrollController,
@@ -121,9 +57,9 @@ class _FilterPanelState extends State<FilterPanel> {
                   spacing: 12,
                   runSpacing: 6,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: const Text('Department:', style: TextStyle(color: Colors.white)),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4),
+                      child: Text('Department:', style: TextStyle(color: Colors.white)),
                     ),
                     DropdownButton<String>(
                       value: _department,
@@ -147,7 +83,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _size,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: sizeOptionsForDepartment(_department).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      items: getSizeOptions(department: _department).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                       onChanged: (v) => setState(() => _size = v ?? 'All'),
                     ),
 
@@ -156,7 +92,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _brands,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: (['All', ...brandOptions]).map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                      items: (['All', ...brands]).map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                       onChanged: (z) => setState(() => _brands = z ?? 'All'),
                     ),
 
@@ -165,7 +101,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _condition,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: (['All', ..._conditionOptions]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      items: (['All', ...conditions]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                       onChanged: (y) => setState(() => _condition = y ?? 'All'),
                     ),
 
@@ -174,12 +110,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _fitting,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: const [
-                        DropdownMenuItem(value: 'All', child: Text('All')),
-                        DropdownMenuItem(value: 'Slim', child: Text('Slim')),
-                        DropdownMenuItem(value: 'Regular', child: Text('Regular')),
-                        DropdownMenuItem(value: 'Loose', child: Text('Loose')),
-                      ],
+                      items: (['All', ...fittings]).map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
                       onChanged: (x) => setState(() => _fitting = x ?? 'All'),
                     ),
 
@@ -206,7 +137,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _material,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: (['All', ..._materialsOptions]).map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                      items: (['All', ...materials]).map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                       onChanged: (materials) => setState(() => _material = materials ?? 'All'),
                     ),
 
@@ -215,7 +146,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       value: _colour,
                       isDense: true,
                       underline: const SizedBox.shrink(),
-                      items: (['All', ..._colourOptions]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      items: (['All', ...colours]).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                       onChanged: (color) => setState(() => _colour = color ?? 'All'),
                     ),
 
