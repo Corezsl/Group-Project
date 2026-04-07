@@ -88,6 +88,19 @@ const List<String> categories = [
   'Accessories',
 ];
 
+const List<String> priceRanges = [
+  'Under £25',
+  '£25 - £50',
+  '£50 - £100',
+  '£100 - £250',
+  'Over £250',
+];
+
+const List<String> dateSortOptions = [
+  'Newest First',
+  'Oldest First',
+];
+
 // helper that mirrors previous _currentSizes logic but is stateless and reusable
 List<String> getSizeOptions({String? department, String? category}) {
   if (category == 'Shoes') {
