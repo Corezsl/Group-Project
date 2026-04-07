@@ -161,7 +161,9 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 child: _filterActive
                     ? FilterPanel(
                         key: const ValueKey('filter'),
-                        onApply: (dept) => context.push('/create-listing', extra: {'department': dept}),
+                        onApply: (filters) {
+                          setState(() => _filterActive = false);
+                        },
                       )
                     : Container(
                         key: const ValueKey('shortcuts'),

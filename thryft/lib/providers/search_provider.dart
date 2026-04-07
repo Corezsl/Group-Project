@@ -184,6 +184,9 @@ class SearchProvider extends ChangeNotifier {
           createdAt: row['created_at'] != null
               ? DateTime.tryParse(row['created_at'].toString())
               : null,
+          department: row['department']?.toString() ?? 'All',
+          material: row['material'].toString(),
+          colour: row['colour'].toString()
         );
       }).toList();
 

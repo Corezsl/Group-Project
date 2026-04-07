@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/utils/size_options.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -27,32 +28,91 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _selectedBrand;
   String? _selectedFitting;
   String? _selectedDepartment;
+  String? _selectedMaterial;
+  String? _selectedColour;
   late final TextEditingController _priceController;
   late final TextEditingController _descriptionController;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.initialData?['name']);
-    _priceController = TextEditingController(
-      text: widget.initialData?['price']?.toString(),
-    );
-    _descriptionController = TextEditingController(
-      text: widget.initialData?['description'],
-    );
-
+    // Normalize incoming initialData to avoid type mismatches (int vs String)
+    Map<String, dynamic>? data;
     if (widget.initialData != null) {
-      _selectedCategory = widget.initialData!['category'];
-      _selectedSize = widget.initialData!['size'];
-      _selectedBrand = widget.initialData!['brand'];
-      _selectedCondition = widget.initialData!['condition'];
-      _selectedFitting = widget.initialData!['fitting'];
-      _selectedDepartment = widget.initialData!['department'];
+      data = Map<String, dynamic>.from(widget.initialData!);
+
+      // map common snake_case DB names to camelCase if needed
+      if (data['image_url'] != null && data['imageUrl'] == null) {
+        data['imageUrl'] = data['image_url'];
+      }
+      if (data['original_price'] != null && data['originalPrice'] == null) {
+        data['originalPrice'] = data['original_price'];
+      }
     }
+
+    _titleController = TextEditingController(text: data?['name']?.toString());
+
+    final priceVal = data?['price'];
+    _priceController = TextEditingController(text: priceVal != null ? priceVal.toString() : '');
+
+    _descriptionController = TextEditingController(text: data?['description']?.toString());
+
+    if (data != null) {
+      _selectedCategory = data['category']?.toString();
+      _selectedSize = data['size']?.toString();
+      _selectedBrand = data['brand']?.toString();
+      _selectedCondition = data['condition']?.toString();
+      _selectedFitting = data['fitting']?.toString();
+      _selectedMaterial = data['material']?.toString();
+      _selectedColour = data['colour']?.toString();
+      // Use normalized department so it matches dropdown items
+      _selectedDepartment = _normalizeDepartment(data['department']?.toString());
+    }
+  }
+
+  // Helper to map incoming department variants to the dropdown values
+  String? _normalizeDepartment(String? input) {
+    if (input == null) return null;
+    final lower = input.trim().toLowerCase();
+    if (lower.isEmpty) return null;
+    if (lower == 'all') return 'All';
+    if (lower.contains('women')) return 'Womens';
+    if (lower.contains('men')) return 'Mens';
+    // Fallback: title-case the value so it more likely matches an item
+    return input[0].toUpperCase() + input.substring(1);
   }
 
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
+
+  final List<String> _materials = [
+    'Cotton',
+    'Polyester',
+    'Wool',
+    'Silk',
+    'Denim',
+    'Leather',
+    'Linen',
+    'Rayon',
+    'Nylon',
+    'Acrylic',
+    'Other',
+  ];
+
+  final List<String> _colours = [
+    'Black',
+    'White',
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Purple',
+    'Pink',
+    'Brown',
+    'Grey',
+    'Orange',
+    'Other',
+  ];
 
   final List<String> _fittings = ['Slim', 'Regular', 'Loose'];
 
@@ -91,13 +151,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   ];
 
   List<String> get _currentSizes {
+    final dept = _selectedDepartment ?? 'All';
+    if (dept != 'All') return sizeOptionsForDepartment(dept);
     switch (_selectedCategory) {
       case 'Shoes':
         return List.generate(19, (i) => (i + 30).toString());
       case 'Accessories':
         return ["Woman's One Size", "Man's One Size", 'Unisex One Size'];
       default:
-        return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+        return sizeOptionsForDepartment('All');
     }
   }
 
@@ -135,6 +197,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (_titleController.text.isEmpty ||
         _selectedCondition == null ||
         _selectedBrand == null ||
+        _selectedDepartment == null ||
+        _selectedMaterial == null ||
+        _selectedColour == null ||
         _priceController.text.isEmpty ||
         (widget.initialData == null && _images[0] == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -151,10 +216,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
 
     final double? parsedPrice = double.tryParse(_priceController.text);
-    if (parsedPrice == null || parsedPrice <= 0) {
+    if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid price greater than 0.'),
+          content: Text('Please enter a valid price greater than 0 or less than 10000.'),
         ),
       );
       return;
@@ -203,6 +268,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'image_url': publicImageUrl,
         'category': _selectedCategory,
         'fitting': _selectedFitting,
+        'material' : _selectedMaterial,
+        'colour' : _selectedColour, 
         'description': _descriptionController.text.isNotEmpty
             ? _descriptionController.text
             : null,
@@ -213,7 +280,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
-        if (oldPrice != null && newPrice != oldPrice) {
+        if (oldPrice != null && newPrice != oldPrice && oldPrice > newPrice) {
           productData['original_price'] = oldPrice;
         }
 
@@ -260,6 +327,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedCondition = null;
       _selectedBrand = null;
       _selectedFitting = null;
+      _selectedDepartment = null;
+      _selectedMaterial = null;
+      _selectedColour = null;
       _images.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
@@ -431,125 +501,199 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 20),
         const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedCategory,
-          hint: const Text('Select a category'),
-          items: _categories
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-              .toList(),
-          onChanged: (val) {
-            setState(() {
-              _selectedCategory = val;
-              _selectedSize = null;
-            });
-          },
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedDepartment ?? 'All',
-          hint: const Text('Select a department'),
-          items: const [
-            DropdownMenuItem(value: 'All', child: Text('All')),
-            DropdownMenuItem(value: 'Womens', child: Text('Womens')),
-            DropdownMenuItem(value: 'Mens', child: Text('Mens')),
-          ],
-          onChanged: (val) => setState(() => _selectedDepartment = val),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
-          ),
-        ),
-        if (_selectedCategory != 'Accessories') ...[
-          const SizedBox(height: 20),
-          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedSize,
-            hint: const Text('Select a size'),
-            items: _currentSizes
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
-            onChanged: (val) => setState(() => _selectedSize = val),
+        Builder(builder: (context) {
+          final safeCat = _selectedCategory != null && _categories.contains(_selectedCategory)
+              ? _selectedCategory
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeCat,
+            hint: const Text('Select a category'),
+            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (val) {
+              setState(() {
+                _selectedCategory = val;
+                _selectedSize = null;
+              });
+            },
             decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 14,
               ),
             ),
-          ),
+          );
+        }),
+        const SizedBox(height: 20),
+        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        Builder(builder: (context) {
+          const deptItems = ['All', 'Womens', 'Mens'];
+          // Use the stored _selectedDepartment as the controlled value,
+          // but only if it matches one of the dropdown items.
+          final validDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
+              ? _selectedDepartment
+              : null;
+
+          return DropdownButtonFormField<String>(
+            value: validDept,
+            hint: const Text('Select a department'),
+            items: const [
+              DropdownMenuItem(value: 'All', child: Text('All')),
+              DropdownMenuItem(value: 'Womens', child: Text('Womens')),
+              DropdownMenuItem(value: 'Mens', child: Text('Mens')),
+            ],
+            onChanged: (val) => setState(() => _selectedDepartment = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        if (_selectedCategory != 'Accessories') ...[
+          const SizedBox(height: 20),
+          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Builder(builder: (context) {
+            final current = _currentSizes.toList();
+            final sizes = List<String>.from(current);
+            if (_selectedSize != null && !sizes.contains(_selectedSize)) {
+              sizes.insert(0, _selectedSize!);
+            }
+            final safeInitial = _selectedSize != null && sizes.contains(_selectedSize)
+                ? _selectedSize
+                : null;
+
+            return DropdownButtonFormField<String>(
+              initialValue: safeInitial,
+              hint: const Text('Select a size'),
+              items: sizes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              onChanged: (val) => setState(() => _selectedSize = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            );
+          }),
         ],
         const SizedBox(height: 20),
         const Text('Condition', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedCondition,
-          hint: const Text('Select a condition'),
-          items: _conditions
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedCondition = val),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
+        Builder(builder: (context) {
+          final safeCondition = _selectedCondition != null && _conditions.contains(_selectedCondition)
+              ? _selectedCondition
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeCondition,
+            hint: const Text('Select a condition'),
+            items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (val) => setState(() => _selectedCondition = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
             ),
-          ),
-        ),
+          );
+        }),
         const SizedBox(height: 20),
         const Text('Brand', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedBrand,
-          hint: const Text('Select a brand'),
-          items: _brands
-              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedBrand = val),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
+        Builder(builder: (context) {
+          final safeBrand = _selectedBrand != null && _brands.contains(_selectedBrand)
+              ? _selectedBrand
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeBrand,
+            hint: const Text('Select a brand'),
+            items: _brands.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+            onChanged: (val) => setState(() => _selectedBrand = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
             ),
-          ),
-        ),
+          );
+        }),
         const SizedBox(height: 20),
         const Text(
           'Fitting (Optional)',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedFitting,
-          hint: const Text('Select a fitting'),
-          items: _fittings
-              .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedFitting = val),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
+        Builder(builder: (context) {
+          final safeFitting = _selectedFitting != null && _fittings.contains(_selectedFitting)
+              ? _selectedFitting
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeFitting,
+            hint: const Text('Select a fitting'),
+            items: _fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+            onChanged: (val) => setState(() => _selectedFitting = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
             ),
-          ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Material (Optional)', style: TextStyle(fontWeight: FontWeight.w600)
         ),
+        Builder(builder: (context) {
+          // defensive copy / null-safety: ensure we always work with a List<String>
+          final List<String> materialsList = _materials;
+          final safeMaterial = _selectedMaterial != null && materialsList.contains(_selectedMaterial)
+              ? _selectedMaterial
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeMaterial,
+            hint: const Text('Select a material'),
+            items: materialsList.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+            onChanged: (val) => setState(() => _selectedMaterial = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        Text('Colour (Optional)', style: TextStyle(fontWeight: FontWeight.w600)),
+        Builder(builder: (context) {
+          final List<String> coloursList = _colours;
+          final safeColour = _selectedColour != null && coloursList.contains(_selectedColour)
+              ? _selectedColour
+              : null;
+          return DropdownButtonFormField<String>(
+            initialValue: safeColour,
+            hint: const Text('Select a colour'),
+            items: coloursList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (val) => setState(() => _selectedColour = val),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          );
+        }),
         const SizedBox(height: 20),
         const Text(
           'Description (Optional)',
