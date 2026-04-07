@@ -20,6 +20,7 @@ import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
+import 'package:thryft/screens/nav_assistant_chat_screen.dart'; //
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -104,6 +105,10 @@ final GoRouter router = GoRouter(
         final category = state.pathParameters['name'] ?? '';
         return CategoryScreen(category: category);
       },
+    ),
+    GoRoute(
+      path: '/chat-assistant',
+      builder: (context, state) => const NavAssistantChatScreen(), //
     ),
   ],
 );
