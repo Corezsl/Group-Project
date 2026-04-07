@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/models/wishlist_item.dart';
+import 'package:thryft/providers/interaction_service.dart';
 
 class WishlistProvider extends ChangeNotifier {
   List<WishlistItem> _items = [];
@@ -89,7 +90,6 @@ class WishlistProvider extends ChangeNotifier {
       // User must be logged in to wishlist items
       return;
     }
-
     final bool isCurrentlyWishlisted = isWishlisted(product.id);
 
     // Optimistic UI update for immediate feedback
@@ -97,6 +97,8 @@ class WishlistProvider extends ChangeNotifier {
       _items.removeWhere((i) => i.product.id == product.id);
     } else {
       _items.insert(0, WishlistItem(product: product, savedAt: DateTime.now()));
+      await InteractionService().logInteraction(productId: product.id, type: 'wishlist');
+
     }
     notifyListeners();
 

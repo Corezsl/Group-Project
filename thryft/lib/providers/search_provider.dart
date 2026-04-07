@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 
+/// Represents criteria for filtering and sorting product search results.
 class SearchFilters {
   final String? size;
   final String? category;
@@ -22,6 +23,7 @@ class SearchFilters {
     this.sortBy = 'newest',
   });
 
+  /// Creates a new filters instance while allowing specific properties to be updated.
   SearchFilters copyWith({
     Object? size = _sentinel,
     Object? category = _sentinel,
@@ -40,6 +42,7 @@ class SearchFilters {
     );
   }
 
+  /// Checks if any filter or non-default sort option is currently applied.
   bool get hasActiveFilters =>
       size != null ||
       category != null ||
@@ -52,6 +55,7 @@ class SearchFilters {
 // Sentinel for copyWith null distinction
 const _sentinel = Object();
 
+/// Manages product searches with debouncing, filtering, and recent search history.
 class SearchProvider extends ChangeNotifier {
   List<Product> _results = [];
   bool _isLoading = false;
@@ -73,7 +77,7 @@ class SearchProvider extends ChangeNotifier {
   List<String> get recentSearches => List.unmodifiable(_recentSearches);
   SearchFilters get filters => _filters;
 
-  // on every keystroke — debounced internally
+  /// Updates the search query and triggers a debounced search execution.
   void onQueryChanged(String value) {
     _query = value;
     notifyListeners();
@@ -94,7 +98,7 @@ class SearchProvider extends ChangeNotifier {
     });
   }
 
-  // when the user explicitly submits (saves to recent searches)
+  /// Executes a search and persists the query to the user's recent search history.
   Future<void> submitSearch(String value) async {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return;
@@ -102,6 +106,7 @@ class SearchProvider extends ChangeNotifier {
     await _executeSearch(trimmed, saveToRecent: true);
   }
 
+  /// Applies new search filters and refreshes the current search results.
   Future<void> updateFilters(SearchFilters newFilters) async {
     _filters = newFilters;
     notifyListeners();
@@ -110,6 +115,7 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Resets all filters to their default values and refreshes the search results.
   void clearFilters() {
     _filters = const SearchFilters();
     notifyListeners();
@@ -118,6 +124,7 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Queries Supabase for products matching the query and currently active filters.
   Future<void> _executeSearch(String q, {bool saveToRecent = false}) async {
     _isLoading = true;
     notifyListeners();
@@ -195,12 +202,14 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Loads the list of recent search queries from local storage.
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
     _recentSearches = prefs.getStringList(_recentSearchesKey) ?? [];
     notifyListeners();
   }
 
+  /// Adds a query to the top of the recent searches list and persists it.
   Future<void> _saveRecentSearch(String q) async {
     _recentSearches.remove(q);
     _recentSearches.insert(0, q);
@@ -212,6 +221,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Deletes a specific query from the recent searches history.
   Future<void> removeRecentSearch(String q) async {
     _recentSearches.remove(q);
     final prefs = await SharedPreferences.getInstance();
@@ -219,6 +229,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Wipes all recent search history from local storage.
   Future<void> clearRecentSearches() async {
     _recentSearches = [];
     final prefs = await SharedPreferences.getInstance();
@@ -226,6 +237,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resets the search state, query, and results to their initial values.
   void clearResults() {
     _debounce?.cancel();
     _query = '';
@@ -235,6 +247,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cancels any active debouncing timer to prevent memory leaks.
   @override
   void dispose() {
     _debounce?.cancel();

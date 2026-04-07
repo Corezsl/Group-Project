@@ -3,6 +3,7 @@ import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
 import '../widgets/header.dart';
 
+/// Screen providing a contact form for users to send messages to the team.
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
 
@@ -17,6 +18,7 @@ class _ContactPageState extends State<ContactScreen> {
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
 
+  /// Cleans up text controllers to free resources.
   @override
   void dispose() {
     _nameController.dispose();
@@ -26,6 +28,7 @@ class _ContactPageState extends State<ContactScreen> {
     super.dispose();
   }
 
+  /// Validates the form and displays a success notification upon submission.
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,7 +68,7 @@ class _ContactPageState extends State<ContactScreen> {
               ),
               child: Column(
                 children: [
-                  // Page Title
+                  // Page Title and descriptive header.
                   Text(
                     'Contact Us',
                     style: TextStyle(
@@ -88,7 +91,7 @@ class _ContactPageState extends State<ContactScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Contact Form
+                      // Form container with shadow and padding.
                       Expanded(
                         child: Card(
                           elevation: 3,
@@ -109,6 +112,7 @@ class _ContactPageState extends State<ContactScreen> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Text fields for user input with validation rules.
                                   TextFormField(
                                     controller: _nameController,
                                     decoration: const InputDecoration(
@@ -177,6 +181,7 @@ class _ContactPageState extends State<ContactScreen> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Submission button.
                                   ElevatedButton(
                                     onPressed: _submitForm,
                                     style: ElevatedButton.styleFrom(
