@@ -20,6 +20,7 @@ import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
+import 'package:thryft/screens/my_offers_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -68,6 +69,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/my-orders',
       builder: (context, state) => const MyOrdersScreen(),
+    ),
+    GoRoute(
+      path: '/my-offers',
+      builder: (context, state) => const MyOffersScreen(),
     ),
     GoRoute(
       path: '/sold-items',
