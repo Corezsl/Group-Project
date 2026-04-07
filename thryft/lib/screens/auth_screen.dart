@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
+/// Screen providing a unified interface for user login and registration.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -20,6 +21,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  /// Validates input and executes either sign-in or sign-up via Supabase.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -30,6 +32,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isLogin) {
+        // Authenticate existing user.
         await Supabase.instance.client.auth.signInWithPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -37,7 +40,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         final username = _usernameController.text.trim();
 
-        // Check if username is already taken
+        // Check for username availability before registration.
         final existingProfile = await Supabase.instance.client
             .from('profiles')
             .select('id')
@@ -53,6 +56,7 @@ class _AuthScreenState extends State<AuthScreen> {
           return;
         }
 
+        // Register new user with metadata.
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -83,6 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  /// Cleans up controllers when the widget is removed from the tree.
   @override
   void dispose() {
     _usernameController.dispose();
@@ -101,11 +106,10 @@ class _AuthScreenState extends State<AuthScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo centered above the form card
               Image.asset('assets/images/thyrft_logo.png', height: 48),
               const SizedBox(height: 32),
 
-              // Auth Card
+              // Main authentication card containing the form.
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -124,6 +128,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Tabs to toggle between Login and Sign up modes.
                     Row(
                       children: [
                         Expanded(
@@ -203,6 +208,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
+                    // Input form for user credentials.
                     Form(
                       key: _formKey,
                       child: Column(
@@ -321,6 +327,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             const SizedBox(height: 16),
                           ],
+                          // Final action button to submit the form.
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF47A4F5),
