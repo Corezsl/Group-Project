@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
+import 'package:thryft/utils/size_options.dart'; // <-- use centralized lists
 
 class StandardProductGrid extends StatefulWidget {
   final List<Product> items;
@@ -33,19 +34,6 @@ class _StandardProductGridState extends State<StandardProductGrid> {
   String? _selectedPriceRange;
   String? _selectedDateSort;
 
-  final List<String> _priceRanges = [
-    'Under £25',
-    '£25 - £50',
-    '£50 - £100',
-    '£100 - £250',
-    'Over £250',
-  ];
-
-  final List<String> _dateSortOptions = [
-    'Newest First',
-    'Oldest First',
-  ];
-
   int _compareSizes(String a, String b) {
     const sizeOrder = {
       'XXS': 0, 'XS': 1, 'S': 2, 'M': 3, 'L': 4, 'XL': 5, 'XXL': 6,
@@ -63,19 +51,18 @@ class _StandardProductGridState extends State<StandardProductGrid> {
 
     if (_selectedPriceRange != null) {
       filtered = filtered.where((p) {
-        if (_selectedPriceRange == 'Under £25') return p.price < 25;
-        if (_selectedPriceRange == '£25 - £50') return p.price >= 25 && p.price <= 50;
-        if (_selectedPriceRange == '£50 - £100') return p.price >= 50 && p.price <= 100;
-        if (_selectedPriceRange == '£100 - £250') return p.price >= 100 && p.price <= 250;
-        if (_selectedPriceRange == 'Over £250') return p.price > 250;
+        if (_selectedPriceRange == priceRanges[0]) return p.price < 25;
+        if (_selectedPriceRange == priceRanges[1]) return p.price >= 25 && p.price <= 50;
+        if (_selectedPriceRange == priceRanges[2]) return p.price >= 50 && p.price <= 100;
+        if (_selectedPriceRange == priceRanges[3]) return p.price >= 100 && p.price <= 250;
+        if (_selectedPriceRange == priceRanges[4]) return p.price > 250;
         return true;
       }).toList();
     }
 
-    if (_selectedDateSort == 'Newest First') {
-      // Assuming ID or created_at mock
+    if (_selectedDateSort == dateSortOptions[0]) {
       filtered.sort((a, b) => b.id.compareTo(a.id));
-    } else if (_selectedDateSort == 'Oldest First') {
+    } else if (_selectedDateSort == dateSortOptions[1]) {
       filtered.sort((a, b) => a.id.compareTo(b.id));
     }
 
@@ -161,7 +148,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                 _buildFilterDropdown<String>(
                   label: 'PRICE',
                   value: _selectedPriceRange,
-                  options: _priceRanges,
+                  options: priceRanges,
                   display: (s) => s,
                   onChanged: (v) => setState(() => _selectedPriceRange = v),
                 ),
@@ -169,7 +156,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                 _buildFilterDropdown<String>(
                   label: widget.dateFilterLabel,
                   value: _selectedDateSort,
-                  options: _dateSortOptions,
+                  options: dateSortOptions,
                   display: (s) => s,
                   onChanged: (v) => setState(() => _selectedDateSort = v),
                 ),
