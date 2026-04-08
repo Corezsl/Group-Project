@@ -23,10 +23,16 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
 
   Future<List<Product>> _fetchFiltered() async {
     try {
+      final currentUserId = Supabase.instance.client.auth.currentUser?.id;
       var query = Supabase.instance.client
           .from('products')
           .select('*, profiles(username)')
           .eq('is_sold', false);
+
+      // exclude current user's items if we have a logged-in user
+      if (currentUserId != null) {
+        query = query.neq('user_id', currentUserId);
+      }
 
       final f = widget.filters;
       if (f.department != null) query = query.eq('department', f.department!);
@@ -51,7 +57,7 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
           data = await query.order('created_at', ascending: false);
       }
 
-      return (data as List).map((row) => Product(
+      return (data).map((row) => Product(
         id: row['id'].toString(),
         name: row['name'].toString(),
         price: (row['price'] as num).toDouble(),
