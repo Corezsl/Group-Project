@@ -157,9 +157,13 @@ class _FilterPanelState extends State<FilterPanel> {
                             ? null
                             : double.tryParse(_priceController.text.trim());
                         final filters = SearchFilters(
+                          department: _department == 'All' ? null : _department,
                           size: _size == 'All' ? null : _size,
-                          category: null, // keep department logic unchanged for now
+                          brand: _brands == 'All' ? null : _brands,
                           condition: _condition == 'All' ? null : _condition,
+                          fitting: _fitting == 'All' ? null : _fitting,
+                          material: _material == 'All' ? null : _material,
+                          colour: _colour == 'All' ? null : _colour,
                           minPrice: null,
                           maxPrice: maxPrice,
                           sortBy: 'newest',
