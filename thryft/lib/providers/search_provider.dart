@@ -9,7 +9,12 @@ import 'package:thryft/models/product.dart';
 class SearchFilters {
   final String? size;
   final String? category;
+  final String? department;
+  final String? brand;
   final String? condition;
+  final String? fitting;
+  final String? material;
+  final String? colour;
   final double? minPrice;
   final double? maxPrice;
   final String sortBy; // 'newest', 'price_asc', 'price_desc'
@@ -17,7 +22,12 @@ class SearchFilters {
   const SearchFilters({
     this.size,
     this.category,
+    this.department,
+    this.brand,
     this.condition,
+    this.fitting,
+    this.material,
+    this.colour,
     this.minPrice,
     this.maxPrice,
     this.sortBy = 'newest',
@@ -27,7 +37,12 @@ class SearchFilters {
   SearchFilters copyWith({
     Object? size = _sentinel,
     Object? category = _sentinel,
+    Object? department = _sentinel,
+    Object? brand = _sentinel,
     Object? condition = _sentinel,
+    Object? fitting = _sentinel,
+    Object? material = _sentinel,
+    Object? colour = _sentinel,
     Object? minPrice = _sentinel,
     Object? maxPrice = _sentinel,
     String? sortBy,
@@ -35,7 +50,12 @@ class SearchFilters {
     return SearchFilters(
       size: size == _sentinel ? this.size : size as String?,
       category: category == _sentinel ? this.category : category as String?,
+      department: department == _sentinel ? this.department : department as String?,
+      brand: brand == _sentinel ? this.brand : brand as String?,
       condition: condition == _sentinel ? this.condition : condition as String?,
+      fitting: fitting == _sentinel ? this.fitting : fitting as String?,
+      material: material == _sentinel ? this.material : material as String?,
+      colour: colour == _sentinel ? this.colour : colour as String?,
       minPrice: minPrice == _sentinel ? this.minPrice : minPrice as double?,
       maxPrice: maxPrice == _sentinel ? this.maxPrice : maxPrice as double?,
       sortBy: sortBy ?? this.sortBy,
@@ -46,7 +66,12 @@ class SearchFilters {
   bool get hasActiveFilters =>
       size != null ||
       category != null ||
+      department != null ||
+      brand != null ||
       condition != null ||
+      fitting != null ||
+      material != null ||
+      colour != null ||
       minPrice != null ||
       maxPrice != null ||
       sortBy != 'newest';

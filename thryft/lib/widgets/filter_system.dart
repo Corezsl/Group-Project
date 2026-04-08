@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/size_options.dart';
+import 'package:thryft/providers/search_provider.dart'; // new import
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
-  final ValueChanged<Map<String, String>>? onApply;
+  final ValueChanged<SearchFilters>? onApply; // changed type
 
   @override
   State<FilterPanel> createState() => _FilterPanelState();
@@ -151,16 +152,20 @@ class _FilterPanelState extends State<FilterPanel> {
                     ),
 
                     TextButton(
-                      onPressed: () => widget.onApply?.call({
-                        'department': _department,
-                        'size': _size,
-                        'brand': _brands,
-                        'price': _priceController.text.trim(),
-                        'condition': _condition,
-                        'fitting': _fitting,
-                        'material': _material,
-                        'colour': _colour,
-                      }),
+                      onPressed: () {
+                        final maxPrice = _priceController.text.trim().isEmpty
+                            ? null
+                            : double.tryParse(_priceController.text.trim());
+                        final filters = SearchFilters(
+                          size: _size == 'All' ? null : _size,
+                          category: null, // keep department logic unchanged for now
+                          condition: _condition == 'All' ? null : _condition,
+                          minPrice: null,
+                          maxPrice: maxPrice,
+                          sortBy: 'newest',
+                        );
+                        widget.onApply?.call(filters);
+                      },
                       child: const Text('Apply'),
                     ),
 
