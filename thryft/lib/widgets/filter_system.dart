@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/size_options.dart';
 import 'package:thryft/providers/search_provider.dart'; // new import
+import 'package:thryft/screens/filter_results_screen.dart'; // added import
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
@@ -169,6 +170,13 @@ class _FilterPanelState extends State<FilterPanel> {
                           sortBy: 'newest',
                         );
                         widget.onApply?.call(filters);
+
+                        // navigate to the filter results screen
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => FilterResultsScreen(filters: filters),
+                          ),
+                        );
                       },
                       child: const Text('Apply'),
                     ),
