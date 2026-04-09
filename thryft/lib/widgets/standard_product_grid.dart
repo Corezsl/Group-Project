@@ -12,6 +12,7 @@ class StandardProductGrid extends StatefulWidget {
   final String emptyTitle;
   final String emptySubtitle;
   final Widget? extraButton;
+  final Widget? extraGridCard;
   final String dateFilterLabel;
   final String priceFilterLabel;
 
@@ -24,6 +25,7 @@ class StandardProductGrid extends StatefulWidget {
     this.emptyTitle = 'No items found',
     this.emptySubtitle = 'Try adjusting your filters or check back later.',
     this.extraButton,
+    this.extraGridCard,
     this.dateFilterLabel = 'DATE',
     this.priceFilterLabel = 'PRICE',
   });
@@ -268,6 +270,11 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                               const SizedBox(height: 24),
                               widget.extraButton!,
                             ],
+                            // show create-listing card even when there are no items
+                            if (widget.extraGridCard != null) ...[
+                              const SizedBox(height: 24),
+                              SizedBox(height: 240, child: widget.extraGridCard!),
+                            ],
                           ],
                         ),
                       ),
@@ -276,13 +283,25 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                       ? SizedBox(
                           height: 200,
                           child: Center(
-                            child: Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
+                                if (widget.extraGridCard != null) ...[
+                                  const SizedBox(height: 16),
+                                  SizedBox(height: 240, child: widget.extraGridCard!),
+                                ],
+                              ],
+                            ),
                           ),
                         )
                       : Wrap(
                           spacing: 16,
                           runSpacing: 16,
-                          children: paginated.map((p) => SizedBox(height: 240, child: ProductCard(product: p))).toList(),
+                          children: [
+                            if (widget.extraGridCard != null) SizedBox(height: 240, child: widget.extraGridCard!),
+                            ...paginated.map((p) => SizedBox(height: 240, child: ProductCard(product: p))).toList(),
+                          ],
                         ),
             ),
           ),
