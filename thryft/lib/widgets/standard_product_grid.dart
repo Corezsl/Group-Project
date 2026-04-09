@@ -12,6 +12,7 @@ class StandardProductGrid extends StatefulWidget {
   final String emptySubtitle;
   final Widget? extraButton;
   final String dateFilterLabel;
+  final String priceFilterLabel;
 
   const StandardProductGrid({
     super.key,
@@ -23,6 +24,7 @@ class StandardProductGrid extends StatefulWidget {
     this.emptySubtitle = 'Try adjusting your filters or check back later.',
     this.extraButton,
     this.dateFilterLabel = 'DATE',
+    this.priceFilterLabel = 'PRICE',
   });
 
   @override
@@ -31,8 +33,8 @@ class StandardProductGrid extends StatefulWidget {
 
 class _StandardProductGridState extends State<StandardProductGrid> {
   String? _selectedSize;
-  String? _selectedPriceRange;
   String? _selectedDateSort;
+  String? _selectedPriceSort;
 
   int _compareSizes(String a, String b) {
     const sizeOrder = {
@@ -49,23 +51,17 @@ class _StandardProductGridState extends State<StandardProductGrid> {
       filtered = filtered.where((p) => p.size == _selectedSize).toList();
     }
 
-    if (_selectedPriceRange != null) {
-      filtered = filtered.where((p) {
-        if (_selectedPriceRange == priceRanges[0]) return p.price < 25;
-        if (_selectedPriceRange == priceRanges[1]) return p.price >= 25 && p.price <= 50;
-        if (_selectedPriceRange == priceRanges[2]) return p.price >= 50 && p.price <= 100;
-        if (_selectedPriceRange == priceRanges[3]) return p.price >= 100 && p.price <= 250;
-        if (_selectedPriceRange == priceRanges[4]) return p.price > 250;
-        return true;
-      }).toList();
-    }
-
     if (_selectedDateSort == dateSortOptions[0]) {
       filtered.sort((a, b) => b.id.compareTo(a.id));
     } else if (_selectedDateSort == dateSortOptions[1]) {
       filtered.sort((a, b) => a.id.compareTo(b.id));
     }
 
+    if (_selectedPriceSort == priceSortOptions[0]) {
+      filtered.sort((a, b) => a.price.compareTo(b.price));
+    } else if (_selectedPriceSort == priceSortOptions[1]) {
+      filtered.sort((a, b) => b.price.compareTo(a.price));
+    }
     return filtered;
   }
 
@@ -144,14 +140,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                   display: (s) => s,
                   onChanged: (v) => setState(() => _selectedSize = v),
                 ),
-                const SizedBox(width: 32),
-                _buildFilterDropdown<String>(
-                  label: 'PRICE',
-                  value: _selectedPriceRange,
-                  options: priceRanges,
-                  display: (s) => s,
-                  onChanged: (v) => setState(() => _selectedPriceRange = v),
-                ),
+
                 const SizedBox(width: 32),
                 _buildFilterDropdown<String>(
                   label: widget.dateFilterLabel,
@@ -159,6 +148,15 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                   options: dateSortOptions,
                   display: (s) => s,
                   onChanged: (v) => setState(() => _selectedDateSort = v),
+                ),
+
+                const SizedBox(width: 32),
+                _buildFilterDropdown<String>(
+                  label: widget.priceFilterLabel,
+                  value: _selectedPriceSort,
+                  options: priceSortOptions,
+                  display: (s) => s,
+                  onChanged: (v) => setState(() => _selectedPriceSort = v),
                 ),
               ],
             ),
