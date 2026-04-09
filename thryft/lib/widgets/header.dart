@@ -363,7 +363,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.accessibility_new_outlined),
+            leading: const Icon(Icons.dry_cleaning_outlined),
             title: const Text('Trousers'),
             onTap: () {
               Navigator.pop(context);
@@ -371,7 +371,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.accessibility_new_outlined),
+            leading: const Icon(Icons.beach_access_outlined),
             title: const Text('Shorts'),
             onTap: () {
               Navigator.pop(context);
@@ -379,7 +379,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.accessibility_new_outlined),
+            leading: const Icon(Icons.woman),
             title: const Text('Dresses'),
             onTap: () {
               Navigator.pop(context);
