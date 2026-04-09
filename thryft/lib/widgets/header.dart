@@ -178,7 +178,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () => context.go('/category/Shirts'),
+                              onPressed: () => context.go('/category/Shirt'),
                               style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Shirts'),
                             ),

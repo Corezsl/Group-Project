@@ -32,10 +32,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<List<Product>> _fetchByCategory() async {
+    final categoryParam = widget.category.trim();
+
+    // use a case-insensitive match so "shirt" / "Shirt" / "SHIRT" all match
     final response = await Supabase.instance.client
         .from('products')
         .select('*, profiles(username)')
-        .eq('category', widget.category)
+        .ilike('category', categoryParam)
         .eq('is_sold', false)
         .order('created_at', ascending: false);
 
