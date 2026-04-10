@@ -268,8 +268,8 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildSortAndFilter() {
-    return Align(
-      alignment: Alignment.centerLeft,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           const SizedBox(width: 24),
