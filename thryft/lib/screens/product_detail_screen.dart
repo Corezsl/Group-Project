@@ -205,6 +205,8 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
         const SizedBox(height: 12),
+        _buildDetailRow("Department", product['department'] ?? '-'),
+        const SizedBox(height: 12),
         _buildDetailRow("Size", product['size'] ?? '-'),
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
