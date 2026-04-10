@@ -273,6 +273,38 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                             ),
                             const SizedBox(width: 12),
                             TextButton(
+                              onPressed: () => context.go('/category/Shorts'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Shorts'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Dresses'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Dresses'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Shorts'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Shorts'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () => context.go('/category/Dresses'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Dresses'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
                               onPressed: () => context.go('/category/Shoes'),
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white,
@@ -669,7 +701,6 @@ class _SearchDropdown extends StatelessWidget {
             },
           ),
         ),
-
       ],
     );
   }
@@ -720,11 +751,27 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.accessibility_new_outlined),
+            leading: const Icon(Icons.dry_cleaning_outlined),
             title: const Text('Trousers'),
             onTap: () {
               Navigator.pop(context);
               context.go('/category/Trousers');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.beach_access_outlined),
+            title: const Text('Shorts'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Shorts');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.woman),
+            title: const Text('Dresses'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/category/Dresses');
             },
           ),
           ListTile(

@@ -90,6 +90,33 @@ class WishlistProvider extends ChangeNotifier {
       // User must be logged in to wishlist items
       return;
     }
+
+    // Prevent users from wishlisting their own items
+    if (product.sellerId != null && product.sellerId.toString() == userId) {
+      final wasWishlisted = isWishlisted(product.id);
+      if (wasWishlisted) {
+        _items.removeWhere((i) => i.product.id == product.id);
+        notifyListeners();
+
+        // Remove the item from DB on wishlist table
+        try {
+          await Supabase.instance.client
+              .from('wishlist')
+              .delete()
+              .eq('user_id', userId)
+              .eq('listing_id', product.id);
+        } catch (e) {
+          debugPrint("Error removing own product from wishlist: $e");
+          fetchWishlist();
+        }
+
+        debugPrint('Removed own product from wishlist (productId=${product.id})');
+      } else {
+        debugPrint('Attempt to wishlist own product prevented (productId=${product.id})');
+      }
+      return;
+    }
+
     final bool isCurrentlyWishlisted = isWishlisted(product.id);
 
     // Optimistic UI update for immediate feedback
