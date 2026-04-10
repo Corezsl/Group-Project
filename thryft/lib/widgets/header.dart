@@ -289,22 +289,6 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () => context.go('/category/Shorts'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Shorts'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton(
-                              onPressed: () => context.go('/category/Dresses'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Dresses'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton(
                               onPressed: () => context.go('/category/Shoes'),
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white,
