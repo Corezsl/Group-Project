@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/models/wishlist_item.dart';
 import 'package:thryft/providers/interaction_service.dart';
+import 'package:thryft/providers/notification_provider.dart';
 
 class WishlistProvider extends ChangeNotifier {
   List<WishlistItem> _items = [];
@@ -142,6 +144,22 @@ class WishlistProvider extends ChangeNotifier {
           'user_id': userId,
           'listing_id': product.id,
         });
+        // Notify the seller that someone wishlisted their item
+        if (product.sellerId != null) {
+          final profile = await Supabase.instance.client
+              .from('profiles')
+              .select('username')
+              .eq('id', userId)
+              .maybeSingle();
+          final username = profile?['username']?.toString() ?? 'Someone';
+          await NotificationProvider.insertNotification(
+            userId: product.sellerId!,
+            type: NotificationType.wishlistAdd,
+            content: '$username added your listing "${product.name}" to their wishlist.',
+            listingId: product.id,
+            relatedUserId: userId,
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error toggling wishlist: $e");
