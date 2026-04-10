@@ -85,92 +85,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final List<XFile?> _images = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _materials = [
-    'Cotton',
-    'Polyester',
-    'Wool',
-    'Silk',
-    'Denim',
-    'Leather',
-    'Linen',
-    'Rayon',
-    'Nylon',
-    'Acrylic',
-    'Other',
-  ];
-
-  final List<String> _colours = [
-    'Black',
-    'White',
-    'Red',
-    'Blue',
-    'Green',
-    'Yellow',
-    'Purple',
-    'Pink',
-    'Brown',
-    'Grey',
-    'Orange',
-    'Other',
-  ];
-
-  final List<String> _fittings = ['Slim', 'Regular', 'Loose'];
-
-  final List<String> _brands = [
-    'Nike',
-    'Adidas',
-    'Puma',
-    'Reebok',
-    'Under Armour',
-    'New Balance',
-    'Asics',
-    'Vans',
-    'Converse',
-    'Jordan',
-    'Fila',
-    'Skechers',
-    'Brooks',
-    'Saucony',
-    'Mizuno',
-    'Hoka One One',
-    'Salomon',
-    'Merrell',
-    'Columbia',
-    'The North Face',
-    'Patagonia',
-    'Other',
-  ];
-
-  final List<String> _categories = [
-    'Shirt',
-    'Trousers',
-    'Dresses',
-    'Shorts',
-    'Shoes',
-    'Accessories',
-  ];
-
-  List<String> get _currentSizes {
-    final dept = _selectedDepartment ?? 'All';
-    if (dept != 'All') return sizeOptionsForDepartment(dept);
-    switch (_selectedCategory) {
-      case 'Shoes':
-        return List.generate(19, (i) => (i + 30).toString());
-      case 'Accessories':
-        return ["Woman's One Size", "Man's One Size", 'Unisex One Size'];
-      default:
-        return sizeOptionsForDepartment('All');
-    }
-  }
-
-  final List<String> _conditions = [
-    'New with tags',
-    'New without tags',
-    'Very good',
-    'Good',
-    'Okay',
-    'Worn',
-  ];
 
   @override
   void dispose() {
@@ -502,13 +416,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Builder(builder: (context) {
-          final safeCat = _selectedCategory != null && _categories.contains(_selectedCategory)
+          final safeCat = _selectedCategory != null && categories.contains(_selectedCategory)
               ? _selectedCategory
               : null;
           return DropdownButtonFormField<String>(
             initialValue: safeCat,
             hint: const Text('Select a category'),
-            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (val) {
               setState(() {
                 _selectedCategory = val;
@@ -529,8 +443,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 6),
         Builder(builder: (context) {
           const deptItems = ['All', 'Womens', 'Mens'];
-          // Use the stored _selectedDepartment as the controlled value,
-          // but only if it matches one of the dropdown items.
           final validDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
               ? _selectedDepartment
               : null;
@@ -558,7 +470,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Builder(builder: (context) {
-            final current = _currentSizes.toList();
+            final current = getSizeOptions(department: _selectedDepartment, category: _selectedCategory).toList();
             final sizes = List<String>.from(current);
             if (_selectedSize != null && !sizes.contains(_selectedSize)) {
               sizes.insert(0, _selectedSize!);
@@ -588,13 +500,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Condition', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Builder(builder: (context) {
-          final safeCondition = _selectedCondition != null && _conditions.contains(_selectedCondition)
+          final safeCondition = _selectedCondition != null && conditions.contains(_selectedCondition)
               ? _selectedCondition
               : null;
           return DropdownButtonFormField<String>(
             initialValue: safeCondition,
             hint: const Text('Select a condition'),
-            items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (val) => setState(() => _selectedCondition = val),
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -609,13 +521,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const Text('Brand', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Builder(builder: (context) {
-          final safeBrand = _selectedBrand != null && _brands.contains(_selectedBrand)
+          final safeBrand = _selectedBrand != null && brands.contains(_selectedBrand)
               ? _selectedBrand
               : null;
           return DropdownButtonFormField<String>(
             initialValue: safeBrand,
             hint: const Text('Select a brand'),
-            items: _brands.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+            items: brands.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
             onChanged: (val) => setState(() => _selectedBrand = val),
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -633,13 +545,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ),
         const SizedBox(height: 6),
         Builder(builder: (context) {
-          final safeFitting = _selectedFitting != null && _fittings.contains(_selectedFitting)
+          final safeFitting = _selectedFitting != null && fittings.contains(_selectedFitting)
               ? _selectedFitting
               : null;
           return DropdownButtonFormField<String>(
             initialValue: safeFitting,
             hint: const Text('Select a fitting'),
-            items: _fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+            items: fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
             onChanged: (val) => setState(() => _selectedFitting = val),
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -655,7 +567,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ),
         Builder(builder: (context) {
           // defensive copy / null-safety: ensure we always work with a List<String>
-          final List<String> materialsList = _materials;
+          final List<String> materialsList = materials;
           final safeMaterial = _selectedMaterial != null && materialsList.contains(_selectedMaterial)
               ? _selectedMaterial
               : null;
@@ -676,7 +588,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 20),
         Text('Colour (Optional)', style: TextStyle(fontWeight: FontWeight.w600)),
         Builder(builder: (context) {
-          final List<String> coloursList = _colours;
+          final List<String> coloursList = colours;
           final safeColour = _selectedColour != null && coloursList.contains(_selectedColour)
               ? _selectedColour
               : null;

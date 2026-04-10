@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 
+/// Manages user notifications and offer interactions using Supabase.
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -14,6 +15,7 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
   bool get isLoading => _isLoading;
 
+  /// Initializes authentication listeners to sync notifications.
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
@@ -29,6 +31,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Fetches user notifications from the database.
   Future<void> fetchNotifications() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -54,7 +57,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Called when NotificationsScreen opens. Marks all unread as read
+  /// Marks all notifications for the current user as read.
   Future<void> markAllAsRead() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -80,11 +83,12 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Updates product status and price upon accepting an offer.
   Future<void> acceptOffer(AppNotification notification) async {
     if (notification.listingId == null || notification.offerPrice == null)
       return;
 
-    // Pre-check: ensure product is not already sold
+    //Check  product is not already sold
     final product = await Supabase.instance.client
         .from('products')
         .select('is_sold')
@@ -109,10 +113,12 @@ class NotificationProvider extends ChangeNotifier {
     await _deleteNotification(notification.notificationId);
   }
 
+  /// Removes a notification when an offer is declined.
   Future<void> declineOffer(AppNotification notification) async {
     await _deleteNotification(notification.notificationId);
   }
 
+  /// Helper to remove a notification locally and from the database.
   Future<void> _deleteNotification(int notificationId) async {
     _notifications.removeWhere((n) => n.notificationId == notificationId);
     notifyListeners();
@@ -123,8 +129,7 @@ class NotificationProvider extends ChangeNotifier {
         .eq('notification_id', notificationId);
   }
 
-  // Called from other providers/screens without needing a provider reference.
-
+  /// Static method to create a new notification entry.
   static Future<void> insertNotification({
     required String userId,
     required NotificationType type,
