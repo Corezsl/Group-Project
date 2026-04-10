@@ -6,20 +6,23 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [✅] Add search bar to header
     - [❌] Expected behaviour: User can click on the search box and type what they want to search, and the relevant results should be displayed.
 - [✅] Add filter icon to the right of the search bar
-    - [ ] Expected behaviour: The Filter options are checkboxes that can be used to further narrow down search results. You can have 0 or many filters selected at once. These filters will interact with the associated tags from the database entries.
+    - [✅] Expected behaviour: The Filter options are dropdowns that can be used to further narrow down search results. You can have 0 or many filters selected at once. These filters will interact with the associated tags from the database entries.
 - [✅] Filter Button Behaviour: Basic Dropdown into a Box filled with checklists where filters can be de/selected.
-- [❌] Filter by Size
+- [✅] Filter by Size
     - [✅] Expected Behaviour: One option out of a list of pre-existing values can be selected, ranging from values that are equivalent independent of gender. IE M / 12. (Where values are filtered either by Size M OR Size 12)
-- [❌] Filter by Brand
-    - [❌] Expected Behaviour: A small searchbox appears where you can type out the brand you are looking for, and it will appear if there is an entry in the database that matches the brand you are looking for. (Search suggestion but you can't type a brand that there is no current entries which are not closed.)
-- [❌] Filter by Condition
-    - [❌] Expected Behaviour: Conditions ranging on a scale of 5 values, From 'Acceptable - New', where it will return results that are that category or above.
-- [❌] Filter by Fitting
-    - [❌] Expected Behaviour: Search by fit
-- [❌] Filter by Price
-- [❌] Filter by Material
-- [❌] Filter by Colour
-- [❌] Filter by Style
+- [✅] Filter by Brand
+    - [✅] Expected Behaviour: A small searchbox appears where you can type out the brand you are looking for, and it will appear if there is an entry in the database that matches the brand you are looking for. (Search suggestion but you can't type a brand that there is no current entries which are not closed.)
+- [✅] Filter by Condition
+    - [✅] Expected Behaviour: Conditions ranging on a scale of 5 values, From 'Acceptable - New', where it will return results that are that category or above.
+- [✅] Filter by Fitting
+    - [✅] Expected Behaviour: Search by fit
+- [✅] Filter by Price
+- [✅] Filter by Material
+- [✅] Filter by Colour
+## [1.2] Sub filtration
+- [] Users can filter by category through shortcuts
+- [] Users can filter how many items appear per page
+- [] Users can only see results to buy that are not their own products
 
 ## [2] Users Should Be Able to View Seller Trust Information
 - [✅] View Public information on a profile
@@ -38,7 +41,7 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [✅] Create "New listing" button that reroutes to different page for listing
 - [✅] Make dropdowns for the qualities of clothing (clothing category field, size field, colour field, brand field etc.)
 - [✅] Make option to upload picture at the top of page (or pictures if possible of product)
-- [❌] Make price field that gives error message for invalid price and disables "list" button
+- [✅] Make price field that gives error message for invalid price and disables "list" button
 - [❌] Make field to enter user's address (the one listing the product), or wont allow a purchase for a user whose address details are blank (ie requires shipping address)
 - [✅] Make button "list item" that lists item and sends to database
 - [✅] Set a price for listing
