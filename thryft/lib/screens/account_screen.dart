@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 
 class AccountScreen extends StatelessWidget {
