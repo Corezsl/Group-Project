@@ -235,12 +235,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _filterActive
-                    ? FilterPanel(
-                        key: const ValueKey('filter'),
-                        onApply: (dept) => context.push(
-                          '/create-listing',
-                          extra: {'department': dept},
-                        ),
+                    ? const FilterPanel(
+                        key: ValueKey('filter'),
                       )
                     : Container(
                         key: const ValueKey('shortcuts'),
