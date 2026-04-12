@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
 
 class ProductCarousel extends StatefulWidget {
-  const ProductCarousel({super.key});
+  final String? category;
+
+  const ProductCarousel({super.key, this.category});
 
   @override
   State<ProductCarousel> createState() => _ProductCarouselState();
@@ -15,93 +18,58 @@ class _ProductCarouselState extends State<ProductCarousel> {
   // how far we scroll when pressing the arrows (roughly 2 cards)
   static const double _scrollAmount = 344;
 
-  // placeholder product data(fetch real data from backend later in the project)
-  final List<Product> products = const [
-    Product(
-      id: '1',
-      name: 'Vintage Denim Jacket',
-      price: 24.99,
-      originalPrice: 39.99,
-      size: 'M',
-      brand: 'Levi\'s',
-      condition: 'Good',
-    ),
-    Product(
-      id: '2',
-      name: 'White Sneakers',
-      price: 18.00,
-      size: '42',
-      brand: 'Nike',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '3',
-      name: 'Floral Summer Dress',
-      price: 12.50,
-      originalPrice: 22.00,
-      size: 'S',
-      brand: 'Zara',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '4',
-      name: 'Wool Coat',
-      price: 45.00,
-      size: 'L',
-      brand: 'H&M',
-      condition: 'Good',
-    ),
-    Product(
-      id: '5',
-      name: 'Leather Belt',
-      price: 8.00,
-      size: 'One Size',
-      brand: 'Unbranded',
-      condition: 'Fair',
-    ),
-    Product(
-      id: '6',
-      name: 'Graphic Tee',
-      price: 6.99,
-      originalPrice: 14.99,
-      size: 'XL',
-      brand: 'ASOS',
-      condition: 'Good',
-    ),
-    Product(
-      id: '7',
-      name: 'Chino Trousers',
-      price: 15.00,
-      size: '32',
-      brand: 'Gap',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '8',
-      name: 'Puffer Jacket',
-      price: 30.00,
-      size: 'M',
-      brand: 'The North Face',
-      condition: 'Good',
-    ),
-    Product(
-      id: '9',
-      name: 'Silk Blouse',
-      price: 10.00,
-      size: 'S',
-      brand: 'Reiss',
-      condition: 'Like New',
-    ),
-    Product(
-      id: '10',
-      name: 'Running Shoes',
-      price: 22.00,
-      originalPrice: 35.00,
-      size: '40',
-      brand: 'Adidas',
-      condition: 'Good',
-    ),
-  ];
+  late Future<List<Product>> _productsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _productsFuture = _fetchProducts();
+  }
+
+  Future<List<Product>> _fetchProducts() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    var query = Supabase.instance.client
+        .from('products')
+        .select('*, profiles(username)');
+
+    if (userId != null) {
+      // Exclude products created by the current user
+      query = query.neq('user_id', userId);
+    }
+    if (widget.category != null) {
+      query = query.eq('category', widget.category!);
+    }
+
+    final response = await query.order('created_at', ascending: false);
+
+    return (response as List)
+        .where((data) => data['is_sold'] != true) // Filter out sold items
+        .map(
+          (data) => Product(
+            id: data['id'].toString(),
+            name: data['name'].toString(),
+            price: (data['price'] as num).toDouble(),
+            originalPrice: data['original_price'] != null
+                ? (data['original_price'] as num).toDouble()
+                : null,
+            size: data['size'].toString(),
+            brand: data['brand'].toString(),
+            condition: data['condition'].toString(),
+            imageUrl: data['image_url']?.toString(),
+            sellerId: data['user_id']?.toString(),
+            sellerName: data['profiles'] != null
+                ? data['profiles']['username']?.toString()
+                : null,
+            isSold: data['is_sold'] == true,
+            category: data['category']?.toString() ?? 'Other',
+            department: data['department']?.toString() ?? 'All',
+            material: data['material'].toString(),
+            colour: data['colour'].toString(),
+          ),
+        )
+        .toList();
+  }
 
   void _scrollLeft() {
     _scrollController.animateTo(
@@ -135,31 +103,54 @@ class _ProductCarouselState extends State<ProductCarousel> {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 280,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left, size: 32),
-            onPressed: _scrollLeft,
-            color: Colors.black87,
-          ),
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              controller: _scrollController,
-              itemCount: products.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                return ProductCard(product: products[index]);
-              },
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right, size: 32),
-            onPressed: _scrollRight,
-            color: Colors.black87,
-          ),
-        ],
+      child: FutureBuilder<List<Product>>(
+        future: _productsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error loading products.'));
+          }
+
+          final products = snapshot.data ?? [];
+
+          if (products.isEmpty) {
+            return const Center(
+              child: Text(
+                'No products available right now.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            );
+          }
+
+          return Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left, size: 32),
+                onPressed: _scrollLeft,
+                color: Colors.black87,
+              ),
+              Expanded(
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  controller: _scrollController,
+                  itemCount: products.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    return ProductCard(product: products[index]);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right, size: 32),
+                onPressed: _scrollRight,
+                color: Colors.black87,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
-import 'widgets/footer.dart';
-import 'widgets/header.dart';
+import '../widgets/footer.dart';
+import '../widgets/header.dart';
 
-class ContactPage extends StatefulWidget {
-  const ContactPage({super.key});
+/// Screen providing a contact form for users to send messages to the team.
+class ContactScreen extends StatefulWidget {
+  const ContactScreen({super.key});
 
   @override
-  State<ContactPage> createState() => _ContactPageState();
+  State<ContactScreen> createState() => _ContactPageState();
 }
 
-class _ContactPageState extends State<ContactPage> {
+class _ContactPageState extends State<ContactScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
 
+  /// Cleans up text controllers to free resources.
   @override
   void dispose() {
     _nameController.dispose();
@@ -26,6 +28,7 @@ class _ContactPageState extends State<ContactPage> {
     super.dispose();
   }
 
+  /// Validates the form and displays a success notification upon submission.
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,7 +68,7 @@ class _ContactPageState extends State<ContactPage> {
               ),
               child: Column(
                 children: [
-                  // Page Title
+                  // Page Title and descriptive header.
                   Text(
                     'Contact Us',
                     style: TextStyle(
@@ -88,7 +91,7 @@ class _ContactPageState extends State<ContactPage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Contact Form
+                      // Form container with shadow and padding.
                       Expanded(
                         child: Card(
                           elevation: 3,
@@ -109,6 +112,7 @@ class _ContactPageState extends State<ContactPage> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Text fields for user input with validation rules.
                                   TextFormField(
                                     controller: _nameController,
                                     decoration: const InputDecoration(
@@ -177,6 +181,7 @@ class _ContactPageState extends State<ContactPage> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Submission button.
                                   ElevatedButton(
                                     onPressed: _submitForm,
                                     style: ElevatedButton.styleFrom(

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
-import 'widgets/footer.dart';
-import 'widgets/header.dart';
+import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/header.dart';
 
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

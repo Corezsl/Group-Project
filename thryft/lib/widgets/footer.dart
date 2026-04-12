@@ -186,50 +186,19 @@ class Footer extends StatelessWidget {
         context.go('/contact');
         break;
       case 'Help Center':
-        _showComingSoonMessage(context, 'Help Center');
+        context.go('/help-center');
         break;
       case 'Terms of Service':
-        _showInfoDialog(
-            context, 'Terms of Service', 'Terms of Service content will be displayed here.');
+        context.go('/terms-of-service');
         break;
       case 'Privacy Policy':
-        _showInfoDialog(
-            context, 'Privacy Policy', 'Privacy Policy content will be displayed here.');
+        context.go('/privacy-policy');
         break;
       case 'Returns':
-        _showInfoDialog(
-            context, 'Returns Policy', 'Returns policy information will be displayed here.');
+        context.go('/returns');
         break;
       default:
         break;
     }
-  }
-
-  void _showComingSoonMessage(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature - Coming Soon!'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showInfoDialog(BuildContext context, String title, String content) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(content),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

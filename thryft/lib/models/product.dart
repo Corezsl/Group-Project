@@ -7,6 +7,14 @@ class Product {
   final String size;
   final String brand;
   final String condition;
+  final DateTime? createdAt; // used for sorting lists
+  final String? sellerId;
+  final String? sellerName;
+  final bool isSold;
+  final String category;
+  final String department;
+  final String material;
+  final String colour;
 
   const Product({
     required this.id,
@@ -17,6 +25,14 @@ class Product {
     required this.size,
     required this.brand,
     required this.condition,
+    this.createdAt,
+    this.sellerId,
+    this.sellerName,
+    this.isSold = false,
+    required this.department,
+    required this.category,
+    required this.material,
+    required this.colour,
   });
 
   factory Product.fromMap(Map<String, dynamic> map) {
@@ -43,5 +59,13 @@ class Product {
     'size': size,
     'brand': brand,
     'condition': condition,
+    if (imageUrl != null) 'imageUrl': imageUrl!,
+    if (sellerId != null) 'sellerId': sellerId!,
+    if (sellerName != null) 'sellerName': sellerName!,
+    'is_sold': isSold.toString(),
+    'category': category,
+    'department': department,
+    'material': material,
+    'colour': colour,
   };
 }
