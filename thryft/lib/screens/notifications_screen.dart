@@ -157,6 +157,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     _timeAgo(notif.createdAt),
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
+                  if (notif.notifType == NotificationType.listingSold &&
+                      notif.buyerAddress != null)
+                    _buildShippingAddress(notif.buyerAddress!),
                   if (notif.notifType == NotificationType.offerReceived)
                     _buildOfferActions(context, provider, notif),
                 ],
@@ -197,6 +200,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       radius: 20,
       backgroundColor: color.withValues(alpha: 0.1),
       child: Icon(icon, color: color, size: 20),
+    );
+  }
+
+  Widget _buildShippingAddress(String address) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.local_shipping_outlined, size: 14, color: Colors.grey[600]),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Ship to: $address',
+                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

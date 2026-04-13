@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:uuid/uuid.dart';
 

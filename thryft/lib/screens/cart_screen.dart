@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thryft/providers/cart_provider.dart';
+import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -57,6 +59,64 @@ class _CartScreenState extends State<CartScreen> {
       }
     } catch (e) {
       debugPrint('Error marking checkout items as sold: $e');
+    }
+
+    // 1.6 Fetch buyer's address once for all notifications
+    String? buyerAddress;
+    try {
+      final addressData = await Supabase.instance.client
+          .from('address')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (addressData != null) {
+        final parts = [
+          addressData['street'],
+          addressData['city'],
+          addressData['postal_code'],
+          addressData['country'],
+        ].where((p) => p != null && p.toString().isNotEmpty).toList();
+        if (parts.isNotEmpty) buyerAddress = parts.join(', ');
+      }
+    } catch (e) {
+      debugPrint('Error fetching buyer address: $e');
+    }
+
+    // 1.7 Send notifications for each sold item
+    for (var item in itemsToRate) {
+      // Notify the seller that their listing sold
+      if (item.product.sellerId != null) {
+        await NotificationProvider.insertNotification(
+          userId: item.product.sellerId!,
+          type: NotificationType.listingSold,
+          content: 'Your listing "${item.product.name}" has been sold!',
+          listingId: item.product.id,
+          relatedUserId: user.id,
+          buyerAddress: buyerAddress,
+        );
+      }
+
+      // Notify users who had this item in their wishlist
+      try {
+        final wishlistEntries = await Supabase.instance.client
+            .from('wishlist')
+            .select('user_id')
+            .eq('listing_id', item.product.id);
+        for (final entry in wishlistEntries as List) {
+          final wishlisterId = entry['user_id']?.toString();
+          if (wishlisterId != null && wishlisterId != user.id) {
+            await NotificationProvider.insertNotification(
+              userId: wishlisterId,
+              type: NotificationType.wishlistPurchased,
+              content:
+                  'An item on your wishlist "${item.product.name}" has been sold.',
+              listingId: item.product.id,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Error sending wishlist purchase notifications: $e');
+      }
     }
 
     // 2. Clear cart
@@ -208,8 +268,8 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildSortAndFilter() {
-    return Align(
-      alignment: Alignment.centerLeft,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           const SizedBox(width: 24),
