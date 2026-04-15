@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';

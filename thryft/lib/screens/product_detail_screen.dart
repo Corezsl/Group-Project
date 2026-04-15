@@ -446,57 +446,88 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
+    final data = await Supabase.instance.client
+        .from('ratings')
+        .select('rating')
+        .eq('seller_id', sellerId);
+    final list = data as List;
+    if (list.isEmpty) return {'avg': 0.0, 'count': 0};
+    final avg = list
+            .map((r) => (r['rating'] as num).toDouble())
+            .reduce((a, b) => a + b) /
+        list.length;
+    return {'avg': avg, 'count': list.length};
+  }
+
   Widget _buildSellerProfile(BuildContext context) {
     if (product['sellerId'] == null) return const SizedBox.shrink();
-    return InkWell(
-      onTap: () => context.push('/user/${product['sellerId']}'),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[200]!),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _fetchSellerRating(product['sellerId']!),
+      builder: (context, snapshot) {
+        final count = snapshot.data?['count'] as int? ?? 0;
+        final avg = snapshot.data?['avg'] as double? ?? 0.0;
+
+        return InkWell(
+          onTap: () => context.push('/user/${product['sellerId']}'),
           borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[200],
-              child: const Icon(Icons.person, color: Colors.grey, size: 30),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[200]!),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product['sellerName'] ?? 'Unknown Seller',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: const [
-                      Icon(Icons.star, color: Colors.amber, size: 16),
-                      SizedBox(width: 4),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.grey[200],
+                  child: const Icon(Icons.person, color: Colors.grey, size: 30),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        "5.0 (0)",
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 13,
+                        product['sellerName'] ?? 'Unknown Seller',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      if (count == 0)
+                        Text(
+                          'No reviews yet',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 13,
+                          ),
+                        )
+                      else
+                        Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${avg.toStringAsFixed(1)} ($count)',
+                              style: const TextStyle(
+                                color: Color(0xFF6B7280),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

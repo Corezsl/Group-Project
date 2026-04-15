@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/utils/size_options.dart';
 
