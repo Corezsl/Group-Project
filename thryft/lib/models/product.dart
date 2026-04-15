@@ -47,6 +47,10 @@ class Product {
       size: map['size'] ?? 'N/A',
       brand: map['brand'] ?? 'Unbranded',
       condition: map['condition'] ?? 'Unknown',
+      colour: map['colour'] ?? 'Not Provided',
+      category: map['category'] ?? 'Unknown',
+      department:  map['department'] ?? 'Unknown',
+      material: map['material'] ?? 'Not Provided'
     );
   }
 
