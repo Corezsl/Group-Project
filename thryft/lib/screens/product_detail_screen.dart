@@ -8,8 +8,9 @@ import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/interaction_service.dart';
-import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/widgets/making_offer_system.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, String> product;
@@ -204,8 +205,6 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
         const SizedBox(height: 12),
-        _buildDetailRow("Department", product['department'] ?? '-'),
-        const SizedBox(height: 12),
         _buildDetailRow("Size", product['size'] ?? '-'),
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
@@ -265,7 +264,9 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildSecondaryButton(
-                    "Make an offer", () => _showOfferDialog(context)),
+                  "Make an offer",
+                  () => _showMakeOfferSheet(context),
+                ),
               ],
             );
           },
@@ -309,6 +310,111 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showMakeOfferSheet(BuildContext context) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      context.push('/auth');
+      return;
+    }
+
+    final sellerId = product['sellerId'];
+    if (sellerId == null || sellerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This listing is missing seller details.')),
+      );
+      return;
+    }
+
+    if (sellerId == currentUser.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot make an offer on your own listing.')),
+      );
+      return;
+    }
+
+    final askingPrice = double.tryParse(product['price'] ?? '0') ?? 0;
+    if (askingPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This listing has an invalid price.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (modalContext) => MakingOfferSystem(
+        listingName: product['name'] ?? 'Listing',
+        askingPrice: askingPrice,
+        onSubmit: (offerPrice) => _submitOffer(context, offerPrice),
+      ),
+    ).then((created) {
+      if (created == true && context.mounted) {
+        context.push('/my-offers');
+      }
+    });
+  }
+
+  Future<void> _submitOffer(BuildContext context, double offerPrice) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final listingId = product['id'];
+    final sellerId = product['sellerId'];
+    if (user == null || listingId == null || sellerId == null) {
+      throw Exception('missing_offer_context');
+    }
+
+    final buyerName =
+        (user.userMetadata?['username']?.toString().trim().isNotEmpty ?? false)
+        ? user.userMetadata!['username'].toString().trim()
+        : 'A buyer';
+
+    final listingName = product['name'] ?? 'your item';
+
+    var offerStored = true;
+    try {
+      await Supabase.instance.client.from('offers').insert({
+        'listing_id': listingId,
+        'buyer_id': user.id,
+        'seller_id': sellerId,
+        'offered_price': offerPrice,
+        'status': 'pending',
+      });
+    } catch (_) {
+      offerStored = false;
+    }
+
+    await NotificationProvider.insertNotification(
+      userId: sellerId,
+      type: NotificationType.offerReceived,
+      content:
+          '$buyerName offered £${offerPrice.toStringAsFixed(2)} for $listingName',
+      listingId: listingId,
+      relatedUserId: user.id,
+      offerPrice: offerPrice,
+    );
+
+    await NotificationProvider.insertNotification(
+      userId: user.id,
+      type: NotificationType.other,
+      content:
+          'You successfully made an offer of £${offerPrice.toStringAsFixed(2)} for $listingName.',
+      listingId: listingId,
+      offerPrice: offerPrice,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            offerStored
+                ? 'Offer sent to the seller.'
+                : 'Offer sent, but offer history storage failed. Please check your database schema.',
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildFullWidthBanner(

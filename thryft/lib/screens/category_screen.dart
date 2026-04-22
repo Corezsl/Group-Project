@@ -32,49 +32,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<List<Product>> _fetchByCategory() async {
-    final categoryParam = widget.category.trim();
-    if (categoryParam.isEmpty) {
-      final response = await Supabase.instance.client
-          .from('products')
-          .select('*, profiles(username)')
-          .eq('is_sold', false)
-          .order('created_at', ascending: false);
-      return (response as List).map((data) => Product(
-        id: data['id'].toString(),
-        name: data['name'].toString(),
-        price: (data['price'] as num).toDouble(),
-        originalPrice: data['original_price'] != null
-            ? (data['original_price'] as num).toDouble()
-            : null,
-        size: data['size'].toString(),
-        brand: data['brand'].toString(),
-        condition: data['condition'].toString(),
-        imageUrl: data['image_url']?.toString(),
-        sellerId: data['user_id']?.toString(),
-        department: data['department']?.toString() ?? 'All',
-        material: data['material'].toString(),
-        colour: data['colour'].toString(),
-        sellerName: data['profiles'] != null
-            ? data['profiles']['username']?.toString()
-            : null,
-        isSold: data['is_sold'] == true,
-        category: data['category']?.toString() ?? 'Other',
-      )).toList();
-    }
-
-    // Normalize and build singular/plural variants, then search with wildcards.
-    final normalized = categoryParam.toLowerCase();
-    final altVariant = normalized.endsWith('s')
-        ? normalized.substring(0, normalized.length - 1)
-        : '${normalized}s';
-    final patternA = '%$normalized%';
-    final patternB = '%$altVariant%';
-
     final response = await Supabase.instance.client
         .from('products')
         .select('*, profiles(username)')
-        //used ilike to search for similar terms
-        .or('category.ilike.$patternA,category.ilike.$patternB')
+        .eq('category', widget.category)
         .eq('is_sold', false)
         .order('created_at', ascending: false);
 

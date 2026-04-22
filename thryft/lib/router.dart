@@ -20,6 +20,7 @@ import 'package:thryft/screens/sold_items_screen.dart';
 import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
+import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
 
@@ -33,10 +34,7 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const WishlistScreen(),
     ),
     GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
-    GoRoute(
-      path: '/contact',
-      builder: (context, state) => const ContactScreen(),
-    ),
+    GoRoute(path: '/contact', builder: (context, state) => const ContactScreen()),
     GoRoute(
       path: '/help-center',
       builder: (context, state) => const HelpCenterScreen(),
@@ -49,10 +47,7 @@ final GoRouter router = GoRouter(
       path: '/privacy-policy',
       builder: (context, state) => const PrivacyPolicyScreen(),
     ),
-    GoRoute(
-      path: '/returns',
-      builder: (context, state) => const ReturnsScreen(),
-    ),
+    GoRoute(path: '/returns', builder: (context, state) => const ReturnsScreen()),
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
@@ -76,6 +71,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/my-orders',
       builder: (context, state) => const MyOrdersScreen(),
+    ),
+    GoRoute(
+      path: '/my-offers',
+      builder: (context, state) => const MyOffersScreen(),
     ),
     GoRoute(
       path: '/sold-items',

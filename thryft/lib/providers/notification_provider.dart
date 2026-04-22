@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 
-/// Manages user notifications and offer interactions using Supabase.
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -16,7 +15,6 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
   bool get isLoading => _isLoading;
 
-  /// Initializes authentication listeners to sync notifications.
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
@@ -113,7 +111,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Marks all notifications for the current user as read.
+  /// Called when NotificationsScreen opens. Marks all unread as read
   Future<void> markAllAsRead() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -139,12 +137,11 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Updates product status and price upon accepting an offer.
   Future<void> acceptOffer(AppNotification notification) async {
     if (notification.listingId == null || notification.offerPrice == null)
       return;
 
-    //Check  product is not already sold
+    // Pre-check: ensure product is not already sold
     final product = await Supabase.instance.client
         .from('products')
         .select('is_sold')
@@ -152,9 +149,12 @@ class NotificationProvider extends ChangeNotifier {
         .single();
 
     if (product['is_sold'] == true) {
+      await _syncOfferStatus(notification, 'declined');
       await _deleteNotification(notification.notificationId);
       throw Exception('already_sold');
     }
+
+    await _syncOfferStatus(notification, 'accepted');
 
     await Supabase.instance.client
         .from('products')
@@ -169,12 +169,47 @@ class NotificationProvider extends ChangeNotifier {
     await _deleteNotification(notification.notificationId);
   }
 
-  /// Removes a notification when an offer is declined.
   Future<void> declineOffer(AppNotification notification) async {
+    await _syncOfferStatus(notification, 'declined');
     await _deleteNotification(notification.notificationId);
   }
 
-  /// Helper to remove a notification locally and from the database.
+  Future<void> _syncOfferStatus(
+    AppNotification notification,
+    String status,
+  ) async {
+    if (notification.listingId == null ||
+        notification.relatedUserId == null ||
+        notification.offerPrice == null) {
+      return;
+    }
+
+    try {
+      final latestOffer = await Supabase.instance.client
+          .from('offers')
+          .select('offer_id')
+          .eq('listing_id', notification.listingId!)
+          .eq('buyer_id', notification.relatedUserId!)
+          .eq('offered_price', notification.offerPrice!)
+          .eq('status', 'pending')
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (latestOffer == null) return;
+
+      await Supabase.instance.client
+          .from('offers')
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('offer_id', latestOffer['offer_id']);
+    } catch (e) {
+      debugPrint('Skipping offers status sync: $e');
+    }
+  }
+
   Future<void> _deleteNotification(int notificationId) async {
     _notifications.removeWhere((n) => n.notificationId == notificationId);
     notifyListeners();
@@ -185,7 +220,8 @@ class NotificationProvider extends ChangeNotifier {
         .eq('notification_id', notificationId);
   }
 
-  /// Static method to create a new notification entry.
+  // Called from other providers/screens without needing a provider reference.
+
   static Future<void> insertNotification({
     required String userId,
     required NotificationType type,
