@@ -206,8 +206,10 @@ class NotificationProvider extends ChangeNotifier {
         if (offerPrice != null) 'offer_price': offerPrice,
         if (buyerAddress != null) 'buyer_address': buyerAddress,
       });
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error inserting notification: $e');
+      debugPrint('Stack: $stack');
+      rethrow;
     }
   }
 }
