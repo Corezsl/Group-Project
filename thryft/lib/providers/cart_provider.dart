@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/models/product.dart';
-
+//test 
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;
   final List<CartItem> _items = [];
