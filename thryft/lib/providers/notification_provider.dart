@@ -6,6 +6,7 @@ import 'package:thryft/models/notification_model.dart';
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
+  RealtimeChannel? _realtimeChannel;
 
   NotificationProvider() {
     _init();
@@ -20,15 +21,70 @@ class NotificationProvider extends ChangeNotifier {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
         fetchNotifications();
+        _subscribeToNotifications();
       } else {
         _notifications.clear();
+        _unsubscribeFromNotifications();
         notifyListeners();
       }
     });
 
     if (Supabase.instance.client.auth.currentUser != null) {
       fetchNotifications();
+      _subscribeToNotifications();
     }
+  }
+
+  void _subscribeToNotifications() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    _unsubscribeFromNotifications();
+
+    _realtimeChannel = Supabase.instance.client
+        .channel('notifications:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notification',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) {
+            final newNotification =
+                AppNotification.fromMap(payload.newRecord);
+            _notifications.insert(0, newNotification);
+            notifyListeners();
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: 'notification',
+          callback: (payload) {
+            final deletedId = payload.oldRecord['notification_id'] as int?;
+            if (deletedId != null) {
+              _notifications.removeWhere((n) => n.notificationId == deletedId);
+              notifyListeners();
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  void _unsubscribeFromNotifications() {
+    if (_realtimeChannel != null) {
+      Supabase.instance.client.removeChannel(_realtimeChannel!);
+      _realtimeChannel = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromNotifications();
+    super.dispose();
   }
 
   /// Fetches user notifications from the database.
