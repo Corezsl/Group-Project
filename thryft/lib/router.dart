@@ -21,7 +21,7 @@ import 'package:thryft/screens/category_screen.dart';
 import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
-// import 'package:thryft/screens/nav_assistant_chat_screen.dart';
+import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
 
 final GoRouter router = GoRouter(
@@ -106,11 +106,22 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const NotificationsScreen(),
     ),
     GoRoute(
+      path: '/search',
+      builder: (context, state) {
+        final q = state.uri.queryParameters['q'] ?? '';
+        return SearchScreen(initialQuery: q);
+      },
+    ),
+    GoRoute(
       path: '/category/:name',
       builder: (context, state) {
         final category = state.pathParameters['name'] ?? '';
         return CategoryScreen(category: category);
       },
+    ),
+    GoRoute(
+      path: '/chat-assistant',
+      builder: (context, state) => const NavAssistantChatScreen(),
     ),
   ],
 );
