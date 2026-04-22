@@ -84,16 +84,21 @@ class _CartScreenState extends State<CartScreen> {
 
     // 1.7 Send notifications for each sold item
     for (var item in itemsToRate) {
+      debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');
       // Notify the seller that their listing sold
       if (item.product.sellerId != null) {
-        await NotificationProvider.insertNotification(
-          userId: item.product.sellerId!,
-          type: NotificationType.listingSold,
-          content: 'Your listing "${item.product.name}" has been sold!',
-          listingId: item.product.id,
-          relatedUserId: user.id,
-          buyerAddress: buyerAddress,
-        );
+        try {
+          await NotificationProvider.insertNotification(
+            userId: item.product.sellerId!,
+            type: NotificationType.listingSold,
+            content: 'Your listing "${item.product.name}" has been sold!',
+            listingId: item.product.id,
+            relatedUserId: user.id,
+            buyerAddress: buyerAddress,
+          );
+        } catch (e) {
+          debugPrint('Failed to notify seller (sellerId=${item.product.sellerId}): $e');
+        }
       }
 
       // Notify users who had this item in their wishlist
