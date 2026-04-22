@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
+import '../widgets/app_drawer.dart';
 import '../widgets/header.dart';
 
 class ContactScreen extends StatefulWidget {
