@@ -8,6 +8,8 @@ import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/interaction_service.dart';
+import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/models/notification_model.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, String> product;
@@ -262,7 +264,8 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                 ),
                 const SizedBox(height: 12),
-                _buildSecondaryButton("Make an offer", () {}),
+                _buildSecondaryButton(
+                    "Make an offer", () => _showOfferDialog(context)),
               ],
             );
           },
@@ -413,6 +416,93 @@ class ProductDetailScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
       }
     }
+  }
+
+  void _showOfferDialog(BuildContext context) {
+    final sellerId = product['sellerId'];
+    final currentUser = Supabase.instance.client.auth.currentUser;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to make an offer')),
+      );
+      return;
+    }
+    if (sellerId == null || sellerId == currentUser.id) return;
+
+    final priceController = TextEditingController();
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Make an Offer'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Listed price: £${product['price']}'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Your offer (£)',
+                  border: OutlineInputBorder(),
+                  prefixText: '£',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: isSending
+                  ? null
+                  : () async {
+                      final offerPrice = double.tryParse(priceController.text.trim());
+                      if (offerPrice == null || offerPrice <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Enter a valid offer price')),
+                        );
+                        return;
+                      }
+                      setDialogState(() => isSending = true);
+                      try {
+                        await NotificationProvider.insertNotification(
+                          userId: sellerId,
+                          type: NotificationType.offerReceived,
+                          content:
+                              '${currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
+                          listingId: product['id'],
+                          relatedUserId: currentUser.id,
+                          offerPrice: offerPrice,
+                        );
+                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Offer sent!')),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSending = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to send offer: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: const Text('Send Offer'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSecondaryButton(String text, VoidCallback onPressed) {
