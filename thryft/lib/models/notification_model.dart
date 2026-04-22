@@ -1,5 +1,4 @@
 enum NotificationType {
-  newMessage,
   listingSold,
   priceDrop,
   other,
@@ -9,8 +8,6 @@ enum NotificationType {
 
   static NotificationType fromString(String value) {
     switch (value) {
-      case 'new_message':
-        return NotificationType.newMessage;
       case 'listing_sold':
         return NotificationType.listingSold;
       case 'price_drop':
@@ -28,8 +25,6 @@ enum NotificationType {
 
   String toDbString() {
     switch (this) {
-      case NotificationType.newMessage:
-        return 'new_message';
       case NotificationType.listingSold:
         return 'listing_sold';
       case NotificationType.priceDrop:
