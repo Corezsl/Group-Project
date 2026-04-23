@@ -91,6 +91,18 @@ class AccountScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
+                          Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.local_offer_outlined),
+                          title: const Text('My Offers'),
+                          subtitle: const Text('View offers you have made'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.push('/my-offers');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       Card(
                         child: ListTile(
                           leading: const Icon(Icons.local_offer_outlined),

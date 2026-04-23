@@ -263,7 +263,7 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                 ),
                 const SizedBox(height: 12),
-                _buildSecondaryButton(
+                  _buildSecondaryButton(
                   "Make an offer",
                   () => _showMakeOfferSheet(context),
                 ),
@@ -358,7 +358,8 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Future<void> _submitOffer(BuildContext context, double offerPrice) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
     final listingId = product['id'];
     final sellerId = product['sellerId'];
     if (user == null || listingId == null || sellerId == null) {
@@ -372,24 +373,57 @@ class ProductDetailScreen extends StatelessWidget {
 
     final listingName = product['name'] ?? 'your item';
 
-    var offerStored = true;
-    try {
-      await Supabase.instance.client.from('offers').insert({
+    var isOfferUpdate = false;
+    final existingOffer = await supabase
+        .from('offers')
+        .select('offer_id')
+        .eq('listing_id', listingId)
+        .eq('buyer_id', user.id)
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (existingOffer != null) {
+      isOfferUpdate = true;
+      await supabase
+          .from('offers')
+          .update({
+            'offered_price': offerPrice,
+            'status': 'pending',
+            'seller_id': sellerId,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('offer_id', existingOffer['offer_id']);
+    } else {
+      await supabase.from('offers').insert({
         'listing_id': listingId,
         'buyer_id': user.id,
         'seller_id': sellerId,
         'offered_price': offerPrice,
         'status': 'pending',
       });
+    }
+
+    try {
+      await supabase
+          .from('notification')
+          .delete()
+          .eq('user_id', sellerId)
+          .eq('notif_type', NotificationType.offerReceived.toDbString())
+          .eq('listing_id', listingId)
+          .eq('related_user_id', user.id);
     } catch (_) {
-      offerStored = false;
+      // Ignore cleanup errors; this is only to avoid duplicate seller notifications.
     }
 
     await NotificationProvider.insertNotification(
       userId: sellerId,
       type: NotificationType.offerReceived,
       content:
-          '$buyerName offered £${offerPrice.toStringAsFixed(2)} for $listingName',
+          isOfferUpdate
+              ? '$buyerName updated their offer to £${offerPrice.toStringAsFixed(2)} for $listingName'
+              : '$buyerName offered £${offerPrice.toStringAsFixed(2)} for $listingName',
       listingId: listingId,
       relatedUserId: user.id,
       offerPrice: offerPrice,
@@ -399,7 +433,9 @@ class ProductDetailScreen extends StatelessWidget {
       userId: user.id,
       type: NotificationType.other,
       content:
-          'You successfully made an offer of £${offerPrice.toStringAsFixed(2)} for $listingName.',
+          isOfferUpdate
+              ? 'You updated your offer to £${offerPrice.toStringAsFixed(2)} for $listingName.'
+              : 'You successfully made an offer of £${offerPrice.toStringAsFixed(2)} for $listingName.',
       listingId: listingId,
       offerPrice: offerPrice,
     );
@@ -408,9 +444,9 @@ class ProductDetailScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            offerStored
-                ? 'Offer sent to the seller.'
-                : 'Offer sent, but offer history storage failed. Please check your database schema.',
+            isOfferUpdate
+                ? 'Offer updated and sent to the seller.'
+                : 'Offer sent to the seller.',
           ),
         ),
       );
@@ -524,92 +560,6 @@ class ProductDetailScreen extends StatelessWidget {
     }
   }
 
-  void _showOfferDialog(BuildContext context) {
-    final sellerId = product['sellerId'];
-    final currentUser = Supabase.instance.client.auth.currentUser;
-
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to make an offer')),
-      );
-      return;
-    }
-    if (sellerId == null || sellerId == currentUser.id) return;
-
-    final priceController = TextEditingController();
-    bool isSending = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: const Text('Make an Offer'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Listed price: £${product['price']}'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Your offer (£)',
-                  border: OutlineInputBorder(),
-                  prefixText: '£',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: isSending
-                  ? null
-                  : () async {
-                      final offerPrice = double.tryParse(priceController.text.trim());
-                      if (offerPrice == null || offerPrice <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Enter a valid offer price')),
-                        );
-                        return;
-                      }
-                      setDialogState(() => isSending = true);
-                      try {
-                        await NotificationProvider.insertNotification(
-                          userId: sellerId,
-                          type: NotificationType.offerReceived,
-                          content:
-                              '${currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
-                          listingId: product['id'],
-                          relatedUserId: currentUser.id,
-                          offerPrice: offerPrice,
-                        );
-                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Offer sent!')),
-                          );
-                        }
-                      } catch (e) {
-                        setDialogState(() => isSending = false);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to send offer: $e')),
-                          );
-                        }
-                      }
-                    },
-              child: const Text('Send Offer'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildSecondaryButton(String text, VoidCallback onPressed) {
     return SizedBox(
