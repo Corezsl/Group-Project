@@ -141,8 +141,9 @@ class NotificationProvider extends ChangeNotifier {
 
   /// Updates product status and price upon accepting an offer.
   Future<void> acceptOffer(AppNotification notification) async {
-    if (notification.listingId == null || notification.offerPrice == null)
+    if (notification.listingId == null || notification.relatedUserId == null) {
       return;
+    }
 
     //Check  product is not already sold
     final product = await Supabase.instance.client
@@ -157,60 +158,108 @@ class NotificationProvider extends ChangeNotifier {
       throw Exception('already_sold');
     }
 
-    await _syncOfferStatus(notification, 'accepted');
+    final updatedOffer = await _syncOfferStatus(notification, 'accepted');
+    final acceptedPrice = (updatedOffer['offered_price'] as num).toDouble();
 
     await Supabase.instance.client
         .from('products')
         .update({
-          'price': notification.offerPrice,
+          'price': acceptedPrice,
           'is_sold': true,
           if (notification.relatedUserId != null)
             'buyer_id': notification.relatedUserId,
         })
         .eq('id', notification.listingId!);
 
+    final listingName = await _resolveListingName(notification.listingId!);
+    await NotificationProvider.insertNotification(
+      userId: notification.relatedUserId!,
+      type: NotificationType.listingSold,
+      content:
+          'Your offer of £${acceptedPrice.toStringAsFixed(2)} for $listingName was accepted.',
+      listingId: notification.listingId,
+      relatedUserId: notification.relatedUserId,
+      offerPrice: acceptedPrice,
+    );
+
     await _deleteNotification(notification.notificationId);
   }
 
   /// Removes a notification when an offer is declined.
   Future<void> declineOffer(AppNotification notification) async {
-    await _syncOfferStatus(notification, 'declined');
+    final updatedOffer = await _syncOfferStatus(notification, 'declined');
+    final declinedPrice = (updatedOffer['offered_price'] as num).toDouble();
+    final listingName = notification.listingId == null
+        ? 'this item'
+        : await _resolveListingName(notification.listingId!);
+
+    if (notification.relatedUserId != null) {
+      await NotificationProvider.insertNotification(
+        userId: notification.relatedUserId!,
+        type: NotificationType.other,
+        content:
+            'Your offer of £${declinedPrice.toStringAsFixed(2)} for $listingName was declined.',
+        listingId: notification.listingId,
+        relatedUserId: notification.relatedUserId,
+        offerPrice: declinedPrice,
+      );
+    }
+
     await _deleteNotification(notification.notificationId);
   }
 
-  Future<void> _syncOfferStatus(
+  Future<Map<String, dynamic>> _syncOfferStatus(
     AppNotification notification,
     String status,
   ) async {
-    if (notification.listingId == null ||
-        notification.relatedUserId == null ||
-        notification.offerPrice == null) {
-      return;
+    if (notification.listingId == null || notification.relatedUserId == null) {
+      throw Exception('missing_offer_identity');
     }
 
+    final latestOffer = await Supabase.instance.client
+        .from('offers')
+        .select('offer_id, offered_price')
+        .eq('listing_id', notification.listingId!)
+        .eq('buyer_id', notification.relatedUserId!)
+        .eq('status', 'pending')
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (latestOffer == null) {
+      throw Exception('offer_not_found');
+    }
+
+    final updatedOffer = await Supabase.instance.client
+        .from('offers')
+        .update({
+          'status': status,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('offer_id', latestOffer['offer_id'])
+        .select('offer_id, offered_price, status')
+        .maybeSingle();
+
+    if (updatedOffer == null) {
+      throw Exception('offer_update_failed');
+    }
+
+    return Map<String, dynamic>.from(updatedOffer as Map);
+  }
+
+  Future<String> _resolveListingName(String listingId) async {
     try {
-      final latestOffer = await Supabase.instance.client
-          .from('offers')
-          .select('offer_id')
-          .eq('listing_id', notification.listingId!)
-          .eq('buyer_id', notification.relatedUserId!)
-          .eq('offered_price', notification.offerPrice!)
-          .eq('status', 'pending')
-          .order('created_at', ascending: false)
-          .limit(1)
+      final product = await Supabase.instance.client
+          .from('products')
+          .select('name')
+          .eq('id', listingId)
           .maybeSingle();
-
-      if (latestOffer == null) return;
-
-      await Supabase.instance.client
-          .from('offers')
-          .update({
-            'status': status,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('offer_id', latestOffer['offer_id']);
-    } catch (e) {
-      debugPrint('Skipping offers status sync: $e');
+      final name = product?['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+      return 'this item';
+    } catch (_) {
+      return 'this item';
     }
   }
 
