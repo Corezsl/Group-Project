@@ -53,23 +53,15 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back),
-                                      onPressed: () => context.go('/account'),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'My Offers',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineMedium
-                                          ?.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
+                                Text(
+                                  'My Offers',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
