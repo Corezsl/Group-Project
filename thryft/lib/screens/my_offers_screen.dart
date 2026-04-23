@@ -22,26 +22,12 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return [];
 
-    List<dynamic> offers = [];
-    var usingNotificationFallback = false;
-
-    try {
-      offers = await Supabase.instance.client
-          .from('offers')
-          .select('offer_id, listing_id, offered_price, status, created_at')
-          .eq('buyer_id', userId)
-          .order('created_at', ascending: false);
-    } catch (_) {
-      usingNotificationFallback = true;
-      offers = await Supabase.instance.client
-          .from('notification')
-          .select('notification_id, listing_id, offer_price, created_at')
-          .eq('user_id', userId)
-          .eq('notif_type', 'other')
-          .not('offer_price', 'is', null)
-          .like('content', 'You successfully made an offer%')
-          .order('created_at', ascending: false);
-    }
+       final offers = await Supabase.instance.client
+        .from('offers')
+        .select('offer_id, listing_id, offered_price, status, created_at')
+        .eq('buyer_id', userId)
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false);
 
     if (offers.isEmpty) return [];
 
@@ -65,14 +51,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
       final listingId = row['listing_id']?.toString() ?? '';
       final product = productById[listingId];
       return _OfferHistoryItem(
-        offerId: (row['offer_id'] ?? row['notification_id']).toString(),
-        listingId: listingId,
-        offeredPrice:
-          ((row['offered_price'] ?? row['offer_price']) as num?)?.toDouble() ??
-          0,
-        status: usingNotificationFallback
-          ? 'pending'
-          : (row['status']?.toString() ?? 'pending'),
+        offerId: row['offer_id'].toString(),
+                listingId: listingId,
+
+        offeredPrice: (row['offered_price'] as num?)?.toDouble() ?? 0,
+        status: row['status']?.toString() ?? 'pending',
         createdAt:
             DateTime.tryParse(row['created_at']?.toString() ?? '') ??
             DateTime.now(),
