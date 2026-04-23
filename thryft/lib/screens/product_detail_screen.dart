@@ -9,6 +9,7 @@ import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/interaction_service.dart';
 import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/providers/offer_provider.dart';
 import 'package:thryft/models/notification_model.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -426,6 +427,7 @@ class ProductDetailScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to make an offer')),
       );
+      context.push('/auth');
       return;
     }
     if (sellerId == null || sellerId == currentUser.id) return;
@@ -465,23 +467,63 @@ class ProductDetailScreen extends StatelessWidget {
                   ? null
                   : () async {
                       final offerPrice = double.tryParse(priceController.text.trim());
+                      final listingPrice = double.tryParse(product['price'] ?? '');
                       if (offerPrice == null || offerPrice <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Enter a valid offer price')),
                         );
                         return;
                       }
+                      if (listingPrice != null && offerPrice >= listingPrice) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Your offer must be less than the listed price of £${listingPrice.toStringAsFixed(2)}',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       setDialogState(() => isSending = true);
                       try {
+                        // Prevent duplicate pending offers.
+                        final alreadyPending = await OfferProvider.hasPendingOffer(
+                          buyerId: currentUser.id,
+                          listingId: product['id'] ?? '',
+                        );
+                        if (alreadyPending) {
+                          if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('You already have a pending offer on this item.'),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Record the offer in the offers table.
+                        await OfferProvider.createOffer(
+                          buyerId: currentUser.id,
+                          sellerId: sellerId,
+                          listingId: product['id'] ?? '',
+                          offerAmount: offerPrice,
+                          listingTitle: product['name'],
+                          listingImageUrl: product['imageUrl'],
+                        );
+
+                        // Notify the seller.
                         await NotificationProvider.insertNotification(
                           userId: sellerId,
                           type: NotificationType.offerReceived,
                           content:
-                              '${currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
+                              '${currentUser.userMetadata?['username'] ?? currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
                           listingId: product['id'],
                           relatedUserId: currentUser.id,
                           offerPrice: offerPrice,
                         );
+
                         if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -497,7 +539,13 @@ class ProductDetailScreen extends StatelessWidget {
                         }
                       }
                     },
-              child: const Text('Send Offer'),
+              child: isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Send Offer'),
             ),
           ],
         ),
