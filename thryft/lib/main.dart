@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/providers/offer_provider.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/router.dart';
@@ -26,6 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => OfferProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       child: const ThryftApp(),
