@@ -152,9 +152,12 @@ class NotificationProvider extends ChangeNotifier {
         .single();
 
     if (product['is_sold'] == true) {
+      await _syncOfferStatus(notification, 'declined');
       await _deleteNotification(notification.notificationId);
       throw Exception('already_sold');
     }
+
+    await _syncOfferStatus(notification, 'accepted');
 
     await Supabase.instance.client
         .from('products')
@@ -171,7 +174,44 @@ class NotificationProvider extends ChangeNotifier {
 
   /// Removes a notification when an offer is declined.
   Future<void> declineOffer(AppNotification notification) async {
+    await _syncOfferStatus(notification, 'declined');
     await _deleteNotification(notification.notificationId);
+  }
+
+  Future<void> _syncOfferStatus(
+    AppNotification notification,
+    String status,
+  ) async {
+    if (notification.listingId == null ||
+        notification.relatedUserId == null ||
+        notification.offerPrice == null) {
+      return;
+    }
+
+    try {
+      final latestOffer = await Supabase.instance.client
+          .from('offers')
+          .select('offer_id')
+          .eq('listing_id', notification.listingId!)
+          .eq('buyer_id', notification.relatedUserId!)
+          .eq('offered_price', notification.offerPrice!)
+          .eq('status', 'pending')
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (latestOffer == null) return;
+
+      await Supabase.instance.client
+          .from('offers')
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('offer_id', latestOffer['offer_id']);
+    } catch (e) {
+      debugPrint('Skipping offers status sync: $e');
+    }
   }
 
   /// Helper to remove a notification locally and from the database.
