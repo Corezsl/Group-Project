@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
-import 'package:thryft/utils/size_options.dart';
-import 'dart:math';
+import 'package:thryft/utils/size_options.dart'; // <-- use centralized lists
 
 class StandardProductGrid extends StatefulWidget {
   final List<Product> items;
@@ -12,9 +11,7 @@ class StandardProductGrid extends StatefulWidget {
   final String emptyTitle;
   final String emptySubtitle;
   final Widget? extraButton;
-  final Widget? extraGridCard;
   final String dateFilterLabel;
-  final String priceFilterLabel;
 
   const StandardProductGrid({
     super.key,
@@ -25,9 +22,7 @@ class StandardProductGrid extends StatefulWidget {
     this.emptyTitle = 'No items found',
     this.emptySubtitle = 'Try adjusting your filters or check back later.',
     this.extraButton,
-    this.extraGridCard,
     this.dateFilterLabel = 'DATE',
-    this.priceFilterLabel = 'PRICE',
   });
 
   @override
@@ -36,13 +31,8 @@ class StandardProductGrid extends StatefulWidget {
 
 class _StandardProductGridState extends State<StandardProductGrid> {
   String? _selectedSize;
+  String? _selectedPriceRange;
   String? _selectedDateSort;
-  String? _selectedPriceSort;
-
-  // Pagination state
-  final List<int> _itemsPerPageOptions = [10, 20, 30, 40, 50];
-  int _itemsPerPage = 50;
-  int _currentPage = 1;
 
   int _compareSizes(String a, String b) {
     const sizeOrder = {
@@ -59,17 +49,23 @@ class _StandardProductGridState extends State<StandardProductGrid> {
       filtered = filtered.where((p) => p.size == _selectedSize).toList();
     }
 
+    if (_selectedPriceRange != null) {
+      filtered = filtered.where((p) {
+        if (_selectedPriceRange == priceRanges[0]) return p.price < 25;
+        if (_selectedPriceRange == priceRanges[1]) return p.price >= 25 && p.price <= 50;
+        if (_selectedPriceRange == priceRanges[2]) return p.price >= 50 && p.price <= 100;
+        if (_selectedPriceRange == priceRanges[3]) return p.price >= 100 && p.price <= 250;
+        if (_selectedPriceRange == priceRanges[4]) return p.price > 250;
+        return true;
+      }).toList();
+    }
+
     if (_selectedDateSort == dateSortOptions[0]) {
       filtered.sort((a, b) => b.id.compareTo(a.id));
     } else if (_selectedDateSort == dateSortOptions[1]) {
       filtered.sort((a, b) => a.id.compareTo(b.id));
     }
 
-    if (_selectedPriceSort == priceSortOptions[0]) {
-      filtered.sort((a, b) => a.price.compareTo(b.price));
-    } else if (_selectedPriceSort == priceSortOptions[1]) {
-      filtered.sort((a, b) => b.price.compareTo(a.price));
-    }
     return filtered;
   }
 
@@ -79,7 +75,6 @@ class _StandardProductGridState extends State<StandardProductGrid> {
     required List<T> options,
     required String Function(T) display,
     required ValueChanged<T?> onChanged,
-    bool includeAll = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,15 +100,14 @@ class _StandardProductGridState extends State<StandardProductGrid> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<T>(
               value: value,
-              hint: includeAll ? Text('All', style: TextStyle(color: Colors.grey[400], fontSize: 14)) : null,
+              hint: Text('All', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF111827)),
               borderRadius: BorderRadius.circular(8),
               items: [
-                if (includeAll)
-                  DropdownMenuItem<T>(
-                    value: null,
-                    child: const Text('All', style: TextStyle(fontSize: 14)),
-                  ),
+                DropdownMenuItem<T>(
+                  value: null,
+                  child: const Text('All', style: TextStyle(fontSize: 14)),
+                ),
                 ...options.map((o) => DropdownMenuItem<T>(
                   value: o,
                   child: Text(display(o), style: const TextStyle(fontSize: 14)),
@@ -132,21 +126,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
     final colorScheme = Theme.of(context).colorScheme;
     final uniqueSizes = widget.items.map((p) => p.size).toSet().toList()
       ..sort(_compareSizes);
-
-    // Apply filters first
-    final filtered = _applyFilters(widget.items);
-
-    // Ensure current page is valid after filters/items-per-page change
-    final totalItems = filtered.length;
-    final totalPages = max(1, (totalItems / _itemsPerPage).ceil());
-    if (_currentPage > totalPages) {
-      _currentPage = totalPages;
-    }
-
-    // Slice for pagination
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = min(startIndex + _itemsPerPage, totalItems);
-    final paginated = (totalItems == 0) ? <Product>[] : filtered.sublist(startIndex, endIndex);
+    final displayed = _applyFilters(widget.items);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -162,94 +142,30 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                   value: _selectedSize,
                   options: uniqueSizes,
                   display: (s) => s,
-                  onChanged: (v) => setState(() {
-                    _selectedSize = v;
-                    _currentPage = 1;
-                  }),
+                  onChanged: (v) => setState(() => _selectedSize = v),
                 ),
-
+                const SizedBox(width: 32),
+                _buildFilterDropdown<String>(
+                  label: 'PRICE',
+                  value: _selectedPriceRange,
+                  options: priceRanges,
+                  display: (s) => s,
+                  onChanged: (v) => setState(() => _selectedPriceRange = v),
+                ),
                 const SizedBox(width: 32),
                 _buildFilterDropdown<String>(
                   label: widget.dateFilterLabel,
                   value: _selectedDateSort,
                   options: dateSortOptions,
                   display: (s) => s,
-                  onChanged: (v) => setState(() {
-                    _selectedDateSort = v;
-                    _currentPage = 1;
-                  }),
-                ),
-
-                const SizedBox(width: 32),
-                _buildFilterDropdown<String>(
-                  label: widget.priceFilterLabel,
-                  value: _selectedPriceSort,
-                  options: priceSortOptions,
-                  display: (s) => s,
-                  onChanged: (v) => setState(() {
-                    _selectedPriceSort = v;
-                    _currentPage = 1;
-                  }),
-                ),
-
-                const SizedBox(width: 32),
-                // Items per page dropdown
-                _buildFilterDropdown<int>(
-                  label: 'PER PAGE',
-                  value: _itemsPerPage,
-                  options: _itemsPerPageOptions,
-                  display: (i) => i.toString(),
-                  includeAll: false,
-                  onChanged: (v) => setState(() {
-                    if (v != null) {
-                      _itemsPerPage = v;
-                      _currentPage = 1;
-                    }
-                  }),
+                  onChanged: (v) => setState(() => _selectedDateSort = v),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
           const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
-          const SizedBox(height: 16),
-
-          // Pagination controls
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Left: summary
-                  Text(
-                    totalItems == 0
-                        ? 'No items'
-                        : 'Showing ${min(totalItems, startIndex + 1)}-${endIndex} of $totalItems',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                  ),
-
-                  // Right: page nav
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
-                      ),
-                      Text('Page $_currentPage of $totalPages', style: Theme.of(context).textTheme.bodySmall),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: ConstrainedBox(
@@ -270,38 +186,21 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                               const SizedBox(height: 24),
                               widget.extraButton!,
                             ],
-                            // show create-listing card even when there are no items
-                            if (widget.extraGridCard != null) ...[
-                              const SizedBox(height: 24),
-                              SizedBox(height: 240, child: widget.extraGridCard!),
-                            ],
                           ],
                         ),
                       ),
                     )
-                  : paginated.isEmpty
+                  : displayed.isEmpty
                       ? SizedBox(
                           height: 200,
                           child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
-                                if (widget.extraGridCard != null) ...[
-                                  const SizedBox(height: 16),
-                                  SizedBox(height: 240, child: widget.extraGridCard!),
-                                ],
-                              ],
-                            ),
+                            child: Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
                           ),
                         )
                       : Wrap(
                           spacing: 16,
                           runSpacing: 16,
-                          children: [
-                            if (widget.extraGridCard != null) SizedBox(height: 240, child: widget.extraGridCard!),
-                            ...paginated.map((p) => SizedBox(height: 240, child: ProductCard(product: p))).toList(),
-                          ],
+                          children: displayed.map((p) => SizedBox(height: 240, child: ProductCard(product: p))).toList(),
                         ),
             ),
           ),

@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/providers/offer_provider.dart';
 
-/// Manages user notifications and offer interactions using Supabase.
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -17,7 +16,6 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
   bool get isLoading => _isLoading;
 
-  /// Initializes authentication listeners to sync notifications.
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
@@ -114,7 +112,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Marks all notifications for the current user as read.
+  /// Called when NotificationsScreen opens. Marks all unread as read
   Future<void> markAllAsRead() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -152,6 +150,7 @@ class NotificationProvider extends ChangeNotifier {
         .single();
 
     if (product['is_sold'] == true) {
+      await _syncOfferStatus(notification, 'declined');
       await _deleteNotification(notification.notificationId);
       throw Exception('already_sold');
     }
@@ -162,7 +161,7 @@ class NotificationProvider extends ChangeNotifier {
     await Supabase.instance.client
         .from('products')
         .update({
-          'price': notification.offerPrice,
+          'price': acceptedPrice,
           'is_sold': true,
           if (notification.relatedUserId != null)
             'buyer_id': notification.relatedUserId,
@@ -255,6 +254,61 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> _syncOfferStatus(
+    AppNotification notification,
+    String status,
+  ) async {
+    if (notification.listingId == null || notification.relatedUserId == null) {
+      throw Exception('missing_offer_identity');
+    }
+
+    final latestOffer = await Supabase.instance.client
+        .from('offers')
+        .select('offer_id, offered_price')
+        .eq('listing_id', notification.listingId!)
+        .eq('buyer_id', notification.relatedUserId!)
+        .eq('status', 'pending')
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (latestOffer == null) {
+      throw Exception('offer_not_found');
+    }
+
+    final updatedOffer = await Supabase.instance.client
+        .from('offers')
+        .update({
+          'status': status,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('offer_id', latestOffer['offer_id'])
+        .select('offer_id, offered_price, status')
+        .maybeSingle();
+
+    if (updatedOffer == null) {
+      throw Exception('offer_update_failed');
+    }
+
+    return Map<String, dynamic>.from(updatedOffer as Map);
+  }
+
+  Future<String> _resolveListingName(String listingId) async {
+    try {
+      final product = await Supabase.instance.client
+          .from('products')
+          .select('name')
+          .eq('id', listingId)
+          .maybeSingle();
+      final name = product?['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+      return 'this item';
+    } catch (_) {
+      return 'this item';
+    }
+  }
+
   /// Helper to remove a notification locally and from the database.
   Future<void> _deleteNotification(int notificationId) async {
     _notifications.removeWhere((n) => n.notificationId == notificationId);
@@ -266,7 +320,8 @@ class NotificationProvider extends ChangeNotifier {
         .eq('notification_id', notificationId);
   }
 
-  /// Static method to create a new notification entry.
+  // Called from other providers/screens without needing a provider reference.
+
   static Future<void> insertNotification({
     required String userId,
     required NotificationType type,
