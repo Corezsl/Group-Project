@@ -9,7 +9,17 @@ CREATE TYPE category_name AS ENUM ('Footwear','Accessories','Shirt','Shorts',
 CREATE TYPE listing_size AS ENUM ('XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL');
 CREATE TYPE listing_fitting AS ENUM ('Slim', 'Regular', 'Loose');
 CREATE TYPE condition_name AS ENUM ('New with tags', 'New without tags','Very good','Good','Okay','Worn');
-CREATE TYPE notification_type AS ENUM ('new_message', 'listing_sold', 'price_drop','other');
+CREATE TYPE notification_type AS ENUM (
+    'new_message',
+    'listing_sold',
+    'price_drop',
+    'wishlist_add',
+    'wishlist_purchased',
+    'offer_received',
+    'offer_accepted',
+    'offer_declined',
+    'other'
+);
 CREATE TYPE order_status_name AS ENUM ('pending', 'shipped', 'delivered');
 
 CREATE TABLE users (
@@ -78,7 +88,11 @@ CREATE TABLE notification (
     notif_type notification_type NOT NULL,
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    listing_id TEXT,
+    related_user_id UUID,
+    offer_price NUMERIC(10, 2),
+    buyer_address TEXT
 );
 
 CREATE TABLE cart_item (
@@ -115,6 +129,32 @@ CREATE TABLE order_items (
     price_at_purchase DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY (order_id, listing_id)
 );
+
+CREATE TABLE offers (
+    offer_id BIGSERIAL PRIMARY KEY,
+    buyer_id UUID NOT NULL,
+    seller_id UUID NOT NULL,
+    listing_id TEXT NOT NULL,
+    listing_title TEXT,
+    listing_image_url TEXT,
+    offer_amount NUMERIC(10, 2) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE offers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "offer_select" ON offers
+    FOR SELECT USING (
+        auth.uid() = buyer_id OR auth.uid() = seller_id
+    );
+
+CREATE POLICY "offer_insert" ON offers
+    FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+CREATE POLICY "offer_update" ON offers
+    FOR UPDATE USING (auth.uid() = seller_id);
 
 CREATE TABLE reviews (
     review_id SERIAL PRIMARY KEY,
