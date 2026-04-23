@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/widgets/footer.dart';
@@ -130,52 +132,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     NotificationProvider provider,
     AppNotification notif,
   ) {
-    return Container(
-      color: notif.isRead ? Colors.white : const Color(0xFFF0F7FF),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildIcon(notif.notifType),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    notif.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: notif.isRead
-                          ? FontWeight.normal
-                          : FontWeight.w600,
+    final isTappable = notif.listingId != null &&
+        notif.notifType != NotificationType.offerReceived;
+
+    return InkWell(
+      onTap: isTappable ? () => _navigateToListing(context, notif) : null,
+      child: Container(
+        color: notif.isRead ? Colors.white : const Color(0xFFF0F7FF),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildIcon(notif.notifType),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notif.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: notif.isRead
+                            ? FontWeight.normal
+                            : FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _timeAgo(notif.createdAt),
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                  if (notif.notifType == NotificationType.listingSold &&
-                      notif.buyerAddress != null)
-                    _buildShippingAddress(notif.buyerAddress!),
-                  if (notif.notifType == NotificationType.offerReceived)
-                    _buildOfferActions(context, provider, notif),
-                ],
-              ),
-            ),
-            if (!notif.isRead)
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(top: 4, left: 8),
-                decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 71, 164, 245),
-                  shape: BoxShape.circle,
+                    const SizedBox(height: 4),
+                    Text(
+                      _timeAgo(notif.createdAt),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                    if (notif.notifType == NotificationType.listingSold &&
+                        notif.buyerAddress != null)
+                      _buildShippingAddress(notif.buyerAddress!),
+                    if (notif.notifType == NotificationType.offerReceived)
+                      _buildOfferActions(context, provider, notif),
+                    if ((notif.notifType == NotificationType.offerAccepted ||
+                            notif.notifType == NotificationType.offerDeclined) &&
+                        notif.listingId != null)
+                      _buildViewOfferLink(context, notif),
+                  ],
                 ),
               ),
-          ],
+              if (!notif.isRead)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(top: 4, left: 8),
+                  decoration: const BoxDecoration(
+                    color: Color.fromARGB(255, 71, 164, 245),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -192,6 +204,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       NotificationType.offerReceived => (
         Icons.local_offer_outlined,
         Colors.purple,
+      ),
+      NotificationType.offerAccepted => (
+        Icons.check_circle_outline,
+        Colors.green,
+      ),
+      NotificationType.offerDeclined => (
+        Icons.cancel_outlined,
+        Colors.red,
       ),
       _ => (Icons.notifications_outlined, Colors.grey),
     };
@@ -224,6 +244,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewOfferLink(BuildContext context, AppNotification notif) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: GestureDetector(
+        onTap: () => _navigateToListing(context, notif),
+        child: Text(
+          'View listing →',
+          style: TextStyle(
+            color: const Color.fromARGB(255, 71, 164, 245),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -298,10 +335,57 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   ) async {
     try {
       await provider.declineOffer(notif);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Offer declined.')),
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to decline offer. Try again.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _navigateToListing(
+      BuildContext context, AppNotification notif) async {
+    if (notif.listingId == null) return;
+    try {
+      final data = await Supabase.instance.client
+          .from('products')
+          .select('*, profiles(username)')
+          .eq('id', notif.listingId!)
+          .maybeSingle();
+
+      if (data == null || !context.mounted) return;
+
+      final product = <String, String>{
+        'id': data['id'].toString(),
+        'name': data['name']?.toString() ?? '',
+        'price': data['price']?.toString() ?? '0',
+        'originalPrice': data['original_price']?.toString() ?? '',
+        'size': data['size']?.toString() ?? '',
+        'brand': data['brand']?.toString() ?? '',
+        'condition': data['condition']?.toString() ?? '',
+        'imageUrl': data['image_url']?.toString() ?? '',
+        'sellerId': data['user_id']?.toString() ?? '',
+        'sellerName': (data['profiles'] as Map?)?['username']?.toString() ?? '',
+        'category': data['category']?.toString() ?? 'Other',
+        'department': data['department']?.toString() ?? 'All',
+        'material': data['material']?.toString() ?? '',
+        'colour': data['colour']?.toString() ?? '',
+        'isSold': (data['is_sold'] == true).toString(),
+      };
+
+      if (context.mounted) {
+        context.push('/product/${notif.listingId}', extra: product);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load listing.')),
         );
       }
     }
