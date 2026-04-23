@@ -3,20 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/notification_provider.dart';
-import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/filter_system.dart';
-import 'package:thryft/widgets/notification_badge.dart';
-import 'package:thryft/widgets/search_dropdown.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Responsive.isMobile(context)
-        ? const _MobileHeader()
-        : const _DesktopHeader();
+    return Responsive.isMobile(context) ? _MobileHeader() : _DesktopHeader();
   }
 }
 
@@ -31,56 +26,6 @@ class _DesktopHeader extends StatefulWidget {
 
 class _DesktopHeaderState extends State<_DesktopHeader> {
   bool _filterActive = false;
-
-  final _layerLink = LayerLink();
-  final _searchController = TextEditingController();
-  late final FocusNode _searchFocusNode;
-  OverlayEntry? _overlayEntry;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchFocusNode = FocusNode();
-    _searchFocusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _removeOverlay();
-    _searchFocusNode.removeListener(_onFocusChange);
-    _searchFocusNode.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_searchFocusNode.hasFocus) {
-      _showOverlay();
-    } else {
-      _searchController.clear();
-      if (mounted) context.read<SearchProvider>().clearResults();
-      Future.delayed(const Duration(milliseconds: 150), _removeOverlay);
-    }
-  }
-
-  void _showOverlay() {
-    _removeOverlay();
-    _overlayEntry = OverlayEntry(
-      builder: (_) => SearchDropdown(
-        layerLink: _layerLink,
-        controller: _searchController,
-        dropdownWidth: 500,
-        onDismiss: () => _searchFocusNode.unfocus(),
-        onNavigate: _removeOverlay,
-      ),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,56 +61,34 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: CompositedTransformTarget(
-                            link: _layerLink,
-                            child: TextField(
-                              controller: _searchController,
-                              focusNode: _searchFocusNode,
-                              textInputAction: TextInputAction.search,
-                              onChanged: (v) => context
-                                  .read<SearchProvider>()
-                                  .onQueryChanged(v),
-                              onSubmitted: (v) {
-                                final q = v.trim();
-                                if (q.isNotEmpty) {
-                                  context.read<SearchProvider>().submitSearch(
-                                    q,
-                                  );
-                                  _searchFocusNode.unfocus();
-                                  context.push(
-                                    '/search?q=${Uri.encodeComponent(q)}',
-                                  );
-                                }
-                              },
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.search,
-                                  color: Colors.white,
-                                ),
-                                hintText: 'Search',
-                                hintStyle: const TextStyle(
-                                  color: Colors.white70,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                border: const OutlineInputBorder(
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: const Color.fromARGB(
-                                  50,
-                                  255,
-                                  255,
-                                  255,
-                                ),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: Colors.white,
                               ),
-                              style: const TextStyle(color: Colors.white),
+                              hintText: 'Search',
+                              hintStyle: const TextStyle(color: Colors.white70),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              border: const OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: const Color.fromARGB(
+                                50,
+                                255,
+                                255,
+                                255,
+                              ),
                             ),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 8),
+                        // static filter icon (no interaction)
                         IconButton(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           icon: Icon(
@@ -174,8 +97,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                                 : Icons.filter_alt_outlined,
                             color: Colors.white,
                           ),
-                          onPressed: () =>
-                              setState(() => _filterActive = !_filterActive),
+                          onPressed: () => setState(() => _filterActive = !_filterActive),
                         ),
                       ],
                     ),
@@ -190,7 +112,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           final session =
                               Supabase.instance.client.auth.currentSession;
                           if (session == null) return const SizedBox.shrink();
-                          return NotificationBadge(
+                          return _NotificationBadge(
                             count: notifProvider.unreadCount,
                             onPressed: () => context.push('/notifications'),
                           );
@@ -237,8 +159,11 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _filterActive
-                    ? const FilterPanel(
-                        key: ValueKey('filter'),
+                    ? FilterPanel(
+                        key: const ValueKey('filter'),
+                        onApply: (filters) {
+                          setState(() => _filterActive = false);
+                        },
                       )
                     : Container(
                         key: const ValueKey('shortcuts'),
@@ -248,66 +173,37 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                           children: [
                             TextButton(
                               onPressed: () => context.go('/'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Home'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
                               onPressed: () => context.go('/category/Shirts'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Shirts'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
                               onPressed: () => context.go('/category/Trousers'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Trousers'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () => context.go('/category/Shorts'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Shorts'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton(
-                              onPressed: () => context.go('/category/Dresses'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Dresses'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton(
                               onPressed: () => context.go('/category/Shoes'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Shoes'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
-                              onPressed: () =>
-                                  context.go('/category/Accessories'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              onPressed: () => context.go('/category/Accessories'),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('Accessories'),
                             ),
                             const SizedBox(width: 12),
                             TextButton(
                               onPressed: () => context.go('/about'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                              ),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
                               child: const Text('About Us'),
                             ),
                           ],
@@ -324,66 +220,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
 
 // ─── Mobile ─────────────────────────────────────────────────────────────────
 
-class _MobileHeader extends StatefulWidget {
-  const _MobileHeader();
-
-  @override
-  State<_MobileHeader> createState() => _MobileHeaderState();
-}
-
-class _MobileHeaderState extends State<_MobileHeader> {
-  final _layerLink = LayerLink();
-  final _searchController = TextEditingController();
-  late final FocusNode _searchFocusNode;
-  OverlayEntry? _overlayEntry;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchFocusNode = FocusNode();
-    _searchFocusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _removeOverlay();
-    _searchFocusNode.removeListener(_onFocusChange);
-    _searchFocusNode.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_searchFocusNode.hasFocus) {
-      _showOverlay();
-    } else {
-      _searchController.clear();
-      if (mounted) context.read<SearchProvider>().clearResults();
-      Future.delayed(const Duration(milliseconds: 150), _removeOverlay);
-    }
-  }
-
-  void _showOverlay() {
-    _removeOverlay();
-    final screenWidth = MediaQuery.of(context).size.width;
-    _overlayEntry = OverlayEntry(
-      builder: (_) => SearchDropdown(
-        layerLink: _layerLink,
-        controller: _searchController,
-        dropdownWidth: screenWidth - 16,
-        onDismiss: () => _searchFocusNode.unfocus(),
-        onNavigate: _removeOverlay,
-      ),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  @override
+class _MobileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
@@ -405,46 +242,28 @@ class _MobileHeaderState extends State<_MobileHeader> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: CompositedTransformTarget(
-                link: _layerLink,
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (v) =>
-                      context.read<SearchProvider>().onQueryChanged(v),
-                  onSubmitted: (v) {
-                    final q = v.trim();
-                    if (q.isNotEmpty) {
-                      context.read<SearchProvider>().submitSearch(q);
-                      _searchFocusNode.unfocus();
-                      context.push('/search?q=${Uri.encodeComponent(q)}');
-                    }
-                  },
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    hintText: 'Search',
-                    hintStyle: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    border: const OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color.fromARGB(50, 255, 255, 255),
-                    isDense: true,
+              child: TextField(
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: 20,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  hintText: 'Search',
+                  hintStyle: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  border: const OutlineInputBorder(borderSide: BorderSide.none),
+                  filled: true,
+                  fillColor: const Color.fromARGB(50, 255, 255, 255),
+                  isDense: true,
                 ),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
           ),
@@ -453,7 +272,7 @@ class _MobileHeaderState extends State<_MobileHeader> {
             builder: (context, notifProvider, _) {
               final session = Supabase.instance.client.auth.currentSession;
               if (session == null) return const SizedBox.shrink();
-              return NotificationBadge(
+              return _NotificationBadge(
                 count: notifProvider.unreadCount,
                 onPressed: () => context.push('/notifications'),
               );
@@ -488,3 +307,49 @@ class _MobileHeaderState extends State<_MobileHeader> {
   }
 }
 
+// ─── Notification Badge ───────────────────────────────────────────────────────
+
+class _NotificationBadge extends StatelessWidget {
+  final int count;
+  final VoidCallback onPressed;
+
+  const _NotificationBadge({required this.count, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          onPressed: onPressed,
+        ),
+        if (count > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints:
+                    const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  count > 99 ? '99+' : count.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

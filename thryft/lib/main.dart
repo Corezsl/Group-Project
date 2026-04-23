@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/providers/search_provider.dart';
@@ -12,7 +11,6 @@ import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
@@ -43,6 +41,7 @@ class ThryftApp extends StatelessWidget {
       title: 'Thryft',
       theme: ThemeData(
         useMaterial3: true,
+        // Primary colour theme
         primaryColor: const Color.fromARGB(255, 71, 164, 245),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 71, 164, 245),
@@ -60,12 +59,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Ensure the FAB is attached to this specific Scaffold
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/chat-assistant'),
-        backgroundColor: const Color.fromARGB(255, 71, 164, 245),
-        child: const Icon(Icons.assistant, color: Colors.white),
-      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,6 +75,7 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const CategorySection(),
+
             const SizedBox(height: 24),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -91,6 +85,8 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            // other widgets can be added here
+            const SizedBox(height: 16),
             const ProductCarousel(),
             const SizedBox(height: 40),
           ],

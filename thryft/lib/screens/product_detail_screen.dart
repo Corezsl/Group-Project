@@ -8,8 +8,8 @@ import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/interaction_service.dart';
-import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/widgets/making_offer_system.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -204,8 +204,6 @@ class ProductDetailScreen extends StatelessWidget {
         const Divider(height: 1, color: Color(0xFFEEEEEE)),
         const SizedBox(height: 16),
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
-        const SizedBox(height: 12),
-        _buildDetailRow("Department", product['department'] ?? '-'),
         const SizedBox(height: 12),
         _buildDetailRow("Size", product['size'] ?? '-'),
         const SizedBox(height: 12),
