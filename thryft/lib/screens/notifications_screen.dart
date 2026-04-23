@@ -283,8 +283,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (context.mounted) {
         final message = e.toString().contains('already_sold')
             ? 'This item is already sold.'
-            : 'Failed to accept offer. Try again.';
-        ScaffoldMessenger.of(
+            : e.toString().contains('offer_not_found')
+                ? 'This offer is no longer pending.'
+                : 'Failed to accept offer. Try again.';        ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
       }
@@ -300,9 +301,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await provider.declineOffer(notif);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to decline offer. Try again.')),
-        );
+        final message = e.toString().contains('offer_not_found')
+            ? 'This offer is no longer pending.'
+            : 'Failed to decline offer. Try again.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     }
   }
