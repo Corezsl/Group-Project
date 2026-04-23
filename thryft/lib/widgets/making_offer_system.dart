@@ -37,6 +37,14 @@ class _MakingOfferSystemState extends State<MakingOfferSystem> {
 		try {
 			await widget.onSubmit(parsed);
 			if (mounted) Navigator.of(context).pop(true);
+      		} catch (_) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(
+						content: Text('Could not submit your offer. Please try again.'),
+					),
+				);
+			}
 		} finally {
 			if (mounted) {
 				setState(() => _isSubmitting = false);
