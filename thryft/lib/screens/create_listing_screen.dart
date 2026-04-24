@@ -122,8 +122,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         _selectedCondition == null ||
         _selectedBrand == null ||
         _selectedDepartment == null ||
-        _selectedMaterial == null ||
-        _selectedColour == null ||
         _priceController.text.isEmpty ||
         (widget.initialData == null && _images[0] == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
