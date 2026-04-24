@@ -86,6 +86,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   final List<XFile?> _images = List.filled(5, null);
+  // Used when editing: display existing listing photos until user replaces them.
+  final List<String?> _existingImageUrls = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
 
 
