@@ -92,10 +92,10 @@ class RecommendationProvider extends ChangeNotifier {
       department: data['department']?.toString() ?? 'All',
       material: data['material'].toString(),
       colour: data['colour'].toString(),
+      description: data['description']?.toString(),
       createdAt: data['created_at'] != null
           ? DateTime.tryParse(data['created_at'].toString())
           : null,
     );
   }
 }
-
