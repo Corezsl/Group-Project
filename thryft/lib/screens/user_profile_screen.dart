@@ -141,8 +141,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     }
 
     final username = _profile?['username'] ?? 'Unknown User';
-    final rating = (_profile?['rating'] ?? 0.0) as num;
-    final ratingCount = _profile?['rating_count'] ?? 0;
+    final ratingCount = _ratings.length;
+    final rating = ratingCount > 0
+        ? _ratings
+                .map((r) => (r['rating'] as num).toDouble())
+                .reduce((a, b) => a + b) /
+            ratingCount
+        : 0.0;
     final avatarUrl = _profile?['avatar_url'];
     final bio = _profile?['bio']?.toString().trim();
 
@@ -224,9 +229,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           color: Colors.grey[300],
                         ),
                         _StatBox(
-                          value: rating.toStringAsFixed(1),
-                          label: 'Rating ($ratingCount)',
-                          icon: Icons.star,
+                          value: ratingCount == 0
+                              ? 'N/A'
+                              : rating.toStringAsFixed(1),
+                          label: ratingCount == 0
+                              ? 'No reviews'
+                              : 'Rating ($ratingCount)',
+                          icon: ratingCount == 0 ? null : Icons.star,
                           iconColor: Colors.amber,
                         ),
                       ],

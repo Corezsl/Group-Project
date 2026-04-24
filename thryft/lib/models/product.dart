@@ -3,7 +3,7 @@ class Product {
   final String name;
   final String? imageUrl;
   final double price;
-  final double? originalPrice; // if set, card shows strikethrough old price
+  final double? originalPrice;
   final String size;
   final String brand;
   final String condition;
@@ -35,7 +35,25 @@ class Product {
     required this.colour,
   });
 
-  /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
+  factory Product.fromMap(Map<String, dynamic> map) {
+    return Product(
+      id: map['id']?.toString() ?? '',
+      name: map['name'] ?? 'Unknown Item',
+      imageUrl: map['image_url'],
+      price: (map['price'] ?? 0).toDouble(),
+      originalPrice: map['original_price'] != null 
+          ? (map['original_price'] as num).toDouble() 
+          : null,
+      size: map['size'] ?? 'N/A',
+      brand: map['brand'] ?? 'Unbranded',
+      condition: map['condition'] ?? 'Unknown',
+      colour: map['colour'] ?? 'Not Provided',
+      category: map['category'] ?? 'Unknown',
+      department:  map['department'] ?? 'Unknown',
+      material: map['material'] ?? 'Not Provided'
+    );
+  }
+
   Map<String, String> toRouteExtra() => {
     'id': id,
     'name': name,
