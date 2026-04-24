@@ -175,6 +175,7 @@ class AccountScreen extends StatelessWidget {
     if (user == null) return const SizedBox.shrink();
 
     final username = user.userMetadata?['username'] ?? 'No Username Provided';
+    final accountAge = _calculateAccountAge(user.createdAt);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +223,31 @@ class AccountScreen extends StatelessWidget {
           user.email ?? '',
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Member for $accountAge',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+        ),
       ],
     );
+  }
+
+  String _calculateAccountAge(DateTime? createdAt) {
+    if (createdAt == null) return 'Unknown';
+
+    final now = DateTime.now();
+    final difference = now.difference(createdAt);
+
+    if (difference.inDays < 1) {
+      return 'Less than a day';
+    } else if (difference.inDays < 30) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
+    } else if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      return '$months month${months == 1 ? '' : 's'}';
+    } else {
+      final years = (difference.inDays / 365).floor();
+      return '$years year${years == 1 ? '' : 's'}';
+    }
   }
 }
