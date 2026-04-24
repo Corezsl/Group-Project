@@ -84,6 +84,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               category: data['category']?.toString() ?? 'Other',
               material: data['material'].toString(),
               colour: data['colour'].toString(),
+              description: data['description']?.toString(),
             ),
           )
           .toList();
