@@ -377,6 +377,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         'material': data['material']?.toString() ?? '',
         'colour': data['colour']?.toString() ?? '',
         'isSold': (data['is_sold'] == true).toString(),
+        if (data['description'] != null) 'description': data['description'].toString(),
       };
 
       if (context.mounted) {
