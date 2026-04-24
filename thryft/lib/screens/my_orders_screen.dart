@@ -63,7 +63,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
               category: data['category']?.toString() ?? 'Other',
               department: data['department']?.toString() ?? 'All',
               material: data['material'].toString(),
-              colour: data['colour'].toString()
+              colour: data['colour'].toString(),
+              description: data['description']?.toString(),
             ),
           )
           .toList();

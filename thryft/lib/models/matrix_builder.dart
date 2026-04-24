@@ -2,7 +2,10 @@ import 'interactions.dart';
 import 'temporal_decay.dart';
 
 class MatrixBuilder {
-  final _decayService = TemporalDecayService();
+  final TemporalDecayService _decayService;
+
+  MatrixBuilder({TemporalDecayService? decayService})
+      : _decayService = decayService ?? TemporalDecayService();
 
   /// Converts raw interactions into a User-Item Matrix with temporal decay applied
   Map<String, Map<String, double>> buildMatrix(List<UserInteraction> interactions) {

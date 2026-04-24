@@ -3,7 +3,7 @@ class Product {
   final String name;
   final String? imageUrl;
   final double price;
-  final double? originalPrice; // if set, card shows strikethrough old price
+  final double? originalPrice;
   final String size;
   final String brand;
   final String condition;
@@ -15,6 +15,7 @@ class Product {
   final String department;
   final String material;
   final String colour;
+  final String? description;
 
   const Product({
     required this.id,
@@ -33,9 +34,29 @@ class Product {
     required this.category,
     required this.material,
     required this.colour,
+    this.description,
   });
 
-  /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
+  factory Product.fromMap(Map<String, dynamic> map) {
+    return Product(
+      id: map['id']?.toString() ?? '',
+      name: map['name'] ?? 'Unknown Item',
+      imageUrl: map['image_url'],
+      price: (map['price'] ?? 0).toDouble(),
+      originalPrice: map['original_price'] != null 
+          ? (map['original_price'] as num).toDouble() 
+          : null,
+      size: map['size'] ?? 'N/A',
+      brand: map['brand'] ?? 'Unbranded',
+      condition: map['condition'] ?? 'Unknown',
+      colour: map['colour'] ?? 'Not Provided',
+      category: map['category'] ?? 'Unknown',
+      department:  map['department'] ?? 'Unknown',
+      material: map['material'] ?? 'Not Provided',
+      description: map['description']
+    );
+  }
+
   Map<String, String> toRouteExtra() => {
     'id': id,
     'name': name,
@@ -53,5 +74,6 @@ class Product {
     'department': department,
     'material': material,
     'colour': colour,
+    if (description != null) 'description': description!,
   };
 }

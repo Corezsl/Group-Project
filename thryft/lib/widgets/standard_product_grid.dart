@@ -255,9 +255,8 @@ class _StandardProductGridState extends State<StandardProductGrid> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
               child: widget.items.isEmpty
-                  ? SizedBox(
-                      height: 300,
-                      child: Center(
+                  ? Center(
+                      child: SingleChildScrollView(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -273,7 +272,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                             // show create-listing card even when there are no items
                             if (widget.extraGridCard != null) ...[
                               const SizedBox(height: 24),
-                              SizedBox(height: 240, child: widget.extraGridCard!),
+                              widget.extraGridCard!,
                             ],
                           ],
                         ),
@@ -289,7 +288,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                                 Text('No items match your filters', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
                                 if (widget.extraGridCard != null) ...[
                                   const SizedBox(height: 16),
-                                  SizedBox(height: 240, child: widget.extraGridCard!),
+                                  widget.extraGridCard!,
                                 ],
                               ],
                             ),
@@ -299,7 +298,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                           spacing: 16,
                           runSpacing: 16,
                           children: [
-                            if (widget.extraGridCard != null) SizedBox(height: 240, child: widget.extraGridCard!),
+                            if (widget.extraGridCard != null) widget.extraGridCard!,
                             ...paginated.map((p) => SizedBox(height: 240, child: ProductCard(product: p))).toList(),
                           ],
                         ),

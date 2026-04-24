@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:thryft/providers/navigation_assistant.dart';
+import 'package:go_router/go_router.dart';
+import 'package:thryft/providers/assistant_chat_provider.dart';
+import 'package:thryft/models/chat_message.dart';
 
 class NavAssistantChatScreen extends StatefulWidget {
   const NavAssistantChatScreen({super.key});
@@ -10,69 +12,81 @@ class NavAssistantChatScreen extends StatefulWidget {
 
 class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, String>> _messages = [
-    {'role': 'assistant', 'content': 'Hello! How can I help you find your way around the app today?'}
-  ];
-  
-  final NavAssistantService _navService = NavAssistantService();
+  final ScrollController _scrollController = ScrollController();
+  late final AssistantChatProvider _chat;
 
-  void _handleSendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  @override
+  void initState() {
+    super.initState();
+    _chat = AssistantChatProvider()..addListener(_onChatChanged);
+  }
 
-    setState(() {
-      _messages.add({'role': 'user', 'content': text});
+  @override
+  void dispose() {
+    _chat.removeListener(_onChatChanged);
+    _chat.dispose();
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onChatChanged() {
+    // Keep the latest message visible.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
     });
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _handleSendMessage() async {
+    final text = _controller.text;
     _controller.clear();
-
-    // Analyze the message for navigation intent
-    final targetRoute = _navService.identifyTargetRoute(text);
-
-    if (targetRoute != null) {
-      final confirmation = _navService.getConfirmationMessage(targetRoute);
-      
-      setState(() {
-        _messages.add({'role': 'assistant', 'content': confirmation});
-      });
-
-      // Execute navigation after a short delay so the user can read the confirmation
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) {
-          Navigator.pushNamed(context, targetRoute);
-        }
-      });
-    } else {
-      setState(() {
-        _messages.add({
-          'role': 'assistant', 
-          'content': "I'm sorry, I didn't quite catch that. Try asking for your 'cart', 'profile', or 'settings'."
-        });
-      });
-    }
+    await _chat.send(text, router: GoRouter.of(context));
   }
 
   @override
   Widget build(BuildContext context) {
+    final messages = _chat.messages;
     return Scaffold(
-      appBar: AppBar(title: const Text("Navigation Assistant")),
+      appBar: AppBar(
+        title: const Text("Assistant"),
+        actions: [
+          IconButton(
+            tooltip: 'Clear',
+            onPressed: _chat.isSending ? null : _chat.clear,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
+              controller: _scrollController,
+              itemCount: messages.length,
               itemBuilder: (context, index) {
-                final isUser = _messages[index]['role'] == 'user';
+                final m = messages[index];
+                final isUser = m.role == ChatRole.user;
+                final isSystem = m.role == ChatRole.system;
+                final bg = isSystem
+                    ? Colors.orange[50]
+                    : (isUser ? Colors.blue[100] : Colors.grey[200]);
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isUser ? Colors.blue[100] : Colors.grey[200],
+                      color: bg,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(_messages[index]['content']!),
+                    child: Text(m.content),
                   ),
                 );
               },
@@ -85,13 +99,15 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: "Where would you like to go?"),
+                    decoration: const InputDecoration(
+                      hintText: "Ask a question or request a page (e.g. \"open my cart\")",
+                    ),
                     onSubmitted: (_) => _handleSendMessage(),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: _handleSendMessage,
+                  onPressed: _chat.isSending ? null : _handleSendMessage,
                 ),
               ],
             ),

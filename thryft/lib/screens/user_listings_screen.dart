@@ -49,6 +49,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       category: data['category']?.toString() ?? 'Other',
       material: data['material'].toString(),
       colour: data['colour'].toString(),
+      description: data['description']?.toString(),
     )).toList();
   }
 

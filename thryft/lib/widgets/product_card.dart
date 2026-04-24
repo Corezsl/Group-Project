@@ -11,6 +11,10 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Must be unique within the current route subtree to avoid Hero tag collisions
+    // when the same product appears in multiple carousels/sections.
+    final heroTag = 'product_image_${product.id}_${identityHashCode(this)}';
+
     return SizedBox(
       width: 160,
       child: Card(
@@ -22,7 +26,10 @@ class ProductCard extends StatelessWidget {
           onTap: () {
             context.push(
               '/product/${product.id}',
-              extra: product.toRouteExtra(),
+              extra: {
+                ...product.toRouteExtra(),
+                'heroTag': heroTag,
+              },
             );
           },
           child: Column(
@@ -58,7 +65,7 @@ class ProductCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Hero(
-                      tag: 'product_image_${product.id}',
+                      tag: heroTag,
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],

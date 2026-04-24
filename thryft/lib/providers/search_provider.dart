@@ -211,7 +211,8 @@ class SearchProvider extends ChangeNotifier {
               : null,
           department: row['department']?.toString() ?? 'All',
           material: row['material'].toString(),
-          colour: row['colour'].toString()
+          colour: row['colour'].toString(),
+          description: row['description']?.toString()
         );
       }).toList();
 

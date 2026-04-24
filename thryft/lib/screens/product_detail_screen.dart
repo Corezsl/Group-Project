@@ -72,6 +72,7 @@ class ProductDetailScreen extends StatelessWidget {
                       department: product['department'] ?? 'All',
                       material: product['material'] ?? '',
                       colour: product['colour'] ?? '',
+                      description: product['description'],
                     ),
                   );
                 },
@@ -134,7 +135,7 @@ class ProductDetailScreen extends StatelessWidget {
 
   Widget _buildImageGallery(BuildContext context) {
     return Hero(
-      tag: 'product_image_${product['name']}',
+      tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
       child: Container(
         constraints: const BoxConstraints(minHeight: 400),
         width: double.infinity,
@@ -211,6 +212,18 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
         const SizedBox(height: 24),
+        if (product['description'] != null && product['description']!.isNotEmpty) ...[
+          const Text(
+            'Description',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            product['description']!,
+            style: TextStyle(color: Colors.grey[700], fontSize: 14, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+        ],
 
         // Action Buttons with logic for single items [cite: 2026-02-20]
         Consumer<CartProvider>(
@@ -299,6 +312,7 @@ class ProductDetailScreen extends StatelessWidget {
         department: product['department'] ?? 'All',
         material: product['material'] ?? '',
         colour: product['colour'] ?? '',
+        description: product['description'],
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(

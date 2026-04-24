@@ -59,6 +59,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             : null,
         isSold: data['is_sold'] == true,
         category: data['category']?.toString() ?? 'Other',
+        description: data['description']?.toString(),
       )).toList();
     }
 
@@ -98,6 +99,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           : null,
       isSold: data['is_sold'] == true,
       category: data['category']?.toString() ?? 'Other',
+      description: data['description']?.toString(),
     )).toList();
   }
 
