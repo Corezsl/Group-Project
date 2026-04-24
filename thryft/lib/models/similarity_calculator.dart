@@ -7,15 +7,22 @@ class SimilarityCalculator {
     double normA = 0.0;
     double normB = 0.0;
 
-    final allProducts = {...userA.keys, ...userB.keys};
+    // Iterate the smaller map for dot product to reduce work.
+    final smaller = userA.length <= userB.length ? userA : userB;
+    final larger = identical(smaller, userA) ? userB : userA;
 
-    for (var product in allProducts) {
-      double scoreA = userA[product] ?? 0.0;
-      double scoreB = userB[product] ?? 0.0;
+    for (final entry in smaller.entries) {
+      final a = entry.value;
+      final b = larger[entry.key];
+      if (b == null) continue;
+      dotProduct += a * b;
+    }
 
-      dotProduct += scoreA * scoreB;
-      normA += pow(scoreA, 2);
-      normB += pow(scoreB, 2);
+    for (final v in userA.values) {
+      normA += v * v;
+    }
+    for (final v in userB.values) {
+      normB += v * v;
     }
 
     if (normA == 0 || normB == 0) return 0.0;
