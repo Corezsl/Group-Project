@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/chat_message.dart';
 import 'package:thryft/providers/chat_service.dart';
 import 'package:thryft/providers/navigation_assistant.dart';
@@ -9,12 +10,15 @@ import 'package:thryft/providers/navigation_assistant.dart';
 class AssistantChatProvider extends ChangeNotifier {
   final ChatService _chatService;
   final NavAssistantService _navService;
+  final SupabaseClient _supabase;
 
   AssistantChatProvider({
     ChatService? chatService,
     NavAssistantService? navService,
+    SupabaseClient? supabase,
   })  : _chatService = chatService ?? ChatService(),
-        _navService = navService ?? NavAssistantService();
+        _navService = navService ?? NavAssistantService(),
+        _supabase = supabase ?? Supabase.instance.client;
 
   final List<ChatMessage> _messages = [
     ChatMessage.assistant(
@@ -29,6 +33,23 @@ class AssistantChatProvider extends ChangeNotifier {
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get isSending => _isSending;
   String? get error => _error;
+
+  bool _isAccountProtectedRoute(String route) {
+    // Anything that exposes user/account data should require auth.
+    // Keep this list aligned with `router.dart`.
+    const protected = <String>{
+      '/account',
+      '/profile-settings',
+      '/my-orders',
+      '/my-offers',
+      '/my-listings',
+      '/sold-items',
+      '/notifications',
+      '/wishlist',
+      '/cart',
+    };
+    return protected.contains(route);
+  }
 
   Future<void> send(String text, {GoRouter? router}) async {
     final trimmed = text.trim();
@@ -48,6 +69,17 @@ class AssistantChatProvider extends ChangeNotifier {
     try {
       final match = _navService.matchTarget(trimmed);
       if (match != null) {
+        final isAuthed = _supabase.auth.currentUser != null;
+        if (_isAccountProtectedRoute(match.route) && !isAuthed) {
+          _messages.add(
+            ChatMessage.assistant(
+              "You'll need to be logged in to access that page. Please sign in first.",
+            ),
+          );
+          notifyListeners();
+          return;
+        }
+
         _messages.add(ChatMessage.assistant(_navService.getConfirmationMessage(match.route)));
         notifyListeners();
 
