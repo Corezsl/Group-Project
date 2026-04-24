@@ -54,6 +54,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
             department: data['department']?.toString() ?? 'All',
             material: data['material'].toString(),
             colour: data['colour'].toString(),
+            description: data['description']?.toString(),
           ),
         )
         .toList();
