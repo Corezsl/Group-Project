@@ -122,10 +122,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('See what buyers are saying'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            final user = Supabase.instance.client.auth.currentUser;
-                            if (user != null) {
-                              context.push('/user/${user.id}');
-                            }
+                            context.push('/my-reviews');
                           },
                         ),
                       ),
