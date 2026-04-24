@@ -38,6 +38,7 @@ class _CartScreenState extends State<CartScreen> {
         await Supabase.instance.client.from('products').update({
           'is_sold': true,
           'buyer_id': user.id,
+          'order_status': 'pending',
         }).eq('id', item.product.id);
       }
     } catch (e) {
