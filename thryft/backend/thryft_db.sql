@@ -18,6 +18,8 @@ CREATE TYPE notification_type AS ENUM (
     'offer_received',
     'offer_accepted',
     'offer_declined',
+    'order_shipped',
+    'order_delivered',
     'other'
 );
 CREATE TYPE order_status_name AS ENUM ('pending', 'shipped', 'delivered');
@@ -47,6 +49,7 @@ CREATE TABLE address (
 CREATE TABLE listings (
     listing_id SERIAL PRIMARY KEY,
     seller_id INT NOT NULL REFERENCES users(user_id),
+    buyer_id INT REFERENCES users(user_id),
     title VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
@@ -56,6 +59,7 @@ CREATE TABLE listings (
     fitting listing_fitting NOT NULL,
     condition condition_name NOT NULL,
     state listing_state NOT NULL DEFAULT 'active',
+    order_status order_status_name DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     shoe_size DECIMAL(2, 1)
 );
