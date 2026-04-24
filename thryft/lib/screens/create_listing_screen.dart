@@ -70,6 +70,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedColour = data['colour']?.toString();
       // Use normalized department so it matches dropdown items
       _selectedDepartment = _normalizeDepartment(data['department']?.toString());
+
+      final existingMain = data['imageUrl']?.toString();
+      if (existingMain != null && existingMain.trim().isNotEmpty) {
+        _existingImageUrls[0] = existingMain.trim();
+      }
     }
   }
 
@@ -278,6 +283,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedMaterial = null;
       _selectedColour = null;
       _images.fillRange(0, 5, null);
+      _existingImageUrls.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
   }
@@ -300,8 +306,31 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
+  Widget _buildNetworkPreview(String url) {
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: Colors.grey[400],
+            size: 40,
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
   Widget _buildMainPreview() {
     final XFile? currentImage = _images[_selectedIndex];
+    final String? existingUrl = _existingImageUrls[_selectedIndex];
 
     return GestureDetector(
       onTap: () => _pickImage(_selectedIndex),
@@ -319,6 +348,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         clipBehavior: Clip.hardEdge,
         child: currentImage != null
             ? _buildImagePreview(currentImage)
+            : (existingUrl != null && existingUrl.isNotEmpty)
+                ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -354,6 +385,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget _buildThumbnail(int index) {
     final bool isSelected = index == _selectedIndex;
     final XFile? currentImage = _images[index];
+    final String? existingUrl = _existingImageUrls[index];
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
@@ -373,6 +405,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         clipBehavior: Clip.hardEdge,
         child: currentImage != null
             ? _buildImagePreview(currentImage)
+            : (existingUrl != null && existingUrl.isNotEmpty)
+                ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
