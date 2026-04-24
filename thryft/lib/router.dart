@@ -22,6 +22,7 @@ import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
 import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
+import 'package:thryft/screens/my_reviews_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
 
 final GoRouter router = GoRouter(
@@ -128,6 +129,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/my-offers',
       builder: (context, state) => const MyOffersScreen(),
+    ),
+    GoRoute(
+      path: '/my-reviews',
+      builder: (context, state) => const MyReviewsScreen(),
     ),
   ],
 );
