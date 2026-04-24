@@ -7,6 +7,7 @@ import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';
 import 'package:thryft/providers/recommendation_provider.dart';
 import 'package:thryft/widgets/recommended_products_section.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       drawer: const AppDrawer(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/chat-assistant'),
+        backgroundColor: const Color.fromARGB(255, 71, 164, 245),
+        child: const Icon(Icons.assistant, color: Colors.white),
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
