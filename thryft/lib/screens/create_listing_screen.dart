@@ -10,6 +10,8 @@ import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/utils/size_options.dart';
+import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/models/notification_model.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -195,7 +197,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
-        if (oldPrice != null && newPrice != oldPrice && oldPrice > newPrice) {
+        final bool isPriceDrop =
+            oldPrice != null && newPrice < oldPrice;
+        if (isPriceDrop) {
           productData['original_price'] = oldPrice;
         }
 
@@ -203,6 +207,32 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .from('products')
             .update(productData)
             .eq('id', widget.initialData!['id']);
+
+        // Notify all users who wishlisted this item about the price drop
+        if (isPriceDrop) {
+          try {
+            final listingId = widget.initialData!['id']?.toString();
+            if (listingId == null) throw Exception('Missing listing id');
+            final wishlistEntries = await supabase
+                .from('wishlist')
+                .select('user_id')
+                .eq('listing_id', listingId);
+            for (final entry in wishlistEntries as List) {
+              final wishlisterId = entry['user_id']?.toString();
+              if (wishlisterId != null && wishlisterId != user.id) {
+                await NotificationProvider.insertNotification(
+                  userId: wishlisterId,
+                  type: NotificationType.priceDrop,
+                  content:
+                      '"${_titleController.text}" dropped from £${oldPrice.toStringAsFixed(2)} to £${newPrice.toStringAsFixed(2)}!',
+                  listingId: listingId,
+                );
+              }
+            }
+          } catch (e) {
+            debugPrint('Error sending price drop notifications: $e');
+          }
+        }
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

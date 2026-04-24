@@ -20,9 +20,9 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [✅] Filter by Material
 - [✅] Filter by Colour
 ## [1.2] Sub filtration
-- [] Users can filter by category through shortcuts
-- [] Users can filter how many items appear per page
-- [] Users can only see results to buy that are not their own products
+- [✅] Users can filter by category through shortcuts
+- [✅] Users can filter how many items appear per page
+- [✅] Users can only see results to buy that are not their own products
 
 ## [2] Users Should Be Able to View Seller Trust Information
 - [✅] View Public information on a profile
@@ -52,7 +52,7 @@ Written below is a list of steps (problem decomposition) of the main requirement
 - [✅] Display active (Non-closed) Listings
 - [✅] Users can edit existing selling listings
 - [✅] Users can create new listings
-- [❌] Users can delete existing listings
+- [✅] Users can delete existing listings
 - [✅] Users can organise their selling listings
 
 ## [5] Users Should Be Able to View Their Purchase and Listing History

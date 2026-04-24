@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/providers/offer_provider.dart';
 
 /// Manages user notifications and offer interactions using Supabase.
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
+  RealtimeChannel? _realtimeChannel;
 
   NotificationProvider() {
     _init();
@@ -20,15 +22,70 @@ class NotificationProvider extends ChangeNotifier {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
         fetchNotifications();
+        _subscribeToNotifications();
       } else {
         _notifications.clear();
+        _unsubscribeFromNotifications();
         notifyListeners();
       }
     });
 
     if (Supabase.instance.client.auth.currentUser != null) {
       fetchNotifications();
+      _subscribeToNotifications();
     }
+  }
+
+  void _subscribeToNotifications() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    _unsubscribeFromNotifications();
+
+    _realtimeChannel = Supabase.instance.client
+        .channel('notifications:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notification',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) {
+            final newNotification =
+                AppNotification.fromMap(payload.newRecord);
+            _notifications.insert(0, newNotification);
+            notifyListeners();
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: 'notification',
+          callback: (payload) {
+            final deletedId = payload.oldRecord['notification_id'] as int?;
+            if (deletedId != null) {
+              _notifications.removeWhere((n) => n.notificationId == deletedId);
+              notifyListeners();
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  void _unsubscribeFromNotifications() {
+    if (_realtimeChannel != null) {
+      Supabase.instance.client.removeChannel(_realtimeChannel!);
+      _realtimeChannel = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromNotifications();
+    super.dispose();
   }
 
   /// Fetches user notifications from the database.
@@ -83,15 +140,14 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Updates product status and price upon accepting an offer.
+  /// Accepts an offer: updates the product, cleans up, then notifies the buyer.
   Future<void> acceptOffer(AppNotification notification) async {
-    if (notification.listingId == null || notification.offerPrice == null)
-      return;
+    if (notification.listingId == null || notification.offerPrice == null) return;
 
-    //Check  product is not already sold
+    // Guard against accepting an already-sold item.
     final product = await Supabase.instance.client
         .from('products')
-        .select('is_sold')
+        .select('is_sold, name')
         .eq('id', notification.listingId!)
         .single();
 
@@ -100,6 +156,9 @@ class NotificationProvider extends ChangeNotifier {
       throw Exception('already_sold');
     }
 
+    final listingTitle = product['name']?.toString() ?? 'the item';
+
+    // Mark product as sold at the agreed price — this is the critical step.
     await Supabase.instance.client
         .from('products')
         .update({
@@ -110,12 +169,90 @@ class NotificationProvider extends ChangeNotifier {
         })
         .eq('id', notification.listingId!);
 
+    // Remove the seller's notification regardless of what follows.
     await _deleteNotification(notification.notificationId);
+
+    // Best-effort: update offer record and notify the buyer.
+    if (notification.relatedUserId != null) {
+      try {
+        await OfferProvider.updateOfferStatus(
+          listingId: notification.listingId!,
+          buyerId: notification.relatedUserId!,
+          status: 'accepted',
+        );
+        await insertNotification(
+          userId: notification.relatedUserId!,
+          type: NotificationType.offerAccepted,
+          content:
+              'Your offer of £${notification.offerPrice!.toStringAsFixed(2)} for "$listingTitle" was accepted! The seller will ship it soon.',
+          listingId: notification.listingId,
+          offerPrice: notification.offerPrice,
+        );
+      } catch (e) {
+        debugPrint('Could not send accept notification to buyer: $e');
+      }
+    }
   }
 
-  /// Removes a notification when an offer is declined.
+  /// Declines an offer: removes the notification, then notifies the buyer.
   Future<void> declineOffer(AppNotification notification) async {
+    // Remove the seller's notification first — this must always succeed.
     await _deleteNotification(notification.notificationId);
+
+    if (notification.listingId == null) return;
+
+    // Best-effort: update offer record and notify the buyer.
+    try {
+      // Resolve buyer ID — prefer the one stored on the notification, but fall
+      // back to the offers table for notifications created before the migration.
+      String? buyerId = notification.relatedUserId;
+      double? offerPrice = notification.offerPrice;
+
+      if (buyerId == null) {
+        final offerRow = await Supabase.instance.client
+            .from('offers')
+            .select('buyer_id, offer_amount')
+            .eq('listing_id', notification.listingId!)
+            .eq('status', 'pending')
+            .maybeSingle();
+        buyerId = offerRow?['buyer_id']?.toString();
+        offerPrice ??= offerRow?['offer_amount'] != null
+            ? (offerRow!['offer_amount'] as num).toDouble()
+            : null;
+      }
+
+      if (buyerId == null) {
+        debugPrint('declineOffer: could not resolve buyer ID — skipping buyer notification');
+        return;
+      }
+
+      String listingTitle = 'the item';
+      try {
+        final product = await Supabase.instance.client
+            .from('products')
+            .select('name')
+            .eq('id', notification.listingId!)
+            .single();
+        listingTitle = product['name']?.toString() ?? listingTitle;
+      } catch (_) {}
+
+      await OfferProvider.updateOfferStatus(
+        listingId: notification.listingId!,
+        buyerId: buyerId,
+        status: 'declined',
+      );
+
+      await insertNotification(
+        userId: buyerId,
+        type: NotificationType.offerDeclined,
+        content:
+            'Your offer of £${offerPrice?.toStringAsFixed(2) ?? '—'} for "$listingTitle" was declined.',
+        listingId: notification.listingId,
+        offerPrice: offerPrice,
+      );
+    } catch (e) {
+      debugPrint('Could not send decline notification to buyer: $e');
+    }
   }
 
   /// Helper to remove a notification locally and from the database.
@@ -150,8 +287,10 @@ class NotificationProvider extends ChangeNotifier {
         if (offerPrice != null) 'offer_price': offerPrice,
         if (buyerAddress != null) 'buyer_address': buyerAddress,
       });
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error inserting notification: $e');
+      debugPrint('Stack: $stack');
+      rethrow;
     }
   }
 }

@@ -3,8 +3,6 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/models/product.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SoldItemsScreen extends StatefulWidget {
@@ -74,24 +72,13 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.go('/account'),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Sold Items',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                      ),
-                    ],
+                  Text(
+                    'Sold Items',
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(

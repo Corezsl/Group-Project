@@ -1,16 +1,15 @@
 enum NotificationType {
-  newMessage,
   listingSold,
   priceDrop,
   other,
   wishlistAdd,
   wishlistPurchased,
-  offerReceived;
+  offerReceived,
+  offerAccepted,
+  offerDeclined;
 
   static NotificationType fromString(String value) {
     switch (value) {
-      case 'new_message':
-        return NotificationType.newMessage;
       case 'listing_sold':
         return NotificationType.listingSold;
       case 'price_drop':
@@ -21,6 +20,10 @@ enum NotificationType {
         return NotificationType.wishlistPurchased;
       case 'offer_received':
         return NotificationType.offerReceived;
+      case 'offer_accepted':
+        return NotificationType.offerAccepted;
+      case 'offer_declined':
+        return NotificationType.offerDeclined;
       default:
         return NotificationType.other;
     }
@@ -28,8 +31,6 @@ enum NotificationType {
 
   String toDbString() {
     switch (this) {
-      case NotificationType.newMessage:
-        return 'new_message';
       case NotificationType.listingSold:
         return 'listing_sold';
       case NotificationType.priceDrop:
@@ -40,6 +41,10 @@ enum NotificationType {
         return 'wishlist_purchased';
       case NotificationType.offerReceived:
         return 'offer_received';
+      case NotificationType.offerAccepted:
+        return 'offer_accepted';
+      case NotificationType.offerDeclined:
+        return 'offer_declined';
       case NotificationType.other:
         return 'other';
     }
