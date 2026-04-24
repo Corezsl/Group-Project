@@ -7,7 +7,6 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/models/product.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -31,10 +30,10 @@ class _CartScreenState extends State<CartScreen> {
 
     setState(() => _isProcessingCheckout = true);
 
-    final itemsToRate = List.from(cart.items);
+    final cartItems = List.from(cart.items);
 
     try {
-      for (var item in itemsToRate) {
+      for (var item in cartItems) {
         await Supabase.instance.client.from('products').update({
           'is_sold': true,
           'buyer_id': user.id,
@@ -65,7 +64,7 @@ class _CartScreenState extends State<CartScreen> {
       debugPrint('Error fetching buyer address: $e');
     }
 
-    for (var item in itemsToRate) {
+    for (var item in cartItems) {
       debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');
       if (item.product.sellerId != null) {
         try {
@@ -110,85 +109,6 @@ class _CartScreenState extends State<CartScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Purchase successful!')),
-    );
-
-    for (var item in itemsToRate) {
-      if (!mounted) break;
-      await _showRatingDialog(item.product);
-    }
-  }
-
-  Future<void> _showRatingDialog(Product product) async {
-    int localRating = 5;
-    final commentController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Rate your purchase: ${product.name}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('How was your experience with ${product.sellerName ?? "the seller"}?'),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < localRating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 32,
-                    ),
-                    onPressed: () => setDialogState(() => localRating = index + 1),
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: commentController,
-                decoration: const InputDecoration(
-                  labelText: 'Leave a comment (optional)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Skip'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _brand,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                final user = Supabase.instance.client.auth.currentUser;
-                if (user != null && product.sellerId != null) {
-                  try {
-                    await Supabase.instance.client.from('ratings').insert({
-                      'seller_id': product.sellerId,
-                      'buyer_id': user.id,
-                      'product_id': product.id,
-                      'rating': localRating,
-                      'comment': commentController.text,
-                    });
-                  } catch (e) {
-                    debugPrint('Error saving rating: $e');
-                  }
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Submit'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
