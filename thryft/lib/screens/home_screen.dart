@@ -5,30 +5,9 @@ import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/hero_banner.dart';
 import 'package:thryft/widgets/product_carousel.dart';
-import 'package:thryft/providers/recommendation_provider.dart';
-import 'package:thryft/widgets/recommended_products_section.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  late final RecommendationProvider _recommendations;
-
-  @override
-  void initState() {
-    super.initState();
-    _recommendations = RecommendationProvider();
-  }
-
-  @override
-  void dispose() {
-    _recommendations.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,22 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const Header(),
             const HeroBanner(),
             SizedBox(height: isMobile ? 16 : 24),
-
-            // ── Recommended ───────────────────────────────────────────────
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPadding),
-              child: AnimatedBuilder(
-                animation: _recommendations,
-                builder: (context, _) {
-                  return RecommendedProductsSection(
-                    provider: _recommendations,
-                    title: 'Recommended for you',
-                    limit: 20,
-                  );
-                },
-              ),
-            ),
-            SizedBox(height: sectionGap),
 
             // ── Shirts & Tops ───────────────────────────────────────────
             Padding(
