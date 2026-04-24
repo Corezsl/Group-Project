@@ -131,7 +131,7 @@ class ProductDetailScreen extends StatelessWidget {
 
   Widget _buildImageGallery(BuildContext context) {
     return Hero(
-      tag: 'product_image_${product['name']}',
+      tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
       child: Container(
         constraints: const BoxConstraints(minHeight: 400),
         width: double.infinity,
