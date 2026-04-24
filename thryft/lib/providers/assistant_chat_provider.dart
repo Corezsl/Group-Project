@@ -46,16 +46,16 @@ class AssistantChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final targetRoute = _navService.identifyTargetRoute(trimmed);
-      if (targetRoute != null) {
-        _messages.add(ChatMessage.assistant(_navService.getConfirmationMessage(targetRoute)));
+      final match = _navService.matchTarget(trimmed);
+      if (match != null) {
+        _messages.add(ChatMessage.assistant(_navService.getConfirmationMessage(match.route)));
         notifyListeners();
 
         // Let the user read the confirmation, then navigate.
         if (router != null) {
           unawaited(
             Future<void>.delayed(const Duration(milliseconds: 700), () {
-              router.push(targetRoute);
+              router.push(match.route);
             }),
           );
         }
