@@ -15,6 +15,8 @@ class Product {
   final String department;
   final String material;
   final String colour;
+  final String? buyerId;
+  final String? orderStatus; // 'pending', 'shipped', 'delivered'
 
   const Product({
     required this.id,
@@ -33,6 +35,8 @@ class Product {
     required this.category,
     required this.material,
     required this.colour,
+    this.buyerId,
+    this.orderStatus,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
