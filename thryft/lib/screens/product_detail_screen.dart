@@ -222,18 +222,23 @@ class ProductDetailScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(allImages.length, (i) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == currentIndex ? 10 : 6,
-                  height: i == currentIndex ? 10 : 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: i == currentIndex
-                        ? const Color.fromARGB(255, 71, 164, 245)
-                        : Colors.grey[300],
+                children: List.generate(allImages.length, (i) => GestureDetector(
+                  onTap: () => indexNotifier.value = i,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    clipBehavior: Clip.hardEdge,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Image.network(
+                      allImages[i],
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 )),
               ),
