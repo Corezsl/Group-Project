@@ -237,9 +237,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _filterActive
-                    ? const FilterPanel(
-                        key: ValueKey('filter'),
-                      )
+                    ? const FilterPanel(key: ValueKey('filter'))
                     : Container(
                         key: const ValueKey('shortcuts'),
                         alignment: Alignment.center,
@@ -449,7 +447,10 @@ class _MobileHeaderState extends State<_MobileHeader> {
                           fillColor: const Color.fromARGB(50, 255, 255, 255),
                           isDense: true,
                         ),
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -469,54 +470,58 @@ class _MobileHeaderState extends State<_MobileHeader> {
                 ),
                 // Notification bell
                 Consumer<NotificationProvider>(
-            builder: (context, notifProvider, _) {
-              final session = Supabase.instance.client.auth.currentSession;
-              if (session == null) return const SizedBox.shrink();
-              return NotificationBadge(
-                count: notifProvider.unreadCount,
-                onPressed: () => context.push('/notifications'),
-              );
-            },
-          ),
-          // Cart icon
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-            onPressed: () => context.push('/cart'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.white),
-            onPressed: () {
-              final session = Supabase.instance.client.auth.currentSession;
-              if (session != null) {
-                context.push('/account');
-              } else {
-                context.push('/auth');
-              }
-            },
-          ),
-          // Hamburger
-          Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  builder: (context, notifProvider, _) {
+                    final session =
+                        Supabase.instance.client.auth.currentSession;
+                    if (session == null) return const SizedBox.shrink();
+                    return NotificationBadge(
+                      count: notifProvider.unreadCount,
+                      onPressed: () => context.push('/notifications'),
+                    );
+                  },
+                ),
+                // Cart icon
+                IconButton(
+                  icon: const Icon(
+                    Icons.shopping_cart_outlined,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => context.push('/cart'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person_outline, color: Colors.white),
+                  onPressed: () {
+                    final session =
+                        Supabase.instance.client.auth.currentSession;
+                    if (session != null) {
+                      context.push('/account');
+                    } else {
+                      context.push('/auth');
+                    }
+                  },
+                ),
+                // Hamburger
+                Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+              ],
             ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: _filterActive
+                ? const SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: FilterPanel(key: ValueKey('filter')),
+                  )
+                : const SizedBox.shrink(key: ValueKey('empty')),
           ),
         ],
       ),
-    ),
-    AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      child: _filterActive
-          ? const SizedBox(
-              height: 48,
-              width: double.infinity,
-              child: FilterPanel(key: ValueKey('filter')),
-            )
-          : const SizedBox.shrink(key: ValueKey('empty')),
-    ),
-  ],
-),
-);
+    );
   }
 }
-
