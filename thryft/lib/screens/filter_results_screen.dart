@@ -75,6 +75,10 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
         colour: row['colour']?.toString() ?? '',
         isSold: row['is_sold'] == true,
         description: row['description']?.toString(),
+        imageUrl2: row['image_url_2']?.toString(),
+        imageUrl3: row['image_url_3']?.toString(),
+        imageUrl4: row['image_url_4']?.toString(),
+        imageUrl5: row['image_url_5']?.toString(),
       )).toList();
     } catch (e) {
       debugPrint('Filter query error: $e');
