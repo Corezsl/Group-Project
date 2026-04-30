@@ -171,7 +171,7 @@ class ProductDetailScreen extends StatelessWidget {
                           ),
                     if (product['is_sold'] == 'true')
                       Container(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
