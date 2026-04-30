@@ -14,6 +14,17 @@ class NavAssistantService {
     caseSensitive: false,
   );
 
+  // Patterns for search-with-query and category-browsing
+  static final RegExp _searchForPattern = RegExp(
+    r'\b(?:search|find|look for|look up)\s+(?:for\s+)?(.+)',
+    caseSensitive: false,
+  );
+
+  static final RegExp _categoryPattern = RegExp(
+    r'\b(?:show|browse|view|see|shop)\s+(?:me\s+)?(?:the\s+)?(\w+)\s*(?:category|collection|section)?',
+    caseSensitive: false,
+  );
+
   /// Analyzes the user's message to find a matching route based on keywords.
   /// Returns the route string if a match is found, otherwise returns null.
   String? identifyTargetRoute(String message) {
@@ -25,9 +36,36 @@ class NavAssistantService {
   /// - supports multi-word phrases
   /// - uses scoring so the "best" destination wins
   /// - requires either a navigation verb ("open", "go to", ...) or decent confidence
+  /// - detects search-with-query and category-browsing intents
   NavMatch? matchTarget(String message) {
     final clean = message.toLowerCase().trim();
     if (clean.isEmpty) return null;
+
+    // Check for search-with-query intent first (e.g. "search for nike shoes")
+    final searchMatch = _searchForPattern.firstMatch(clean);
+    if (searchMatch != null) {
+      final query = searchMatch.group(1)?.trim();
+      if (query != null && query.isNotEmpty) {
+        return NavMatch(
+          route: '/search?q=${Uri.encodeComponent(query)}',
+          confidence: 0.9,
+          key: 'search_query',
+        );
+      }
+    }
+
+    // Check for category-browsing intent (e.g. "show me the tops category")
+    final catMatch = _categoryPattern.firstMatch(clean);
+    if (catMatch != null) {
+      final catWord = catMatch.group(1)?.trim().toLowerCase();
+      if (catWord != null && AppNavigationMap.categories.contains(catWord)) {
+        return NavMatch(
+          route: '/category/$catWord',
+          confidence: 0.9,
+          key: 'category',
+        );
+      }
+    }
 
     final hasNavVerb = _navVerb.hasMatch(clean);
 
@@ -86,6 +124,18 @@ class NavAssistantService {
 
   /// Generates a friendly confirmation message based on the destination.
   String getConfirmationMessage(String route) {
+    // Handle search-with-query routes
+    if (route.startsWith('/search?q=')) {
+      final query = Uri.decodeComponent(route.replaceFirst('/search?q=', ''));
+      return "Searching for \"$query\" now!";
+    }
+
+    // Handle category routes
+    if (route.startsWith('/category/')) {
+      final cat = route.replaceFirst('/category/', '').replaceAll('-', ' ');
+      return "Browsing the $cat collection for you!";
+    }
+
     final pageName = route.replaceAll('/', '').replaceAll('-', ' ');
     if (pageName.isEmpty) return "Heading back to the home page.";
     return "Sure thing! Opening your $pageName now.";
