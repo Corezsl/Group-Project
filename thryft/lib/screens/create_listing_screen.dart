@@ -186,6 +186,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .getPublicUrl(fileName);
       }
 
+      // Upload secondary images if changed
+      final List<String?> secondaryImageUrls = List.filled(4, null);
+      for (int i = 1; i <= 4; i++) {
+        if (_images[i] != null) {
+          final img = _images[i]!;
+          final fileExt = img.name.split('.').last;
+          final fileName = '${const Uuid().v4()}.$fileExt';
+          final bytes = await img.readAsBytes();
+          await supabase.storage
+              .from('product-images')
+              .uploadBinary(
+                fileName,
+                bytes,
+                fileOptions: FileOptions(contentType: 'image/$fileExt'),
+              );
+          secondaryImageUrls[i - 1] = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+        } else {
+          secondaryImageUrls[i - 1] = _existingImageUrls[i];
+        }
+      }
+
       // Handle Database Operation
       final double newPrice = double.parse(_priceController.text);
       final Map<String, dynamic> productData = {
