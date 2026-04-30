@@ -122,10 +122,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('See what buyers are saying'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            final user = Supabase.instance.client.auth.currentUser;
-                            if (user != null) {
-                              context.push('/user/${user.id}');
-                            }
+                            context.push('/my-reviews');
                           },
                         ),
                       ),
@@ -175,7 +172,7 @@ class AccountScreen extends StatelessWidget {
     if (user == null) return const SizedBox.shrink();
 
     final username = user.userMetadata?['username'] ?? 'No Username Provided';
-    final createdAt = user.createdAt != null ? DateTime.parse(user.createdAt!) : null;
+    final createdAt = DateTime.parse(user.createdAt);
     final accountAge = _calculateAccountAge(createdAt);
 
     return Column(

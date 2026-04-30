@@ -164,6 +164,7 @@ class NotificationProvider extends ChangeNotifier {
         .update({
           'price': notification.offerPrice,
           'is_sold': true,
+          'order_status': 'pending',
           if (notification.relatedUserId != null)
             'buyer_id': notification.relatedUserId,
         })

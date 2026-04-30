@@ -15,6 +15,8 @@ class Product {
   final String department;
   final String material;
   final String colour;
+  final String? buyerId;
+  final String? orderStatus; // 'pending', 'shipped', 'delivered'
   final String? description;
 
   const Product({
@@ -34,29 +36,12 @@ class Product {
     required this.category,
     required this.material,
     required this.colour,
+    this.buyerId,
+    this.orderStatus,
     this.description,
   });
 
-  factory Product.fromMap(Map<String, dynamic> map) {
-    return Product(
-      id: map['id']?.toString() ?? '',
-      name: map['name'] ?? 'Unknown Item',
-      imageUrl: map['image_url'],
-      price: (map['price'] ?? 0).toDouble(),
-      originalPrice: map['original_price'] != null 
-          ? (map['original_price'] as num).toDouble() 
-          : null,
-      size: map['size'] ?? 'N/A',
-      brand: map['brand'] ?? 'Unbranded',
-      condition: map['condition'] ?? 'Unknown',
-      colour: map['colour'] ?? 'Not Provided',
-      category: map['category'] ?? 'Unknown',
-      department:  map['department'] ?? 'Unknown',
-      material: map['material'] ?? 'Not Provided',
-      description: map['description']
-    );
-  }
-
+  /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
   Map<String, String> toRouteExtra() => {
     'id': id,
     'name': name,
