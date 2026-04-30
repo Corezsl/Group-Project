@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -74,6 +74,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       final existingMain = data['imageUrl']?.toString();
       if (existingMain != null && existingMain.trim().isNotEmpty) {
         _existingImageUrls[0] = existingMain.trim();
+      }
+
+      // Load secondary images for edit mode
+      for (int i = 2; i <= 5; i++) {
+        final existing = data['image_url_$i']?.toString();
+        if (existing != null && existing.trim().isNotEmpty) {
+          _existingImageUrls[i - 1] = existing.trim();
+        }
       }
     }
   }
