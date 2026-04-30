@@ -332,6 +332,8 @@ class _MobileHeader extends StatefulWidget {
 }
 
 class _MobileHeaderState extends State<_MobileHeader> {
+  bool _filterActive = false;
+
   final _layerLink = LayerLink();
   final _searchController = TextEditingController();
   late final FocusNode _searchFocusNode;
@@ -386,70 +388,87 @@ class _MobileHeaderState extends State<_MobileHeader> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
       color: const Color.fromARGB(255, 71, 164, 245),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Logo
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => context.go('/'),
-            child: Image.asset(
-              'assets/images/thyrft_logo.png',
-              height: 44,
-              fit: BoxFit.contain,
-            ),
-          ),
-          // Expanded search bar
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: CompositedTransformTarget(
-                link: _layerLink,
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (v) =>
-                      context.read<SearchProvider>().onQueryChanged(v),
-                  onSubmitted: (v) {
-                    final q = v.trim();
-                    if (q.isNotEmpty) {
-                      context.read<SearchProvider>().submitSearch(q);
-                      _searchFocusNode.unfocus();
-                      context.push('/search?q=${Uri.encodeComponent(q)}');
-                    }
-                  },
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    hintText: 'Search',
-                    hintStyle: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    border: const OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color.fromARGB(50, 255, 255, 255),
-                    isDense: true,
+          Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                // Logo
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => context.go('/'),
+                  child: Image.asset(
+                    'assets/images/thyrft_logo.png',
+                    height: 44,
+                    fit: BoxFit.contain,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
-              ),
-            ),
-          ),
-          // Notification bell
-          Consumer<NotificationProvider>(
+                // Expanded search bar
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: CompositedTransformTarget(
+                      link: _layerLink,
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (v) =>
+                            context.read<SearchProvider>().onQueryChanged(v),
+                        onSubmitted: (v) {
+                          final q = v.trim();
+                          if (q.isNotEmpty) {
+                            context.read<SearchProvider>().submitSearch(q);
+                            _searchFocusNode.unfocus();
+                            context.push('/search?q=${Uri.encodeComponent(q)}');
+                          }
+                        },
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          hintText: 'Search',
+                          hintStyle: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          border: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: const Color.fromARGB(50, 255, 255, 255),
+                          isDense: true,
+                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    _filterActive
+                        ? Icons.filter_alt
+                        : Icons.filter_alt_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _filterActive = !_filterActive),
+                ),
+                // Notification bell
+                Consumer<NotificationProvider>(
             builder: (context, notifProvider, _) {
               final session = Supabase.instance.client.auth.currentSession;
               if (session == null) return const SizedBox.shrink();
@@ -484,7 +503,20 @@ class _MobileHeaderState extends State<_MobileHeader> {
           ),
         ],
       ),
-    );
+    ),
+    AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      child: _filterActive
+          ? const SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: FilterPanel(key: ValueKey('filter')),
+            )
+          : const SizedBox.shrink(key: ValueKey('empty')),
+    ),
+  ],
+),
+);
   }
 }
 
