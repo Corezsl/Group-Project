@@ -241,6 +241,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             oldPrice != null && newPrice < oldPrice;
         if (isPriceDrop) {
           productData['original_price'] = oldPrice;
+        } else {
+          productData['original_price'] = null;
         }
 
         await supabase
