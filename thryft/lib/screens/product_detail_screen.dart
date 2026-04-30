@@ -388,8 +388,6 @@ class ProductDetailScreen extends StatelessWidget {
         ),
 
         const SizedBox(height: 32),
-        _buildBuyerProtectionBox(),
-        const SizedBox(height: 32),
         _buildSellerProfile(context),
         const SizedBox(height: 40),
         if (!_isDesktop(context)) const Footer(),
@@ -584,9 +582,9 @@ class ProductDetailScreen extends StatelessWidget {
                   : () async {
                       final offerPrice = double.tryParse(priceController.text.trim());
                       final listingPrice = double.tryParse(product['price'] ?? '');
-                      if (offerPrice == null || offerPrice <= 0) {
+                      if (offerPrice == null || offerPrice < 0.01) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Enter a valid offer price')),
+                          const SnackBar(content: Text('Offer must be at least £0.01')),
                         );
                         return;
                       }
@@ -712,43 +710,6 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBuyerProtectionBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.shield, color: brandColor, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Buyer Protection fee",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Includes our Refund Policy and helps keep our community safe.",
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
     final data = await Supabase.instance.client
