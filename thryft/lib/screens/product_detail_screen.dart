@@ -142,73 +142,99 @@ class ProductDetailScreen extends StatelessWidget {
       product['image_url_5'],
     ].where((u) => u != null && u.isNotEmpty).cast<String>().toList();
 
+    if (allImages.isEmpty) {
+      return Hero(
+        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: const Icon(Icons.image, size: 100, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Single image — no PageView needed
+    if (allImages.length == 1) {
+      return Hero(
+        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(allImages[0], fit: BoxFit.contain),
+              if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Multiple images — use PageView with ValueNotifier for dot state
+    final pageNotifier = ValueNotifier<int>(0);
+
     return Hero(
       tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
-      child: StatefulBuilder(
-        builder: (context, setState) {
-          int currentPage = 0;
-          final controller = PageController();
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                constraints: const BoxConstraints(minHeight: 400),
-                width: double.infinity,
-                color: Colors.grey[100],
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    allImages.isEmpty
-                        ? const Icon(Icons.image, size: 100, color: Colors.grey)
-                        : PageView.builder(
-                            controller: controller,
-                            itemCount: allImages.length,
-                            onPageChanged: (i) => setState(() => currentPage = i),
-                            itemBuilder: (_, i) => Image.network(
-                              allImages[i],
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                    if (product['is_sold'] == 'true')
-                      Container(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          'SOLD',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 4.0,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (allImages.length > 1)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(allImages.length, (i) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: i == currentPage ? 10 : 6,
-                      height: i == currentPage ? 10 : 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i == currentPage
-                            ? const Color.fromARGB(255, 71, 164, 245)
-                            : Colors.grey[300],
-                      ),
-                    )),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 400,
+            width: double.infinity,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                PageView.builder(
+                  itemCount: allImages.length,
+                  onPageChanged: (i) => pageNotifier.value = i,
+                  itemBuilder: (_, i) => Container(
+                    color: Colors.grey[100],
+                    child: Image.network(allImages[i], fit: BoxFit.contain),
                   ),
                 ),
-            ],
-          );
-        },
+                if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: ValueListenableBuilder<int>(
+              valueListenable: pageNotifier,
+              builder: (_, currentPage, __) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(allImages.length, (i) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == currentPage ? 10 : 6,
+                  height: i == currentPage ? 10 : 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i == currentPage
+                        ? const Color.fromARGB(255, 71, 164, 245)
+                        : Colors.grey[300],
+                  ),
+                )),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSoldOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        'SOLD',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 4.0,
+        ),
       ),
     );
   }
