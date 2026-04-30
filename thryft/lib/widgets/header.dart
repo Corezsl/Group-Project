@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/utils/responsive.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/filter_system.dart';
 import 'package:thryft/widgets/notification_badge.dart';
 import 'package:thryft/widgets/search_dropdown.dart';
@@ -504,7 +505,39 @@ class _MobileHeaderState extends State<_MobileHeader> {
                 Builder(
                   builder: (ctx) => IconButton(
                     icon: const Icon(Icons.menu, color: Colors.white),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    onPressed: () {
+                      if (Scaffold.maybeOf(ctx)?.hasDrawer ?? false) {
+                        Scaffold.of(ctx).openDrawer();
+                      } else {
+                        showGeneralDialog(
+                          context: ctx,
+                          barrierDismissible: true,
+                          barrierLabel: 'Drawer',
+                          barrierColor: Colors.black54,
+                          transitionDuration: const Duration(milliseconds: 250),
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) {
+                                return const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Material(
+                                    elevation: 16,
+                                    child: AppDrawer(),
+                                  ),
+                                );
+                              },
+                          transitionBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(-1, 0),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                );
+                              },
+                        );
+                      }
+                    },
                   ),
                 ),
               ],
