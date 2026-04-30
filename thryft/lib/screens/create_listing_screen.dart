@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -74,6 +74,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       final existingMain = data['imageUrl']?.toString();
       if (existingMain != null && existingMain.trim().isNotEmpty) {
         _existingImageUrls[0] = existingMain.trim();
+      }
+
+      // Load secondary images for edit mode
+      for (int i = 2; i <= 5; i++) {
+        final existing = data['image_url_$i']?.toString();
+        if (existing != null && existing.trim().isNotEmpty) {
+          _existingImageUrls[i - 1] = existing.trim();
+        }
       }
     }
   }
@@ -178,6 +186,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .getPublicUrl(fileName);
       }
 
+      // Upload secondary images if changed
+      final List<String?> secondaryImageUrls = List.filled(4, null);
+      for (int i = 1; i <= 4; i++) {
+        if (_images[i] != null) {
+          final img = _images[i]!;
+          final fileExt = img.name.split('.').last;
+          final fileName = '${const Uuid().v4()}.$fileExt';
+          final bytes = await img.readAsBytes();
+          await supabase.storage
+              .from('product-images')
+              .uploadBinary(
+                fileName,
+                bytes,
+                fileOptions: FileOptions(contentType: 'image/$fileExt'),
+              );
+          secondaryImageUrls[i - 1] = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+        } else {
+          secondaryImageUrls[i - 1] = _existingImageUrls[i];
+        }
+      }
+
       // Handle Database Operation
       final double newPrice = double.parse(_priceController.text);
       final Map<String, dynamic> productData = {
@@ -188,6 +219,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'brand': _selectedBrand,
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
+        'image_url_2': secondaryImageUrls[0],
+        'image_url_3': secondaryImageUrls[1],
+        'image_url_4': secondaryImageUrls[2],
+        'image_url_5': secondaryImageUrls[3],
         'category': _selectedCategory,
         'fitting': _selectedFitting,
         'material' : _selectedMaterial,

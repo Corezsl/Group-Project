@@ -134,35 +134,137 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Widget _buildImageGallery(BuildContext context) {
+    final allImages = [
+      product['imageUrl'],
+      product['image_url_2'],
+      product['image_url_3'],
+      product['image_url_4'],
+      product['image_url_5'],
+    ].where((u) => u != null && u.isNotEmpty).cast<String>().toList();
+
+    if (allImages.isEmpty) {
+      return Hero(
+        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: const Icon(Icons.image, size: 100, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Single image — no PageView needed
+    if (allImages.length == 1) {
+      return Hero(
+        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(allImages[0], fit: BoxFit.contain),
+              if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Multiple images — use ValueNotifier for selected index
+    final indexNotifier = ValueNotifier<int>(0);
+
     return Hero(
       tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 400),
-        width: double.infinity,
-        color: Colors.grey[100],
-        child: Stack(
-          alignment: Alignment.center,
+      child: ValueListenableBuilder<int>(
+        valueListenable: indexNotifier,
+        builder: (context, currentIndex, _) => Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            product['imageUrl'] != null
-                ? Image.network(product['imageUrl']!, fit: BoxFit.contain)
-                : const Icon(Icons.image, size: 100, color: Colors.grey),
-            if (product['is_sold'] == 'true')
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                child: Text(
-                  'SOLD',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4.0,
-                  ),
-                ),
+            Container(
+              height: 400,
+              width: double.infinity,
+              color: Colors.grey[100],
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.network(allImages[currentIndex], fit: BoxFit.contain),
+                  if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+                  // Left arrow
+                  if (currentIndex > 0)
+                    Positioned(
+                      left: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_left, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex - 1,
+                      ),
+                    ),
+                  // Right arrow
+                  if (currentIndex < allImages.length - 1)
+                    Positioned(
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_right, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex + 1,
+                      ),
+                    ),
+                ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(allImages.length, (i) => GestureDetector(
+                  onTap: () => indexNotifier.value = i,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    clipBehavior: Clip.hardEdge,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: i == currentIndex
+                            ? const Color.fromARGB(255, 71, 164, 245)
+                            : Colors.grey[300]!,
+                        width: i == currentIndex ? 2.5 : 1.5,
+                      ),
+                    ),
+                    child: Image.network(
+                      allImages[i],
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )),
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoldOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        'SOLD',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 4.0,
         ),
       ),
     );

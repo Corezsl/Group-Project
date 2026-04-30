@@ -60,6 +60,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
         isSold: data['is_sold'] == true,
         category: data['category']?.toString() ?? 'Other',
         description: data['description']?.toString(),
+        imageUrl2: data['image_url_2']?.toString(),
+        imageUrl3: data['image_url_3']?.toString(),
+        imageUrl4: data['image_url_4']?.toString(),
+        imageUrl5: data['image_url_5']?.toString(),
       )).toList();
     }
 
@@ -100,6 +104,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
       isSold: data['is_sold'] == true,
       category: data['category']?.toString() ?? 'Other',
       description: data['description']?.toString(),
+      imageUrl2: data['image_url_2']?.toString(),
+      imageUrl3: data['image_url_3']?.toString(),
+      imageUrl4: data['image_url_4']?.toString(),
+      imageUrl5: data['image_url_5']?.toString(),
     )).toList();
   }
 
