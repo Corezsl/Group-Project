@@ -584,9 +584,9 @@ class ProductDetailScreen extends StatelessWidget {
                   : () async {
                       final offerPrice = double.tryParse(priceController.text.trim());
                       final listingPrice = double.tryParse(product['price'] ?? '');
-                      if (offerPrice == null || offerPrice <= 0) {
+                      if (offerPrice == null || offerPrice < 0.01) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Enter a valid offer price')),
+                          const SnackBar(content: Text('Offer must be at least £0.01')),
                         );
                         return;
                       }
