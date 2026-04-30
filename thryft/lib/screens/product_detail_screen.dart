@@ -234,6 +234,12 @@ class ProductDetailScreen extends StatelessWidget {
                     clipBehavior: Clip.hardEdge,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: i == currentIndex
+                            ? const Color.fromARGB(255, 71, 164, 245)
+                            : Colors.grey[300]!,
+                        width: i == currentIndex ? 2.5 : 1.5,
+                      ),
                     ),
                     child: Image.network(
                       allImages[i],
