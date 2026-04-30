@@ -173,53 +173,73 @@ class ProductDetailScreen extends StatelessWidget {
       );
     }
 
-    // Multiple images — use PageView with ValueNotifier for dot state
-    final pageNotifier = ValueNotifier<int>(0);
+    // Multiple images — use ValueNotifier for selected index
+    final indexNotifier = ValueNotifier<int>(0);
 
     return Hero(
       tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 400,
-            width: double.infinity,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PageView.builder(
-                  itemCount: allImages.length,
-                  onPageChanged: (i) => pageNotifier.value = i,
-                  itemBuilder: (_, i) => Container(
-                    color: Colors.grey[100],
-                    child: Image.network(allImages[i], fit: BoxFit.contain),
-                  ),
-                ),
-                if (product['is_sold'] == 'true') _buildSoldOverlay(context),
-              ],
+      child: ValueListenableBuilder<int>(
+        valueListenable: indexNotifier,
+        builder: (context, currentIndex, _) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 400,
+              width: double.infinity,
+              color: Colors.grey[100],
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.network(allImages[currentIndex], fit: BoxFit.contain),
+                  if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+                  // Left arrow
+                  if (currentIndex > 0)
+                    Positioned(
+                      left: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_left, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex - 1,
+                      ),
+                    ),
+                  // Right arrow
+                  if (currentIndex < allImages.length - 1)
+                    Positioned(
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_right, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex + 1,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ValueListenableBuilder<int>(
-              valueListenable: pageNotifier,
-              builder: (_, currentPage, __) => Row(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(allImages.length, (i) => Container(
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == currentPage ? 10 : 6,
-                  height: i == currentPage ? 10 : 6,
+                  width: i == currentIndex ? 10 : 6,
+                  height: i == currentIndex ? 10 : 6,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: i == currentPage
+                    color: i == currentIndex
                         ? const Color.fromARGB(255, 71, 164, 245)
                         : Colors.grey[300],
                   ),
                 )),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
