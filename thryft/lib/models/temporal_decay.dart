@@ -2,7 +2,9 @@ import 'dart:math';
 
 class TemporalDecayService {
   /// The rate at which the interaction score diminishes over time.
-  final double decayRate = 0.95;
+  final double decayRate;
+
+  TemporalDecayService({this.decayRate = 0.95});
 
   /// Applies exponential decay to a weight based on the date it was created.
   double applyDecay(double score, DateTime? createdAt) {

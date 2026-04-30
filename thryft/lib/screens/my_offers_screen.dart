@@ -302,6 +302,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
         'material': data['material']?.toString() ?? '',
         'colour': data['colour']?.toString() ?? '',
         'isSold': (data['is_sold'] == true).toString(),
+        if (data['description'] != null) 'description': data['description'].toString(),
       };
 
       if (context.mounted) {

@@ -3,7 +3,7 @@ class Product {
   final String name;
   final String? imageUrl;
   final double price;
-  final double? originalPrice; // if set, card shows strikethrough old price
+  final double? originalPrice;
   final String size;
   final String brand;
   final String condition;
@@ -17,6 +17,7 @@ class Product {
   final String colour;
   final String? buyerId;
   final String? orderStatus; // 'pending', 'shipped', 'delivered'
+  final String? description;
 
   const Product({
     required this.id,
@@ -37,6 +38,7 @@ class Product {
     required this.colour,
     this.buyerId,
     this.orderStatus,
+    this.description,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -57,5 +59,6 @@ class Product {
     'department': department,
     'material': material,
     'colour': colour,
+    if (description != null) 'description': description!,
   };
 }

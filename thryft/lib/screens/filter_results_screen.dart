@@ -74,6 +74,7 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
         material: row['material']?.toString() ?? '',
         colour: row['colour']?.toString() ?? '',
         isSold: row['is_sold'] == true,
+        description: row['description']?.toString(),
       )).toList();
     } catch (e) {
       debugPrint('Filter query error: $e');

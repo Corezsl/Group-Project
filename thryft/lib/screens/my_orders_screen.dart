@@ -71,6 +71,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
               createdAt: data['created_at'] != null
                   ? DateTime.tryParse(data['created_at'].toString())
                   : null,
+              description: data['description']?.toString(),
             ),
           )
           .toList();
