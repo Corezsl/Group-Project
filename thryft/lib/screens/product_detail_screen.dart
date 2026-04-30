@@ -134,6 +134,14 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Widget _buildImageGallery(BuildContext context) {
+    final allImages = [
+      product['imageUrl'],
+      product['image_url_2'],
+      product['image_url_3'],
+      product['image_url_4'],
+      product['image_url_5'],
+    ].where((u) => u != null && u.isNotEmpty).cast<String>().toList();
+
     return Hero(
       tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
       child: Container(
