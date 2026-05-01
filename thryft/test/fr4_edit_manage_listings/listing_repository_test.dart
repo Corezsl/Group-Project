@@ -44,6 +44,23 @@ class FakeMutateFilterBuilder extends Fake
       Future<dynamic>.value(null).then(onValue, onError: onError);
 }
 
+// Simulates a Supabase permission / RLS error on await.
+class FakeErrorFilterBuilder extends Fake
+    implements PostgrestFilterBuilder<dynamic> {
+  final Object error;
+  FakeErrorFilterBuilder(this.error);
+
+  @override
+  FakeErrorFilterBuilder eq(String column, dynamic value) => this;
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(dynamic) onValue, {
+    Function? onError,
+  }) =>
+      Future<dynamic>.error(error).then(onValue, onError: onError);
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -236,6 +253,29 @@ void main() {
         throwsA(isA<NotAuthenticatedException>()),
       );
       verifyNever(() => client.from(any()));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR4 Partition 5 — Edit another user's listing (invalid)
+  // RLS enforcement is server-side; the repo must propagate the error.
+  // -------------------------------------------------------------------------
+  group('FR4 #5 — edit another user\'s listing', () {
+    test('server permission error propagates out of updateListing', () async {
+      final permissionError = Exception('permission denied for table products');
+      final errorFilter = FakeErrorFilterBuilder(permissionError);
+
+      when(() => client.from(any())).thenAnswer((_) => qb);
+      when(() => qb.update(any())).thenAnswer((_) => errorFilter);
+
+      expect(
+        () => repo.updateListing(
+          id: 'listing-other',
+          userId: 'user-123',
+          fields: {'price': 20.0},
+        ),
+        throwsA(isA<Exception>()),
+      );
     });
   });
 }
