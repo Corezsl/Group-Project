@@ -7,7 +7,7 @@ import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/providers/interaction_service.dart';
+
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/providers/offer_provider.dart';
 import 'package:thryft/models/notification_model.dart';
@@ -25,10 +25,6 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    InteractionService().logInteraction(
-      productId: product['id'] ?? '',
-      type: 'view',
-    );
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
