@@ -60,6 +60,33 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    try {
+      final paymentData = await Supabase.instance.client
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (paymentData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please add a payment method in your profile settings before checkout.'),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error fetching payment method: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error verifying payment method.')),
+        );
+      }
+      return;
+    }
+
     setState(() => _isProcessingCheckout = true);
 
     final cartItems = List.from(cart.items);
