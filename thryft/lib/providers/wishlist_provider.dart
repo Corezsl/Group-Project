@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/models/wishlist_item.dart';
-import 'package:thryft/providers/interaction_service.dart';
 import 'package:thryft/providers/notification_provider.dart';
 
 class WishlistProvider extends ChangeNotifier {
@@ -127,7 +126,6 @@ class WishlistProvider extends ChangeNotifier {
       _items.removeWhere((i) => i.product.id == product.id);
     } else {
       _items.insert(0, WishlistItem(product: product, savedAt: DateTime.now()));
-      await InteractionService().logInteraction(productId: product.id, type: 'wishlist');
 
     }
     notifyListeners();
