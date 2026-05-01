@@ -144,7 +144,9 @@ class ProductDetailScreen extends StatelessWidget {
 
     if (allImages.isEmpty) {
       return Hero(
-        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
         child: Container(
           height: 400,
           width: double.infinity,
@@ -157,7 +159,9 @@ class ProductDetailScreen extends StatelessWidget {
     // Single image — no PageView needed
     if (allImages.length == 1) {
       return Hero(
-        tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
         child: Container(
           height: 400,
           width: double.infinity,
@@ -177,7 +181,9 @@ class ProductDetailScreen extends StatelessWidget {
     final indexNotifier = ValueNotifier<int>(0);
 
     return Hero(
-      tag: product['heroTag'] ?? 'product_image_${product['id'] ?? product['name']}',
+      tag:
+          product['heroTag'] ??
+          'product_image_${product['id'] ?? product['name']}',
       child: ValueListenableBuilder<int>(
         valueListenable: indexNotifier,
         builder: (context, currentIndex, _) => Column(
@@ -225,28 +231,28 @@ class ProductDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(allImages.length, (i) => GestureDetector(
-                  onTap: () => indexNotifier.value = i,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    clipBehavior: Clip.hardEdge,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: i == currentIndex
-                            ? const Color.fromARGB(255, 71, 164, 245)
-                            : Colors.grey[300]!,
-                        width: i == currentIndex ? 2.5 : 1.5,
+                children: List.generate(
+                  allImages.length,
+                  (i) => GestureDetector(
+                    onTap: () => indexNotifier.value = i,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: i == currentIndex
+                              ? const Color.fromARGB(255, 71, 164, 245)
+                              : Colors.grey[300]!,
+                          width: i == currentIndex ? 2.5 : 1.5,
+                        ),
                       ),
-                    ),
-                    child: Image.network(
-                      allImages[i],
-                      fit: BoxFit.cover,
+                      child: Image.network(allImages[i], fit: BoxFit.cover),
                     ),
                   ),
-                )),
+                ),
               ),
             ),
           ],
@@ -314,7 +320,8 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
         const SizedBox(height: 24),
-        if (product['description'] != null && product['description']!.isNotEmpty) ...[
+        if (product['description'] != null &&
+            product['description']!.isNotEmpty) ...[
           const Text(
             'Description',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -322,7 +329,11 @@ class ProductDetailScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             product['description']!,
-            style: TextStyle(color: Colors.grey[700], fontSize: 14, height: 1.5),
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 24),
         ],
@@ -337,12 +348,23 @@ class ProductDetailScreen extends StatelessWidget {
             final isInCart = cart.isInCart(product['id'] ?? '');
 
             if (isSold) {
-              return _buildFullWidthBanner(
+              final soldBanner = _buildFullWidthBanner(
                 Icons.sell_outlined,
                 'This item has been sold',
                 Colors.grey[600]!,
                 Colors.grey[100]!,
               );
+
+              if (isOwner) {
+                return Column(
+                  children: [
+                    soldBanner,
+                    _BuyerAddressWidget(productId: product['id'] ?? ''),
+                  ],
+                );
+              }
+
+              return soldBanner;
             }
 
             if (isOwner) {
@@ -381,7 +403,9 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildSecondaryButton(
-                    "Make an offer", () => _showOfferDialog(context)),
+                  "Make an offer",
+                  () => _showOfferDialog(context),
+                ),
               ],
             );
           },
@@ -488,7 +512,10 @@ class ProductDetailScreen extends StatelessWidget {
               side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text('Delete listing', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete listing',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
@@ -502,8 +529,14 @@ class ProductDetailScreen extends StatelessWidget {
         title: const Text('Delete listing'),
         content: const Text('Are you sure you want to delete this product?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -523,12 +556,16 @@ class ProductDetailScreen extends StatelessWidget {
             .eq('user_id', currentUser.id);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product deleted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Product deleted')));
         context.go('/my-listings');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
       }
     }
   }
@@ -562,7 +599,9 @@ class ProductDetailScreen extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Your offer (£)',
                   border: OutlineInputBorder(),
@@ -580,11 +619,17 @@ class ProductDetailScreen extends StatelessWidget {
               onPressed: isSending
                   ? null
                   : () async {
-                      final offerPrice = double.tryParse(priceController.text.trim());
-                      final listingPrice = double.tryParse(product['price'] ?? '');
+                      final offerPrice = double.tryParse(
+                        priceController.text.trim(),
+                      );
+                      final listingPrice = double.tryParse(
+                        product['price'] ?? '',
+                      );
                       if (offerPrice == null || offerPrice < 0.01) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Offer must be at least £0.01')),
+                          const SnackBar(
+                            content: Text('Offer must be at least £0.01'),
+                          ),
                         );
                         return;
                       }
@@ -601,16 +646,20 @@ class ProductDetailScreen extends StatelessWidget {
                       setDialogState(() => isSending = true);
                       try {
                         // Prevent duplicate pending offers.
-                        final alreadyPending = await OfferProvider.hasPendingOffer(
-                          buyerId: currentUser.id,
-                          listingId: product['id'] ?? '',
-                        );
+                        final alreadyPending =
+                            await OfferProvider.hasPendingOffer(
+                              buyerId: currentUser.id,
+                              listingId: product['id'] ?? '',
+                            );
                         if (alreadyPending) {
-                          if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                          if (dialogContext.mounted)
+                            Navigator.of(dialogContext).pop();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('You already have a pending offer on this item.'),
+                                content: Text(
+                                  'You already have a pending offer on this item.',
+                                ),
                               ),
                             );
                           }
@@ -638,7 +687,8 @@ class ProductDetailScreen extends StatelessWidget {
                           offerPrice: offerPrice,
                         );
 
-                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                        if (dialogContext.mounted)
+                          Navigator.of(dialogContext).pop();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Offer sent!')),
@@ -710,7 +760,6 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-
   Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
     final data = await Supabase.instance.client
         .from('ratings')
@@ -718,7 +767,8 @@ class ProductDetailScreen extends StatelessWidget {
         .eq('seller_id', sellerId);
     final list = data as List;
     if (list.isEmpty) return {'avg': 0.0, 'count': 0};
-    final avg = list
+    final avg =
+        list
             .map((r) => (r['rating'] as num).toDouble())
             .reduce((a, b) => a + b) /
         list.length;
@@ -773,7 +823,11 @@ class ProductDetailScreen extends StatelessWidget {
                       else
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${avg.toStringAsFixed(1)} ($count)',
@@ -793,6 +847,126 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BuyerAddressWidget extends StatefulWidget {
+  final String productId;
+
+  const _BuyerAddressWidget({required this.productId});
+
+  @override
+  State<_BuyerAddressWidget> createState() => _BuyerAddressWidgetState();
+}
+
+class _BuyerAddressWidgetState extends State<_BuyerAddressWidget> {
+  String? _address;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  Future<void> _fetchAddress() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final productRes = await supabase
+          .from('products')
+          .select('buyer_id')
+          .eq('id', widget.productId)
+          .maybeSingle();
+
+      if (productRes != null && productRes['buyer_id'] != null) {
+        final addressRes = await supabase
+            .from('address')
+            .select()
+            .eq('user_id', productRes['buyer_id'])
+            .maybeSingle();
+
+        if (addressRes != null) {
+          if (mounted) {
+            setState(() {
+              _address =
+                  "${addressRes['street_name']} ${addressRes['house_number']}, ${addressRes['city']} ${addressRes['postal_code']}, ${addressRes['country']}";
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching buyer address: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 16.0),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_address == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_shipping_outlined,
+                size: 18,
+                color: Colors.grey[700],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Ship to Buyer',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _address!,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
