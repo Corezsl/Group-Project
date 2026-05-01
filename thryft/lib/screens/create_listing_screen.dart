@@ -164,6 +164,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         throw Exception('You must be logged in to modify a listing.');
       }
 
+      // Verify user has a payment method before allowing them to list
+      final paymentData = await supabase
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (paymentData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please add a payment method in your profile settings before creating a listing.'),
+            ),
+          );
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+
       String? publicImageUrl = widget.initialData?['imageUrl'];
 
       // Upload main image if changed
