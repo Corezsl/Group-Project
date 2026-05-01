@@ -19,6 +19,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool _isLoading = false;
 
   Map<String, dynamic>? _userAddress;
+  Map<String, dynamic>? _userPaymentMethod;
   String? _currentAvatarUrl;
   final _bioController = TextEditingController();
 
@@ -26,6 +27,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   void initState() {
     super.initState();
     _fetchAddress();
+    _fetchPaymentMethod();
     _fetchProfile();
   }
 
@@ -49,6 +51,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       if (mounted) {
         setState(() {
           _userAddress = response;
+        });
+      }
+    } catch (e) {
+      // Ignore if not present
+    }
+  }
+
+  Future<void> _fetchPaymentMethod() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await _supabase
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (mounted) {
+        setState(() {
+          _userPaymentMethod = response;
         });
       }
     } catch (e) {
