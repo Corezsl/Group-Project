@@ -71,6 +71,12 @@ class _CartScreenState extends State<CartScreen> {
           'buyer_id': user.id,
           'order_status': 'pending',
         }).eq('id', item.product.id);
+
+        // Remove this product from all users' carts
+        await Supabase.instance.client
+            .from('cart_items')
+            .delete()
+            .eq('product_id', item.product.id);
       }
     } catch (e) {
       debugPrint('Error marking checkout items as sold: $e');
