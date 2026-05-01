@@ -16,6 +16,7 @@ class SoldItemsScreen extends StatefulWidget {
 
 class _SoldItemsScreenState extends State<SoldItemsScreen> {
   List<Product> _soldItems = [];
+  Map<String, String> _buyerAddresses = {};
   bool _isLoading = true;
 
   @override
@@ -71,8 +72,39 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           )
           .toList();
 
+      final buyerIds = items
+          .map((p) => p.buyerId)
+          .whereType<String>()
+          .toSet()
+          .toList();
+      final Map<String, String> addresses = {};
+
+      if (buyerIds.isNotEmpty) {
+        try {
+          final addressResponse = await Supabase.instance.client
+              .from('address')
+              .select()
+              .filter('user_id', 'in', buyerIds);
+
+          for (var addr in addressResponse) {
+            final parts = [
+              addr['street'],
+              addr['city'],
+              addr['postal_code'],
+              addr['country'],
+            ].where((p) => p != null && p.toString().isNotEmpty).toList();
+            if (parts.isNotEmpty) {
+              addresses[addr['user_id'].toString()] = parts.join(', ');
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching buyer addresses: $e');
+        }
+      }
+
       setState(() {
         _soldItems = items;
+        _buyerAddresses = addresses;
         _isLoading = false;
       });
     } catch (e) {
@@ -350,6 +382,42 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
             // Action row — only show for pending items
             if (status == 'pending') ...[
               const SizedBox(height: 10),
+              if (product.buyerId != null &&
+                  _buyerAddresses[product.buyerId] != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ship to:\n${_buyerAddresses[product.buyerId]!}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[800],
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -382,7 +450,11 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
 
   Widget _buildStatusBadge(String status) {
     final (label, color, bg) = switch (status) {
-      'shipped' => ('Shipped', const Color(0xFF1D6FB8), const Color(0xFFE0F0FF)),
+      'shipped' => (
+        'Shipped',
+        const Color(0xFF1D6FB8),
+        const Color(0xFFE0F0FF),
+      ),
       'delivered' => ('Delivered', Colors.green[700]!, Colors.green[50]!),
       _ => ('To Ship', Colors.orange[700]!, Colors.orange[50]!),
     };
@@ -406,8 +478,18 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
