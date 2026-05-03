@@ -22,9 +22,7 @@ import 'package:thryft/screens/notifications_screen.dart';
 import 'package:thryft/screens/forgot_password_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/nav_assistant_chat_screen.dart';
-import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
-import 'package:thryft/screens/my_offers_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
