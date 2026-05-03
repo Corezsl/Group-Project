@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/screens/about_screen.dart';
 import 'package:thryft/screens/contact_screen.dart';
 import 'package:thryft/screens/help_center_screen.dart';
@@ -24,6 +25,9 @@ import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/my_reviews_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
+
+String? requireAuth(SupabaseClient client) =>
+    client.auth.currentUser == null ? '/auth' : null;
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -66,6 +70,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/create-listing',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) {
         final data = state.extra as Map<String, dynamic>?;
         return CreateListingScreen(initialData: data);
@@ -73,14 +78,17 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/my-listings',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const MyListingsScreen(),
     ),
     GoRoute(
       path: '/my-orders',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const MyOrdersScreen(),
     ),
     GoRoute(
       path: '/sold-items',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const SoldItemsScreen(),
     ),
     GoRoute(
