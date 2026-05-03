@@ -88,9 +88,12 @@ const List<String> categories = [
   'Accessories',
 ];
 
-const List<String> priceSortOptions = [
-  'Lowest Price First',
-  'Highest Price First',
+const List<String> priceRanges = [
+  'Under £25',
+  '£25 - £50',
+  '£50 - £100',
+  '£100 - £250',
+  'Over £250',
 ];
 
 const List<String> dateSortOptions = [

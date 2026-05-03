@@ -4,7 +4,6 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
-import 'package:go_router/go_router.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -98,36 +97,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           emptyIcon: Icons.list_alt,
                           emptyTitle: 'No active listings',
                           emptySubtitle: 'Items you list for sale will appear here.',
-                          extraGridCard: GestureDetector(
-                            onTap: () => context.go('/create-listing'),
-                            behavior: HitTestBehavior.opaque,
-                            child: SizedBox(
-                              width: 140,
-                              child: Card(
-                                color: Colors.blue,
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.add_circle_outline, size: 28, color: Colors.white),
-                                      SizedBox(height: 6),
-                                      Text(
-                                        'Create Listing',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                         ),
-                       );
+                      );
                     },
                   ),
                 ],

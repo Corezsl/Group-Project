@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
-import 'package:thryft/providers/offer_provider.dart';
 
-/// Manages user notifications and offer interactions using Supabase.
 class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -17,7 +15,6 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
   bool get isLoading => _isLoading;
 
-  /// Initializes authentication listeners to sync notifications.
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
@@ -114,7 +111,7 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Marks all notifications for the current user as read.
+  /// Called when NotificationsScreen opens. Marks all unread as read
   Future<void> markAllAsRead() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -140,118 +137,125 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Accepts an offer: updates the product, cleans up, then notifies the buyer.
   Future<void> acceptOffer(AppNotification notification) async {
-    if (notification.listingId == null || notification.offerPrice == null) return;
+    if (notification.listingId == null || notification.relatedUserId == null) {
+      return;
+    }
 
-    // Guard against accepting an already-sold item.
+    // Pre-check: ensure product is not already sold
     final product = await Supabase.instance.client
         .from('products')
-        .select('is_sold, name')
+        .select('is_sold')
         .eq('id', notification.listingId!)
         .single();
 
     if (product['is_sold'] == true) {
+      await _syncOfferStatus(notification, 'declined');
       await _deleteNotification(notification.notificationId);
       throw Exception('already_sold');
     }
 
-    final listingTitle = product['name']?.toString() ?? 'the item';
+    final updatedOffer = await _syncOfferStatus(notification, 'accepted');
+    final acceptedPrice = (updatedOffer['offered_price'] as num).toDouble();
 
-    // Mark product as sold at the agreed price — this is the critical step.
     await Supabase.instance.client
         .from('products')
         .update({
-          'price': notification.offerPrice,
+          'price': acceptedPrice,
           'is_sold': true,
           if (notification.relatedUserId != null)
             'buyer_id': notification.relatedUserId,
         })
         .eq('id', notification.listingId!);
 
-    // Remove the seller's notification regardless of what follows.
-    await _deleteNotification(notification.notificationId);
+    final listingName = await _resolveListingName(notification.listingId!);
+    await NotificationProvider.insertNotification(
+      userId: notification.relatedUserId!,
+      type: NotificationType.listingSold,
+      content:
+          'Your offer of £${acceptedPrice.toStringAsFixed(2)} for $listingName was accepted.',
+      listingId: notification.listingId,
+      relatedUserId: notification.relatedUserId,
+      offerPrice: acceptedPrice,
+    );
 
-    // Best-effort: update offer record and notify the buyer.
-    if (notification.relatedUserId != null) {
-      try {
-        await OfferProvider.updateOfferStatus(
-          listingId: notification.listingId!,
-          buyerId: notification.relatedUserId!,
-          status: 'accepted',
-        );
-        await insertNotification(
-          userId: notification.relatedUserId!,
-          type: NotificationType.offerAccepted,
-          content:
-              'Your offer of £${notification.offerPrice!.toStringAsFixed(2)} for "$listingTitle" was accepted! The seller will ship it soon.',
-          listingId: notification.listingId,
-          offerPrice: notification.offerPrice,
-        );
-      } catch (e) {
-        debugPrint('Could not send accept notification to buyer: $e');
-      }
-    }
+    await _deleteNotification(notification.notificationId);
   }
 
-  /// Declines an offer: removes the notification, then notifies the buyer.
   Future<void> declineOffer(AppNotification notification) async {
-    // Remove the seller's notification first — this must always succeed.
-    await _deleteNotification(notification.notificationId);
+    final updatedOffer = await _syncOfferStatus(notification, 'declined');
+    final declinedPrice = (updatedOffer['offered_price'] as num).toDouble();
+    final listingName = notification.listingId == null
+        ? 'this item'
+        : await _resolveListingName(notification.listingId!);
 
-    if (notification.listingId == null) return;
-
-    // Best-effort: update offer record and notify the buyer.
-    try {
-      // Resolve buyer ID — prefer the one stored on the notification, but fall
-      // back to the offers table for notifications created before the migration.
-      String? buyerId = notification.relatedUserId;
-      double? offerPrice = notification.offerPrice;
-
-      if (buyerId == null) {
-        final offerRow = await Supabase.instance.client
-            .from('offers')
-            .select('buyer_id, offer_amount')
-            .eq('listing_id', notification.listingId!)
-            .eq('status', 'pending')
-            .maybeSingle();
-        buyerId = offerRow?['buyer_id']?.toString();
-        offerPrice ??= offerRow?['offer_amount'] != null
-            ? (offerRow!['offer_amount'] as num).toDouble()
-            : null;
-      }
-
-      if (buyerId == null) {
-        debugPrint('declineOffer: could not resolve buyer ID — skipping buyer notification');
-        return;
-      }
-
-      String listingTitle = 'the item';
-      try {
-        final product = await Supabase.instance.client
-            .from('products')
-            .select('name')
-            .eq('id', notification.listingId!)
-            .single();
-        listingTitle = product['name']?.toString() ?? listingTitle;
-      } catch (_) {}
-
-      await OfferProvider.updateOfferStatus(
-        listingId: notification.listingId!,
-        buyerId: buyerId,
-        status: 'declined',
-      );
-
-      await insertNotification(
-        userId: buyerId,
-        type: NotificationType.offerDeclined,
+    if (notification.relatedUserId != null) {
+      await NotificationProvider.insertNotification(
+        userId: notification.relatedUserId!,
+        type: NotificationType.other,
         content:
-            'Your offer of £${offerPrice?.toStringAsFixed(2) ?? '—'} for "$listingTitle" was declined.',
+            'Your offer of £${declinedPrice.toStringAsFixed(2)} for $listingName was declined.',
         listingId: notification.listingId,
-        offerPrice: offerPrice,
+        relatedUserId: notification.relatedUserId,
+        offerPrice: declinedPrice,
       );
-    } catch (e) {
-      debugPrint('Could not send decline notification to buyer: $e');
+    }
+
+    await _deleteNotification(notification.notificationId);
+  }
+
+  Future<Map<String, dynamic>> _syncOfferStatus(
+    AppNotification notification,
+    String status,
+  ) async {
+    if (notification.listingId == null || notification.relatedUserId == null) {
+      throw Exception('missing_offer_identity');
+    }
+
+    final latestOffer = await Supabase.instance.client
+        .from('offers')
+        .select('offer_id, offered_price')
+        .eq('listing_id', notification.listingId!)
+        .eq('buyer_id', notification.relatedUserId!)
+        .eq('status', 'pending')
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (latestOffer == null) {
+      throw Exception('offer_not_found');
+    }
+
+    final updatedOffer = await Supabase.instance.client
+        .from('offers')
+        .update({
+          'status': status,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('offer_id', latestOffer['offer_id'])
+        .select('offer_id, offered_price, status')
+        .maybeSingle();
+
+    if (updatedOffer == null) {
+      throw Exception('offer_update_failed');
+    }
+
+    return Map<String, dynamic>.from(updatedOffer as Map);
+  }
+
+  Future<String> _resolveListingName(String listingId) async {
+    try {
+      final product = await Supabase.instance.client
+          .from('products')
+          .select('name')
+          .eq('id', listingId)
+          .maybeSingle();
+      final name = product?['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+      return 'this item';
+    } catch (_) {
+      return 'this item';
     }
   }
 
@@ -266,7 +270,8 @@ class NotificationProvider extends ChangeNotifier {
         .eq('notification_id', notificationId);
   }
 
-  /// Static method to create a new notification entry.
+  // Called from other providers/screens without needing a provider reference.
+
   static Future<void> insertNotification({
     required String userId,
     required NotificationType type,

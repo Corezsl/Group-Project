@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/interactions.dart';
 
-
 class InteractionService {
   final _supabase = Supabase.instance.client;
 
