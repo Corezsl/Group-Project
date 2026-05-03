@@ -199,7 +199,7 @@ class AccountScreen extends StatelessWidget {
     if (user == null) return const SizedBox.shrink();
 
     final username = user.userMetadata?['username'] ?? 'No Username Provided';
-    final createdAt = user.createdAt != null ? DateTime.parse(user.createdAt!) : null;
+    final createdAt = DateTime.parse(user.createdAt);
     final accountAge = _calculateAccountAge(createdAt);
 
     return Column(
