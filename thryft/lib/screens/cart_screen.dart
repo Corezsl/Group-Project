@@ -28,22 +28,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    setState(() => _isProcessingCheckout = true);
-
-    final cartItems = List.from(cart.items);
-
-    try {
-      for (var item in cartItems) {
-        await Supabase.instance.client.from('products').update({
-          'is_sold': true,
-          'buyer_id': user.id,
-          'order_status': 'pending',
-        }).eq('id', item.product.id);
-      }
-    } catch (e) {
-      debugPrint('Error marking checkout items as sold: $e');
-    }
-
+    // Fetch buyer address early — block checkout if missing
     String? buyerAddress;
     try {
       final addressData = await Supabase.instance.client
@@ -63,6 +48,68 @@ class _CartScreenState extends State<CartScreen> {
     } catch (e) {
       debugPrint('Error fetching buyer address: $e');
     }
+
+    if (buyerAddress == null || buyerAddress.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please add a delivery address in your profile settings before checkout.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final paymentData = await Supabase.instance.client
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (paymentData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please add a payment method in your profile settings before checkout.'),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error fetching payment method: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error verifying payment method.')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isProcessingCheckout = true);
+
+    final cartItems = List.from(cart.items);
+
+    try {
+      for (var item in cartItems) {
+        await Supabase.instance.client.from('products').update({
+          'is_sold': true,
+          'buyer_id': user.id,
+          'order_status': 'pending',
+        }).eq('id', item.product.id);
+
+        // Remove this product from all users' carts
+        await Supabase.instance.client
+            .from('cart_items')
+            .delete()
+            .eq('product_id', item.product.id);
+      }
+    } catch (e) {
+      debugPrint('Error marking checkout items as sold: $e');
+    }
+
+
 
     for (var item in cartItems) {
       debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');

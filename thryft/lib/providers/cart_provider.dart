@@ -43,7 +43,8 @@ class CartProvider extends ChangeNotifier {
           final productsData = await Supabase.instance.client
               .from('products')
               .select('*, profiles(username)')
-              .inFilter('id', productIds);
+              .inFilter('id', productIds)
+              .eq('is_sold', false);
               
           for (var pData in productsData) {
             final product = Product(

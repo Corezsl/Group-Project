@@ -19,6 +19,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool _isLoading = false;
 
   Map<String, dynamic>? _userAddress;
+  Map<String, dynamic>? _userPaymentMethod;
   String? _currentAvatarUrl;
   final _bioController = TextEditingController();
 
@@ -26,6 +27,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   void initState() {
     super.initState();
     _fetchAddress();
+    _fetchPaymentMethod();
     _fetchProfile();
   }
 
@@ -49,6 +51,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       if (mounted) {
         setState(() {
           _userAddress = response;
+        });
+      }
+    } catch (e) {
+      // Ignore if not present
+    }
+  }
+
+  Future<void> _fetchPaymentMethod() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await _supabase
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (mounted) {
+        setState(() {
+          _userPaymentMethod = response;
         });
       }
     } catch (e) {
@@ -210,6 +233,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  Future<void> _updatePaymentMethod(
+    String cardholderName,
+    String cardNumber,
+    String expiryDate,
+    String cvv,
+  ) async {
+    setState(() => _isLoading = true);
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final Map<String, dynamic> data = {
+        'user_id': user.id,
+        'cardholder_name': cardholderName,
+        'card_number': cardNumber,
+        'expiry_date': expiryDate,
+        'cvv': cvv,
+      };
+
+      if (_userPaymentMethod != null && _userPaymentMethod!.containsKey('id')) {
+        data['id'] = _userPaymentMethod!['id'];
+      }
+
+      await _supabase.from('payment_methods').upsert(data);
+      _showSnackBar('Successfully updated payment method');
+      await _fetchPaymentMethod();
+    } catch (e) {
+      _showSnackBar('Error: ${e.toString()}', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _showAddressDialog() {
     final streetCtrl = TextEditingController(
       text: _userAddress?['street'] ?? '',
@@ -291,6 +349,102 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     cityCtrl.text.trim(),
                     postalCtrl.text.trim(),
                     countryCtrl.text.trim(),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPaymentDialog() {
+    final nameCtrl = TextEditingController(
+      text: _userPaymentMethod?['cardholder_name'] ?? '',
+    );
+    final numberCtrl = TextEditingController(
+      text: _userPaymentMethod?['card_number'] ?? '',
+    );
+    final expiryCtrl = TextEditingController(
+      text: _userPaymentMethod?['expiry_date'] ?? '',
+    );
+    final cvvCtrl = TextEditingController(
+      text: _userPaymentMethod?['cvv'] ?? '',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Payment Method'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Cardholder Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: numberCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Card Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: expiryCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Expiry Date (MM/YY)',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: cvvCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'CVV',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(context);
+                  await _updatePaymentMethod(
+                    nameCtrl.text.trim(),
+                    numberCtrl.text.trim(),
+                    expiryCtrl.text.trim(),
+                    cvvCtrl.text.trim(),
                   );
                 }
               },
@@ -617,6 +771,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(
                                 _userAddress?['country'] ?? 'Not set',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Payment Method',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: _showPaymentDialog,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.credit_card, size: 32),
+                              title: Text(
+                                _userPaymentMethod?['cardholder_name'] ?? 'Not set',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                _userPaymentMethod?['card_number'] != null
+                                    ? '**** **** **** ${_userPaymentMethod!['card_number'].toString().length >= 4 ? _userPaymentMethod!['card_number'].toString().substring(_userPaymentMethod!['card_number'].toString().length - 4) : _userPaymentMethod!['card_number']}'
+                                    : 'No card added',
                               ),
                             ),
                           ),

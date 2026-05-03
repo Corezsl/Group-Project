@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/utils/responsive.dart';
+import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/filter_system.dart';
 import 'package:thryft/widgets/notification_badge.dart';
 import 'package:thryft/widgets/search_dropdown.dart';
@@ -237,9 +238,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _filterActive
-                    ? const FilterPanel(
-                        key: ValueKey('filter'),
-                      )
+                    ? const FilterPanel(key: ValueKey('filter'))
                     : Container(
                         key: const ValueKey('shortcuts'),
                         alignment: Alignment.center,
@@ -332,6 +331,8 @@ class _MobileHeader extends StatefulWidget {
 }
 
 class _MobileHeaderState extends State<_MobileHeader> {
+  bool _filterActive = false;
+
   final _layerLink = LayerLink();
   final _searchController = TextEditingController();
   late final FocusNode _searchFocusNode;
@@ -386,105 +387,174 @@ class _MobileHeaderState extends State<_MobileHeader> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
       color: const Color.fromARGB(255, 71, 164, 245),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Logo
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => context.go('/'),
-            child: Image.asset(
-              'assets/images/thyrft_logo.png',
-              height: 44,
-              fit: BoxFit.contain,
-            ),
-          ),
-          // Expanded search bar
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: CompositedTransformTarget(
-                link: _layerLink,
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (v) =>
-                      context.read<SearchProvider>().onQueryChanged(v),
-                  onSubmitted: (v) {
-                    final q = v.trim();
-                    if (q.isNotEmpty) {
-                      context.read<SearchProvider>().submitSearch(q);
-                      _searchFocusNode.unfocus();
-                      context.push('/search?q=${Uri.encodeComponent(q)}');
+          Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                // Logo
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => context.go('/'),
+                  child: Image.asset(
+                    'assets/images/thyrft_logo.png',
+                    height: 44,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                // Expanded search bar
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: CompositedTransformTarget(
+                      link: _layerLink,
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (v) =>
+                            context.read<SearchProvider>().onQueryChanged(v),
+                        onSubmitted: (v) {
+                          final q = v.trim();
+                          if (q.isNotEmpty) {
+                            context.read<SearchProvider>().submitSearch(q);
+                            _searchFocusNode.unfocus();
+                            context.push('/search?q=${Uri.encodeComponent(q)}');
+                          }
+                        },
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          hintText: 'Search',
+                          hintStyle: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          border: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: const Color.fromARGB(50, 255, 255, 255),
+                          isDense: true,
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    _filterActive
+                        ? Icons.filter_alt
+                        : Icons.filter_alt_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _filterActive = !_filterActive),
+                ),
+                // Notification bell
+                Consumer<NotificationProvider>(
+                  builder: (context, notifProvider, _) {
+                    final session =
+                        Supabase.instance.client.auth.currentSession;
+                    if (session == null) return const SizedBox.shrink();
+                    return NotificationBadge(
+                      count: notifProvider.unreadCount,
+                      onPressed: () => context.push('/notifications'),
+                    );
+                  },
+                ),
+                // Cart icon
+                IconButton(
+                  icon: const Icon(
+                    Icons.shopping_cart_outlined,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => context.push('/cart'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person_outline, color: Colors.white),
+                  onPressed: () {
+                    final session =
+                        Supabase.instance.client.auth.currentSession;
+                    if (session != null) {
+                      context.push('/account');
+                    } else {
+                      context.push('/auth');
                     }
                   },
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    hintText: 'Search',
-                    hintStyle: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    border: const OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color.fromARGB(50, 255, 255, 255),
-                    isDense: true,
-                  ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
-              ),
+                // Hamburger
+                Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () {
+                      if (Scaffold.maybeOf(ctx)?.hasDrawer ?? false) {
+                        Scaffold.of(ctx).openDrawer();
+                      } else {
+                        showGeneralDialog(
+                          context: ctx,
+                          barrierDismissible: true,
+                          barrierLabel: 'Drawer',
+                          barrierColor: Colors.black54,
+                          transitionDuration: const Duration(milliseconds: 250),
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) {
+                                return const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Material(
+                                    elevation: 16,
+                                    child: AppDrawer(),
+                                  ),
+                                );
+                              },
+                          transitionBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(-1, 0),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                );
+                              },
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          // Notification bell
-          Consumer<NotificationProvider>(
-            builder: (context, notifProvider, _) {
-              final session = Supabase.instance.client.auth.currentSession;
-              if (session == null) return const SizedBox.shrink();
-              return NotificationBadge(
-                count: notifProvider.unreadCount,
-                onPressed: () => context.push('/notifications'),
-              );
-            },
-          ),
-          // Cart icon
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-            onPressed: () => context.push('/cart'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.white),
-            onPressed: () {
-              final session = Supabase.instance.client.auth.currentSession;
-              if (session != null) {
-                context.push('/account');
-              } else {
-                context.push('/auth');
-              }
-            },
-          ),
-          // Hamburger
-          Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
-            ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: _filterActive
+                ? const SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: FilterPanel(key: ValueKey('filter')),
+                  )
+                : const SizedBox.shrink(key: ValueKey('empty')),
           ),
         ],
       ),
     );
   }
 }
-
