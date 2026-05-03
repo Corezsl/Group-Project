@@ -12,6 +12,8 @@ class WishlistProvider extends ChangeNotifier {
     _init();
   }
 
+  WishlistProvider.test();
+
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final session = data.session;

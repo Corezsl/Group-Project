@@ -12,6 +12,7 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/utils/size_options.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/utils/listing_form_validator.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -126,31 +127,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _submit() async {
-    if (_titleController.text.isEmpty ||
-        _selectedCondition == null ||
-        _selectedBrand == null ||
-        _selectedDepartment == null ||
-        _priceController.text.isEmpty ||
-        (widget.initialData == null && _images[0] == null)) {
+    final String? validationError = validateListingForm(
+      title: _titleController.text,
+      price: _priceController.text,
+      condition: _selectedCondition,
+      brand: _selectedBrand,
+      department: _selectedDepartment,
+      category: _selectedCategory,
+      size: _selectedSize,
+      isNewListing: widget.initialData == null,
+      hasImage: _images[0] != null,
+    );
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields.')),
-      );
-      return;
-    }
-
-    if (_selectedCategory != 'Accessories' && _selectedSize == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a size.')));
-      return;
-    }
-
-    final double? parsedPrice = double.tryParse(_priceController.text);
-    if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid price greater than 0 or less than 10000.'),
-        ),
+        SnackBar(content: Text(validationError)),
       );
       return;
     }
