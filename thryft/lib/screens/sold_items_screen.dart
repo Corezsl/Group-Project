@@ -3,6 +3,7 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/models/product.dart';
+import 'package:thryft/models/notification_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SoldItemsScreen extends StatefulWidget {
@@ -32,7 +33,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         .eq('is_sold', true)
         .order('created_at', ascending: false);
 
-    return (response as List)
+    final products = (response as List)
         .map(
           (data) => Product(
             id: data['id'].toString(),
@@ -58,6 +59,56 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           ),
         )
         .toList();
+
+    // Fetch buyer addresses from notifications for sold listings.
+    final productIds = products.map((p) => p.id).toList();
+    if (productIds.isEmpty) return products;
+
+    try {
+      final notifResponse = await Supabase.instance.client
+          .from('notification')
+          .select('listing_id, buyer_address')
+          .eq('user_id', userId)
+          .eq('notif_type', NotificationType.listingSold.toDbString())
+          .inFilter('listing_id', productIds);
+
+      final addressMap = <String, String>{};
+      for (final row in notifResponse as List) {
+        final listingId = row['listing_id']?.toString();
+        final address = row['buyer_address']?.toString();
+        if (listingId != null && address != null && address.isNotEmpty) {
+          addressMap[listingId] = address;
+        }
+      }
+
+      return products
+          .map(
+            (p) => Product(
+              id: p.id,
+              name: p.name,
+              imageUrl: p.imageUrl,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              size: p.size,
+              brand: p.brand,
+              condition: p.condition,
+              createdAt: p.createdAt,
+              sellerId: p.sellerId,
+              sellerName: p.sellerName,
+              isSold: p.isSold,
+              category: p.category,
+              department: p.department,
+              material: p.material,
+              colour: p.colour,
+              description: p.description,
+              buyerAddress: addressMap[p.id],
+            ),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching buyer addresses: $e');
+      return products;
+    }
   }
 
   @override

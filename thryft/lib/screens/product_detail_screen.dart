@@ -220,11 +220,57 @@ class ProductDetailScreen extends StatelessWidget {
             final isInCart = cart.isInCart(product['id'] ?? '');
 
             if (isSold) {
-              return _buildFullWidthBanner(
-                Icons.sell_outlined,
-                'This item has been sold',
-                Colors.grey[600]!,
-                Colors.grey[100]!,
+              return Column(
+                children: [
+                  _buildFullWidthBanner(
+                    Icons.sell_outlined,
+                    'This item has been sold',
+                    Colors.grey[600]!,
+                    Colors.grey[100]!,
+                  ),
+                  if (product['buyerAddress'] != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F7FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFB3D7FF)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.local_shipping_outlined, color: brandColor, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Ship to buyer',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Color(0xFF1A73E8),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  product['buyerAddress']!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               );
             }
 

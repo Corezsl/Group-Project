@@ -16,6 +16,7 @@ class Product {
   final String material;
   final String colour;
   final String? description;
+  final String? buyerAddress;
 
   const Product({
     required this.id,
@@ -35,6 +36,7 @@ class Product {
     required this.material,
     required this.colour,
     this.description,
+    this.buyerAddress,
   });
 
   factory Product.fromMap(Map<String, dynamic> map) {
@@ -75,5 +77,6 @@ class Product {
     'material': material,
     'colour': colour,
     if (description != null) 'description': description!,
+    if (buyerAddress != null) 'buyerAddress': buyerAddress!,
   };
 }
