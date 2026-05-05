@@ -18,6 +18,7 @@ class Product {
   final String? buyerId;
   final String? orderStatus; // 'pending', 'shipped', 'delivered'
   final String? description;
+  final String? buyerAddress;
   final String? imageUrl2;
   final String? imageUrl3;
   final String? imageUrl4;
@@ -43,6 +44,7 @@ class Product {
     this.buyerId,
     this.orderStatus,
     this.description,
+    this.buyerAddress,
     this.imageUrl2,
     this.imageUrl3,
     this.imageUrl4,
@@ -68,6 +70,7 @@ class Product {
     'material': material,
     'colour': colour,
     if (description != null) 'description': description!,
+    if (buyerAddress != null) 'buyerAddress': buyerAddress!,
     if (imageUrl2 != null) 'image_url_2': imageUrl2!,
     if (imageUrl3 != null) 'image_url_3': imageUrl3!,
     if (imageUrl4 != null) 'image_url_4': imageUrl4!,

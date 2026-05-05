@@ -113,7 +113,11 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           .select('listing_id, buyer_address')
           .eq('user_id', userId)
           .eq('notif_type', NotificationType.listingSold.toDbString());
-
+      debugPrint('Sold items: ${products.length} products, notif rows: ${(notifResponse as List).length}');
+      for (final row in notifResponse as List) {
+        debugPrint('  listing_id=${row['listing_id']} buyer_address=${row['buyer_address']}');
+      }
+      
       final productIdSet = products.map((p) => p.id).toSet();
       for (final row in notifResponse as List) {
         final listingId = row['listing_id']?.toString();

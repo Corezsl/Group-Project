@@ -9,6 +9,11 @@ class SearchFilters {
   final String? size;
   final String? category;
   final String? condition;
+  final String? department;
+  final String? brand;
+  final String? fitting;
+  final String? material;
+  final String? colour;
   final double? minPrice;
   final double? maxPrice;
   final String sortBy; // 'newest', 'price_asc', 'price_desc'
@@ -17,6 +22,11 @@ class SearchFilters {
     this.size,
     this.category,
     this.condition,
+    this.department,
+    this.brand,
+    this.fitting,
+    this.material,
+    this.colour,
     this.minPrice,
     this.maxPrice,
     this.sortBy = 'newest',
@@ -26,6 +36,11 @@ class SearchFilters {
     Object? size = _sentinel,
     Object? category = _sentinel,
     Object? condition = _sentinel,
+    Object? department = _sentinel,
+    Object? brand = _sentinel,
+    Object? fitting = _sentinel,
+    Object? material = _sentinel,
+    Object? colour = _sentinel,
     Object? minPrice = _sentinel,
     Object? maxPrice = _sentinel,
     String? sortBy,
@@ -34,6 +49,11 @@ class SearchFilters {
       size: size == _sentinel ? this.size : size as String?,
       category: category == _sentinel ? this.category : category as String?,
       condition: condition == _sentinel ? this.condition : condition as String?,
+      department: department == _sentinel ? this.department : department as String?,
+      brand: brand == _sentinel ? this.brand : brand as String?,
+      fitting: fitting == _sentinel ? this.fitting : fitting as String?,
+      material: material == _sentinel ? this.material : material as String?,
+      colour: colour == _sentinel ? this.colour : colour as String?,
       minPrice: minPrice == _sentinel ? this.minPrice : minPrice as double?,
       maxPrice: maxPrice == _sentinel ? this.maxPrice : maxPrice as double?,
       sortBy: sortBy ?? this.sortBy,
@@ -44,6 +64,11 @@ class SearchFilters {
       size != null ||
       category != null ||
       condition != null ||
+      department != null ||
+      brand != null ||
+      fitting != null ||
+      material != null ||
+      colour != null ||
       minPrice != null ||
       maxPrice != null ||
       sortBy != 'newest';
@@ -137,6 +162,21 @@ class SearchProvider extends ChangeNotifier {
       }
       if (_filters.condition != null) {
         queryBuilder = queryBuilder.eq('condition', _filters.condition!);
+      }
+      if (_filters.department != null) {
+        queryBuilder = queryBuilder.eq('department', _filters.department!);
+      }
+      if (_filters.brand != null) {
+        queryBuilder = queryBuilder.eq('brand', _filters.brand!);
+      }
+      if (_filters.fitting != null) {
+        queryBuilder = queryBuilder.eq('fitting', _filters.fitting!);
+      }
+      if (_filters.material != null) {
+        queryBuilder = queryBuilder.eq('material', _filters.material!);
+      }
+      if (_filters.colour != null) {
+        queryBuilder = queryBuilder.eq('colour', _filters.colour!);
       }
       if (_filters.minPrice != null) {
         queryBuilder = queryBuilder.gte('price', _filters.minPrice!);
