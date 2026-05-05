@@ -7,10 +7,10 @@ import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/providers/interaction_service.dart';
-import 'package:thryft/models/notification_model.dart';
+
 import 'package:thryft/providers/notification_provider.dart';
-import 'package:thryft/widgets/making_offer_system.dart';
+import 'package:thryft/providers/offer_provider.dart';
+import 'package:thryft/models/notification_model.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, String> product;
@@ -25,10 +25,6 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    InteractionService().logInteraction(
-      productId: product['id'] ?? '',
-      type: 'view',
-    );
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -72,6 +68,7 @@ class ProductDetailScreen extends StatelessWidget {
                       department: product['department'] ?? 'All',
                       material: product['material'] ?? '',
                       colour: product['colour'] ?? '',
+                      description: product['description'],
                     ),
                   );
                 },
@@ -133,35 +130,143 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Widget _buildImageGallery(BuildContext context) {
+    final allImages = [
+      product['imageUrl'],
+      product['image_url_2'],
+      product['image_url_3'],
+      product['image_url_4'],
+      product['image_url_5'],
+    ].where((u) => u != null && u.isNotEmpty).cast<String>().toList();
+
+    if (allImages.isEmpty) {
+      return Hero(
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: const Icon(Icons.image, size: 100, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Single image — no PageView needed
+    if (allImages.length == 1) {
+      return Hero(
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(allImages[0], fit: BoxFit.contain),
+              if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Multiple images — use ValueNotifier for selected index
+    final indexNotifier = ValueNotifier<int>(0);
+
     return Hero(
-      tag: 'product_image_${product['name']}',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 400),
-        width: double.infinity,
-        color: Colors.grey[100],
-        child: Stack(
-          alignment: Alignment.center,
+      tag:
+          product['heroTag'] ??
+          'product_image_${product['id'] ?? product['name']}',
+      child: ValueListenableBuilder<int>(
+        valueListenable: indexNotifier,
+        builder: (context, currentIndex, _) => Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            product['imageUrl'] != null
-                ? Image.network(product['imageUrl']!, fit: BoxFit.contain)
-                : const Icon(Icons.image, size: 100, color: Colors.grey),
-            if (product['is_sold'] == 'true')
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                child: Text(
-                  'SOLD',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4.0,
+            Container(
+              height: 400,
+              width: double.infinity,
+              color: Colors.grey[100],
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.network(allImages[currentIndex], fit: BoxFit.contain),
+                  if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+                  // Left arrow
+                  if (currentIndex > 0)
+                    Positioned(
+                      left: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_left, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex - 1,
+                      ),
+                    ),
+                  // Right arrow
+                  if (currentIndex < allImages.length - 1)
+                    Positioned(
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_right, size: 32),
+                        color: Colors.black87,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () => indexNotifier.value = currentIndex + 1,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  allImages.length,
+                  (i) => GestureDetector(
+                    onTap: () => indexNotifier.value = i,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: i == currentIndex
+                              ? const Color.fromARGB(255, 71, 164, 245)
+                              : Colors.grey[300]!,
+                          width: i == currentIndex ? 2.5 : 1.5,
+                        ),
+                      ),
+                      child: Image.network(allImages[i], fit: BoxFit.cover),
+                    ),
                   ),
                 ),
               ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoldOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        'SOLD',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 4.0,
         ),
       ),
     );
@@ -205,10 +310,29 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
         const SizedBox(height: 12),
+        _buildDetailRow("Department", product['department'] ?? '-'),
+        const SizedBox(height: 12),
         _buildDetailRow("Size", product['size'] ?? '-'),
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
         const SizedBox(height: 24),
+        if (product['description'] != null &&
+            product['description']!.isNotEmpty) ...[
+          const Text(
+            'Description',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            product['description']!,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
 
         // Action Buttons with logic for single items [cite: 2026-02-20]
         Consumer<CartProvider>(
@@ -220,12 +344,23 @@ class ProductDetailScreen extends StatelessWidget {
             final isInCart = cart.isInCart(product['id'] ?? '');
 
             if (isSold) {
-              return _buildFullWidthBanner(
+              final soldBanner = _buildFullWidthBanner(
                 Icons.sell_outlined,
                 'This item has been sold',
                 Colors.grey[600]!,
                 Colors.grey[100]!,
               );
+
+              if (isOwner) {
+                return Column(
+                  children: [
+                    soldBanner,
+                    _BuyerAddressWidget(productId: product['id'] ?? ''),
+                  ],
+                );
+              }
+
+              return soldBanner;
             }
 
             if (isOwner) {
@@ -263,17 +398,15 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                 ),
                 const SizedBox(height: 12),
-                  _buildSecondaryButton(
+                _buildSecondaryButton(
                   "Make an offer",
-                  () => _showMakeOfferSheet(context),
+                  () => _showOfferDialog(context),
                 ),
               ],
             );
           },
         ),
 
-        const SizedBox(height: 32),
-        _buildBuyerProtectionBox(),
         const SizedBox(height: 32),
         _buildSellerProfile(context),
         const SizedBox(height: 40),
@@ -299,6 +432,7 @@ class ProductDetailScreen extends StatelessWidget {
         department: product['department'] ?? 'All',
         material: product['material'] ?? '',
         colour: product['colour'] ?? '',
+        description: product['description'],
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(
@@ -310,147 +444,6 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _showMakeOfferSheet(BuildContext context) {
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
-      context.push('/auth');
-      return;
-    }
-
-    final sellerId = product['sellerId'];
-    if (sellerId == null || sellerId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This listing is missing seller details.')),
-      );
-      return;
-    }
-
-    if (sellerId == currentUser.id) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You cannot make an offer on your own listing.')),
-      );
-      return;
-    }
-
-    final askingPrice = double.tryParse(product['price'] ?? '0') ?? 0;
-    if (askingPrice <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This listing has an invalid price.')),
-      );
-      return;
-    }
-
-    showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (modalContext) => MakingOfferSystem(
-        listingName: product['name'] ?? 'Listing',
-        askingPrice: askingPrice,
-        onSubmit: (offerPrice) => _submitOffer(context, offerPrice),
-      ),
-    ).then((created) {
-      if (created == true && context.mounted) {
-        context.push('/my-offers');
-      }
-    });
-  }
-
-  Future<void> _submitOffer(BuildContext context, double offerPrice) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    final listingId = product['id'];
-    final sellerId = product['sellerId'];
-    if (user == null || listingId == null || sellerId == null) {
-      throw Exception('missing_offer_context');
-    }
-
-    final buyerName =
-        (user.userMetadata?['username']?.toString().trim().isNotEmpty ?? false)
-        ? user.userMetadata!['username'].toString().trim()
-        : 'A buyer';
-
-    final listingName = product['name'] ?? 'your item';
-
-    var isOfferUpdate = false;
-    final existingOffer = await supabase
-        .from('offers')
-        .select('offer_id')
-        .eq('listing_id', listingId)
-        .eq('buyer_id', user.id)
-        .order('updated_at', ascending: false)
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (existingOffer != null) {
-      isOfferUpdate = true;
-      await supabase
-          .from('offers')
-          .update({
-            'offered_price': offerPrice,
-            'status': 'pending',
-            'seller_id': sellerId,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('offer_id', existingOffer['offer_id']);
-    } else {
-      await supabase.from('offers').insert({
-        'listing_id': listingId,
-        'buyer_id': user.id,
-        'seller_id': sellerId,
-        'offered_price': offerPrice,
-        'status': 'pending',
-      });
-    }
-
-    try {
-      await supabase
-          .from('notification')
-          .delete()
-          .eq('user_id', sellerId)
-          .eq('notif_type', NotificationType.offerReceived.toDbString())
-          .eq('listing_id', listingId)
-          .eq('related_user_id', user.id);
-    } catch (_) {
-      // Ignore cleanup errors; this is only to avoid duplicate seller notifications.
-    }
-
-    await NotificationProvider.insertNotification(
-      userId: sellerId,
-      type: NotificationType.offerReceived,
-      content:
-          isOfferUpdate
-              ? '$buyerName updated their offer to £${offerPrice.toStringAsFixed(2)} for $listingName'
-              : '$buyerName offered £${offerPrice.toStringAsFixed(2)} for $listingName',
-      listingId: listingId,
-      relatedUserId: user.id,
-      offerPrice: offerPrice,
-    );
-
-    await NotificationProvider.insertNotification(
-      userId: user.id,
-      type: NotificationType.other,
-      content:
-          isOfferUpdate
-              ? 'You updated your offer to £${offerPrice.toStringAsFixed(2)} for $listingName.'
-              : 'You successfully made an offer of £${offerPrice.toStringAsFixed(2)} for $listingName.',
-      listingId: listingId,
-      offerPrice: offerPrice,
-    );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isOfferUpdate
-                ? 'Offer updated and sent to the seller.'
-                : 'Offer sent to the seller.',
-          ),
-        ),
-      );
-    }
   }
 
   Widget _buildFullWidthBanner(
@@ -515,7 +508,10 @@ class ProductDetailScreen extends StatelessWidget {
               side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text('Delete listing', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete listing',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
@@ -529,8 +525,14 @@ class ProductDetailScreen extends StatelessWidget {
         title: const Text('Delete listing'),
         content: const Text('Are you sure you want to delete this product?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -550,16 +552,166 @@ class ProductDetailScreen extends StatelessWidget {
             .eq('user_id', currentUser.id);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product deleted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Product deleted')));
         context.go('/my-listings');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
       }
     }
   }
 
+  void _showOfferDialog(BuildContext context) {
+    final sellerId = product['sellerId'];
+    final currentUser = Supabase.instance.client.auth.currentUser;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to make an offer')),
+      );
+      context.push('/auth');
+      return;
+    }
+    if (sellerId == null || sellerId == currentUser.id) return;
+
+    final priceController = TextEditingController();
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Make an Offer'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Listed price: £${product['price']}'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Your offer (£)',
+                  border: OutlineInputBorder(),
+                  prefixText: '£',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: isSending
+                  ? null
+                  : () async {
+                      final offerPrice = double.tryParse(
+                        priceController.text.trim(),
+                      );
+                      final listingPrice = double.tryParse(
+                        product['price'] ?? '',
+                      );
+                      if (offerPrice == null || offerPrice < 0.01) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Offer must be at least £0.01'),
+                          ),
+                        );
+                        return;
+                      }
+                      if (listingPrice != null && offerPrice >= listingPrice) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Your offer must be less than the listed price of £${listingPrice.toStringAsFixed(2)}',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      setDialogState(() => isSending = true);
+                      try {
+                        // Prevent duplicate pending offers.
+                        final alreadyPending =
+                            await OfferProvider.hasPendingOffer(
+                              buyerId: currentUser.id,
+                              listingId: product['id'] ?? '',
+                            );
+                        if (alreadyPending) {
+                          if (dialogContext.mounted)
+                            Navigator.of(dialogContext).pop();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'You already have a pending offer on this item.',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Record the offer in the offers table.
+                        await OfferProvider.createOffer(
+                          buyerId: currentUser.id,
+                          sellerId: sellerId,
+                          listingId: product['id'] ?? '',
+                          offerAmount: offerPrice,
+                          listingTitle: product['name'],
+                          listingImageUrl: product['imageUrl'],
+                        );
+
+                        // Notify the seller.
+                        await NotificationProvider.insertNotification(
+                          userId: sellerId,
+                          type: NotificationType.offerReceived,
+                          content:
+                              '${currentUser.userMetadata?['username'] ?? currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
+                          listingId: product['id'],
+                          relatedUserId: currentUser.id,
+                          offerPrice: offerPrice,
+                        );
+
+                        if (dialogContext.mounted)
+                          Navigator.of(dialogContext).pop();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Offer sent!')),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSending = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to send offer: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Send Offer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildSecondaryButton(String text, VoidCallback onPressed) {
     return SizedBox(
@@ -604,44 +756,6 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBuyerProtectionBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.shield, color: brandColor, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Buyer Protection fee",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Includes our Refund Policy and helps keep our community safe.",
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
     final data = await Supabase.instance.client
         .from('ratings')
@@ -649,7 +763,8 @@ class ProductDetailScreen extends StatelessWidget {
         .eq('seller_id', sellerId);
     final list = data as List;
     if (list.isEmpty) return {'avg': 0.0, 'count': 0};
-    final avg = list
+    final avg =
+        list
             .map((r) => (r['rating'] as num).toDouble())
             .reduce((a, b) => a + b) /
         list.length;
@@ -704,7 +819,11 @@ class ProductDetailScreen extends StatelessWidget {
                       else
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${avg.toStringAsFixed(1)} ($count)',
@@ -724,6 +843,126 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BuyerAddressWidget extends StatefulWidget {
+  final String productId;
+
+  const _BuyerAddressWidget({required this.productId});
+
+  @override
+  State<_BuyerAddressWidget> createState() => _BuyerAddressWidgetState();
+}
+
+class _BuyerAddressWidgetState extends State<_BuyerAddressWidget> {
+  String? _address;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  Future<void> _fetchAddress() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final productRes = await supabase
+          .from('products')
+          .select('buyer_id')
+          .eq('id', widget.productId)
+          .maybeSingle();
+
+      if (productRes != null && productRes['buyer_id'] != null) {
+        final addressRes = await supabase
+            .from('address')
+            .select()
+            .eq('user_id', productRes['buyer_id'])
+            .maybeSingle();
+
+        if (addressRes != null) {
+          if (mounted) {
+            setState(() {
+              _address =
+                  "${addressRes['street_name']} ${addressRes['house_number']}, ${addressRes['city']} ${addressRes['postal_code']}, ${addressRes['country']}";
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching buyer address: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 16.0),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_address == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_shipping_outlined,
+                size: 18,
+                color: Colors.grey[700],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Ship to Buyer',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _address!,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -117,6 +117,18 @@ class AccountScreen extends StatelessWidget {
                       const SizedBox(height: 10),
                       Card(
                         child: ListTile(
+                          leading: const Icon(Icons.local_offer_outlined),
+                          title: const Text('My Offers'),
+                          subtitle: const Text('Track offers you have made'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.push('/my-offers');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: ListTile(
                           leading: const Icon(Icons.favorite_outline),
                           title: const Text('My Favourites'),
                           subtitle: const Text('View your saved items'),
@@ -134,10 +146,7 @@ class AccountScreen extends StatelessWidget {
                           subtitle: const Text('See what buyers are saying'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
-                            final user = Supabase.instance.client.auth.currentUser;
-                            if (user != null) {
-                              context.push('/user/${user.id}');
-                            }
+                            context.push('/my-reviews');
                           },
                         ),
                       ),
@@ -187,6 +196,8 @@ class AccountScreen extends StatelessWidget {
     if (user == null) return const SizedBox.shrink();
 
     final username = user.userMetadata?['username'] ?? 'No Username Provided';
+    final createdAt = DateTime.parse(user.createdAt);
+    final accountAge = _calculateAccountAge(createdAt);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +245,31 @@ class AccountScreen extends StatelessWidget {
           user.email ?? '',
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Member for $accountAge',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+        ),
       ],
     );
+  }
+
+  String _calculateAccountAge(DateTime? createdAt) {
+    if (createdAt == null) return 'Unknown';
+
+    final now = DateTime.now();
+    final difference = now.difference(createdAt);
+
+    if (difference.inDays < 1) {
+      return 'Less than a day';
+    } else if (difference.inDays < 30) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
+    } else if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      return '$months month${months == 1 ? '' : 's'}';
+    } else {
+      final years = (difference.inDays / 365).floor();
+      return '$years year${years == 1 ? '' : 's'}';
+    }
   }
 }

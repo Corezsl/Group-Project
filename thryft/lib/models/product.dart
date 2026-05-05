@@ -3,7 +3,7 @@ class Product {
   final String name;
   final String? imageUrl;
   final double price;
-  final double? originalPrice; // if set, card shows strikethrough old price
+  final double? originalPrice;
   final String size;
   final String brand;
   final String condition;
@@ -15,6 +15,13 @@ class Product {
   final String department;
   final String material;
   final String colour;
+  final String? buyerId;
+  final String? orderStatus; // 'pending', 'shipped', 'delivered'
+  final String? description;
+  final String? imageUrl2;
+  final String? imageUrl3;
+  final String? imageUrl4;
+  final String? imageUrl5;
 
   const Product({
     required this.id,
@@ -33,6 +40,13 @@ class Product {
     required this.category,
     required this.material,
     required this.colour,
+    this.buyerId,
+    this.orderStatus,
+    this.description,
+    this.imageUrl2,
+    this.imageUrl3,
+    this.imageUrl4,
+    this.imageUrl5,
   });
 
   /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
@@ -53,5 +67,10 @@ class Product {
     'department': department,
     'material': material,
     'colour': colour,
+    if (description != null) 'description': description!,
+    if (imageUrl2 != null) 'image_url_2': imageUrl2!,
+    if (imageUrl3 != null) 'image_url_3': imageUrl3!,
+    if (imageUrl4 != null) 'image_url_4': imageUrl4!,
+    if (imageUrl5 != null) 'image_url_5': imageUrl5!,
   };
 }

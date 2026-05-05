@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +12,7 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/utils/size_options.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/utils/listing_form_validator.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -70,6 +71,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedColour = data['colour']?.toString();
       // Use normalized department so it matches dropdown items
       _selectedDepartment = _normalizeDepartment(data['department']?.toString());
+
+      final existingMain = data['imageUrl']?.toString();
+      if (existingMain != null && existingMain.trim().isNotEmpty) {
+        _existingImageUrls[0] = existingMain.trim();
+      }
+
+      // Load secondary images for edit mode
+      for (int i = 2; i <= 5; i++) {
+        final existing = data['image_url_$i']?.toString();
+        if (existing != null && existing.trim().isNotEmpty) {
+          _existingImageUrls[i - 1] = existing.trim();
+        }
+      }
     }
   }
 
@@ -86,6 +100,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   final List<XFile?> _images = List.filled(5, null);
+  // Used when editing: display existing listing photos until user replaces them.
+  final List<String?> _existingImageUrls = List.filled(5, null);
   final ImagePicker _picker = ImagePicker();
 
 
@@ -111,33 +127,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _submit() async {
-    if (_titleController.text.isEmpty ||
-        _selectedCondition == null ||
-        _selectedBrand == null ||
-        _selectedDepartment == null ||
-        _selectedMaterial == null ||
-        _selectedColour == null ||
-        _priceController.text.isEmpty ||
-        (widget.initialData == null && _images[0] == null)) {
+    final String? validationError = validateListingForm(
+      title: _titleController.text,
+      price: _priceController.text,
+      condition: _selectedCondition,
+      brand: _selectedBrand,
+      department: _selectedDepartment,
+      category: _selectedCategory,
+      size: _selectedSize,
+      isNewListing: widget.initialData == null,
+      hasImage: _images[0] != null,
+    );
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields.')),
-      );
-      return;
-    }
-
-    if (_selectedCategory != 'Accessories' && _selectedSize == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a size.')));
-      return;
-    }
-
-    final double? parsedPrice = double.tryParse(_priceController.text);
-    if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid price greater than 0 or less than 10000.'),
-        ),
+        SnackBar(content: Text(validationError)),
       );
       return;
     }
@@ -149,6 +152,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       final user = supabase.auth.currentUser;
       if (user == null) {
         throw Exception('You must be logged in to modify a listing.');
+      }
+
+      // Verify user has a payment method before allowing them to list
+      final paymentData = await supabase
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (paymentData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please add a payment method in your profile settings before creating a listing.'),
+            ),
+          );
+          setState(() => _isLoading = false);
+        }
+        return;
       }
 
       String? publicImageUrl = widget.initialData?['imageUrl'];
@@ -173,6 +195,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .getPublicUrl(fileName);
       }
 
+      // Upload secondary images if changed
+      final List<String?> secondaryImageUrls = List.filled(4, null);
+      for (int i = 1; i <= 4; i++) {
+        if (_images[i] != null) {
+          final img = _images[i]!;
+          final fileExt = img.name.split('.').last;
+          final fileName = '${const Uuid().v4()}.$fileExt';
+          final bytes = await img.readAsBytes();
+          await supabase.storage
+              .from('product-images')
+              .uploadBinary(
+                fileName,
+                bytes,
+                fileOptions: FileOptions(contentType: 'image/$fileExt'),
+              );
+          secondaryImageUrls[i - 1] = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+        } else {
+          secondaryImageUrls[i - 1] = _existingImageUrls[i];
+        }
+      }
+
       // Handle Database Operation
       final double newPrice = double.parse(_priceController.text);
       final Map<String, dynamic> productData = {
@@ -183,6 +228,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'brand': _selectedBrand,
         'condition': _selectedCondition,
         'image_url': publicImageUrl,
+        'image_url_2': secondaryImageUrls[0],
+        'image_url_3': secondaryImageUrls[1],
+        'image_url_4': secondaryImageUrls[2],
+        'image_url_5': secondaryImageUrls[3],
         'category': _selectedCategory,
         'fitting': _selectedFitting,
         'material' : _selectedMaterial,
@@ -201,6 +250,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             oldPrice != null && newPrice < oldPrice;
         if (isPriceDrop) {
           productData['original_price'] = oldPrice;
+        } else {
+          productData['original_price'] = null;
         }
 
         await supabase
@@ -276,6 +327,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedMaterial = null;
       _selectedColour = null;
       _images.fillRange(0, 5, null);
+      _existingImageUrls.fillRange(0, 5, null);
       _selectedIndex = 0;
     });
   }
@@ -298,8 +350,31 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
+  Widget _buildNetworkPreview(String url) {
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: Colors.grey[400],
+            size: 40,
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
   Widget _buildMainPreview() {
     final XFile? currentImage = _images[_selectedIndex];
+    final String? existingUrl = _existingImageUrls[_selectedIndex];
 
     return GestureDetector(
       onTap: () => _pickImage(_selectedIndex),
@@ -317,6 +392,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         clipBehavior: Clip.hardEdge,
         child: currentImage != null
             ? _buildImagePreview(currentImage)
+            : (existingUrl != null && existingUrl.isNotEmpty)
+                ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -352,6 +429,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget _buildThumbnail(int index) {
     final bool isSelected = index == _selectedIndex;
     final XFile? currentImage = _images[index];
+    final String? existingUrl = _existingImageUrls[index];
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
@@ -371,6 +449,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         clipBehavior: Clip.hardEdge,
         child: currentImage != null
             ? _buildImagePreview(currentImage)
+            : (existingUrl != null && existingUrl.isNotEmpty)
+                ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

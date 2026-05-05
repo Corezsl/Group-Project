@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/models/wishlist_item.dart';
+import 'package:thryft/providers/notification_provider.dart';
 
 class WishlistProvider extends ChangeNotifier {
   List<WishlistItem> _items = [];
@@ -9,6 +11,8 @@ class WishlistProvider extends ChangeNotifier {
   WishlistProvider() {
     _init();
   }
+
+  WishlistProvider.test();
 
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
@@ -61,6 +65,7 @@ class WishlistProvider extends ChangeNotifier {
             department: pData['department']?.toString() ?? 'All',
             material: pData['material'].toString(),
             colour: pData['colour'].toString(),
+            description: pData['description']?.toString(),
           );
           return WishlistItem(
             product: p,
@@ -123,6 +128,7 @@ class WishlistProvider extends ChangeNotifier {
       _items.removeWhere((i) => i.product.id == product.id);
     } else {
       _items.insert(0, WishlistItem(product: product, savedAt: DateTime.now()));
+
     }
     notifyListeners();
 
@@ -139,6 +145,22 @@ class WishlistProvider extends ChangeNotifier {
           'user_id': userId,
           'listing_id': product.id,
         });
+        // Notify the seller that someone wishlisted their item
+        if (product.sellerId != null) {
+          final profile = await Supabase.instance.client
+              .from('profiles')
+              .select('username')
+              .eq('id', userId)
+              .maybeSingle();
+          final username = profile?['username']?.toString() ?? 'Someone';
+          await NotificationProvider.insertNotification(
+            userId: product.sellerId!,
+            type: NotificationType.wishlistAdd,
+            content: '$username added your listing "${product.name}" to their wishlist.',
+            listingId: product.id,
+            relatedUserId: userId,
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error toggling wishlist: $e");

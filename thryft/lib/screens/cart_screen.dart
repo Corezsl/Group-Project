@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/notification_provider.dart';
@@ -6,7 +7,6 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/models/product.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -16,24 +16,8 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  String? _selectedSortOption;
-  String? _selectedFilterOption;
+  static const Color _brand = Color.fromARGB(255, 71, 164, 245);
   bool _isProcessingCheckout = false;
-
-  final List<String> _sortOptions = [
-    'Price: High to Low',
-    'Price: Low to High',
-    'A-Z',
-    'Z-A',
-  ];
-
-  final List<String> _filterOptions = [
-    'Still active',
-    'Shirts',
-    'Trousers',
-    'Shoes',
-    'Accessories',
-  ];
 
   Future<void> _handleCheckout(CartProvider cart) async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -44,24 +28,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    setState(() => _isProcessingCheckout = true);
-
-    // 1. Capture items to rate before clearing cart
-    final itemsToRate = List.from(cart.items);
-
-    // 1.5 Update items as sold in database
-    try {
-      for (var item in itemsToRate) {
-        await Supabase.instance.client.from('products').update({
-          'is_sold': true,
-          'buyer_id': user.id,
-        }).eq('id', item.product.id);
-      }
-    } catch (e) {
-      debugPrint('Error marking checkout items as sold: $e');
-    }
-
-    // 1.6 Fetch buyer's address once for all notifications
+    // Fetch buyer address early — block checkout if missing
     String? buyerAddress;
     try {
       final addressData = await Supabase.instance.client
@@ -82,10 +49,70 @@ class _CartScreenState extends State<CartScreen> {
       debugPrint('Error fetching buyer address: $e');
     }
 
-    // 1.7 Send notifications for each sold item
-    for (var item in itemsToRate) {
+    if (buyerAddress == null || buyerAddress.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please add a delivery address in your profile settings before checkout.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final paymentData = await Supabase.instance.client
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (paymentData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please add a payment method in your profile settings before checkout.'),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error fetching payment method: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error verifying payment method.')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isProcessingCheckout = true);
+
+    final cartItems = List.from(cart.items);
+
+    try {
+      for (var item in cartItems) {
+        await Supabase.instance.client.from('products').update({
+          'is_sold': true,
+          'buyer_id': user.id,
+          'order_status': 'pending',
+        }).eq('id', item.product.id);
+
+        // Remove this product from all users' carts
+        await Supabase.instance.client
+            .from('cart_items')
+            .delete()
+            .eq('product_id', item.product.id);
+      }
+    } catch (e) {
+      debugPrint('Error marking checkout items as sold: $e');
+    }
+
+
+
+    for (var item in cartItems) {
       debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');
-      // Notify the seller that their listing sold
       if (item.product.sellerId != null) {
         try {
           await NotificationProvider.insertNotification(
@@ -97,11 +124,10 @@ class _CartScreenState extends State<CartScreen> {
             buyerAddress: buyerAddress,
           );
         } catch (e) {
-          debugPrint('Failed to notify seller (sellerId=${item.product.sellerId}): $e');
+          debugPrint('Failed to notify seller: $e');
         }
       }
 
-      // Notify users who had this item in their wishlist
       try {
         final wishlistEntries = await Supabase.instance.client
             .from('wishlist')
@@ -113,8 +139,7 @@ class _CartScreenState extends State<CartScreen> {
             await NotificationProvider.insertNotification(
               userId: wishlisterId,
               type: NotificationType.wishlistPurchased,
-              content:
-                  'An item on your wishlist "${item.product.name}" has been sold.',
+              content: 'An item on your wishlist "${item.product.name}" has been sold.',
               listingId: item.product.id,
             );
           }
@@ -124,102 +149,22 @@ class _CartScreenState extends State<CartScreen> {
       }
     }
 
-    // 2. Clear cart
     await cart.clear();
 
     if (!mounted) return;
     setState(() => _isProcessingCheckout = false);
 
-    // 3. Show Success & Start Rating Flow
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Purchase successful!')),
-    );
-
-    // 4. Prompt for ratings
-    for (var item in itemsToRate) {
-      if (!mounted) break;
-      await _showRatingDialog(item.product);
-    }
-  }
-
-  Future<void> _showRatingDialog(Product product) async {
-    int localRating = 5;
-    final commentController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Rate your purchase: ${product.name}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('How was your experience with ${product.sellerName ?? "the seller"}?'),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < localRating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 32,
-                    ),
-                    onPressed: () {
-                      setDialogState(() => localRating = index + 1);
-                    },
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: commentController,
-                decoration: const InputDecoration(
-                  labelText: 'Leave a comment (optional)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Skip'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final user = Supabase.instance.client.auth.currentUser;
-                if (user != null && product.sellerId != null) {
-                  try {
-                    await Supabase.instance.client.from('ratings').insert({
-                      'seller_id': product.sellerId,
-                      'buyer_id': user.id,
-                      'product_id': product.id,
-                      'rating': localRating,
-                      'comment': commentController.text,
-                    });
-                  } catch (e) {
-                    debugPrint('Error saving rating: $e');
-                  }
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Submit'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -233,31 +178,57 @@ class _CartScreenState extends State<CartScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Header(),
-                      const Divider(
-                          height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: Column(
-                          children: [
-                            _buildSortAndFilter(),
-                            const SizedBox(height: 20),
-                            const Divider(
-                                height: 1,
-                                thickness: 1,
-                                color: Color(0xFFE5E7EB)),
-                            const SizedBox(height: 24),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
-                              child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 1100),
-                                child: cart.items.isEmpty
-                                    ? _buildEmptyCart(context, colorScheme)
-                                    : _buildCartContent(context, cart),
-                              ),
+                      const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1000),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 40, horizontal: 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Title row
+                                Row(
+                                  children: [
+                                    Text(
+                                      'My Cart',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    if (cart.items.isNotEmpty) ...[
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: _brand.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          '${cart.items.length} ${cart.items.length == 1 ? 'item' : 'items'}',
+                                          style: const TextStyle(
+                                            color: _brand,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                if (cart.items.isEmpty)
+                                  _buildEmptyCart(context)
+                                else
+                                  constraints.maxWidth >= 800
+                                      ? _buildDesktopLayout(context, cart)
+                                      : _buildMobileLayout(context, cart),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -272,145 +243,227 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildSortAndFilter() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          const SizedBox(width: 24),
-          const Text(
-            'SORT BY',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.6,
-              color: Color(0xFF6B7280),
+  Widget _buildEmptyCart(BuildContext context) {
+    return SizedBox(
+      height: 360,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.shopping_cart_outlined,
+                  size: 48, color: Colors.grey[400]),
             ),
-          ),
-          const SizedBox(width: 18),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedSortOption,
-              hint: const Text('Best selling', style: TextStyle(fontSize: 15, color: Color(0xFF111827))),
-              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF111827)),
-              borderRadius: BorderRadius.circular(8),
-              items: _sortOptions.map((option) => DropdownMenuItem(value: option, child: Text(option, style: const TextStyle(fontSize: 14)))).toList(),
-              onChanged: (value) => setState(() => _selectedSortOption = value),
+            const SizedBox(height: 20),
+            Text(
+              'Your cart is empty',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
             ),
-          ),
-          const SizedBox(width: 36),
-          const Text(
-            'FILTER BY',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: Color(0xFF6B7280)),
-          ),
-          const SizedBox(width: 18),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedFilterOption,
-              hint: const Text('Still active', style: TextStyle(fontSize: 15, color: Color(0xFF111827))),
-              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF111827)),
-              borderRadius: BorderRadius.circular(8),
-              items: _filterOptions.map((option) => DropdownMenuItem(value: option, child: Text(option, style: const TextStyle(fontSize: 14)))).toList(),
-              onChanged: (value) => setState(() => _selectedFilterOption = value),
+            const SizedBox(height: 8),
+            Text(
+              'Browse listings and add something you love.',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => context.go('/'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _brand,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4)),
+              ),
+              child: const Text('Browse listings',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyCart(BuildContext context, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.shopping_cart_outlined, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text('Your cart is empty', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5))),
-          const SizedBox(height: 8),
-          Text('Add items you love to find them later', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.4))),
-        ],
-      ),
+  // Desktop: items on the left, summary panel on the right.
+  Widget _buildDesktopLayout(BuildContext context, CartProvider cart) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 6, child: _buildItemList(cart)),
+        const SizedBox(width: 32),
+        SizedBox(width: 300, child: _buildSummaryPanel(context, cart)),
+      ],
     );
   }
 
-  Widget _buildCartContent(BuildContext context, CartProvider cart) {
+  // Mobile: items stacked above summary.
+  Widget _buildMobileLayout(BuildContext context, CartProvider cart) {
     return Column(
       children: [
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: cart.items.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final item = cart.items[index];
-            final product = item.product;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(4)),
-                    clipBehavior: Clip.antiAlias,
-                    child: product.imageUrl != null ? Image.network(product.imageUrl!, fit: BoxFit.cover) : const Icon(Icons.image, color: Colors.grey),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text('${product.brand} · ${product.size}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                        const SizedBox(height: 8),
-                        Text('£${product.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                    onPressed: () => cart.removeItem(product.id),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+        _buildItemList(cart),
         const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[200]!)),
-          child: Column(
+        _buildSummaryPanel(context, cart),
+      ],
+    );
+  }
+
+  Widget _buildItemList(CartProvider cart) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: cart.items.length,
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+      itemBuilder: (context, index) {
+        final product = cart.items[index].product;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total price', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text('£${cart.totalPrice.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
+              // Thumbnail
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  color: Colors.grey[100],
+                  child: product.imageUrl != null
+                      ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                      : Icon(Icons.image_outlined,
+                          size: 32, color: Colors.grey[400]),
+                ),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: _isProcessingCheckout
-                    ? const Center(child: CircularProgressIndicator())
-                    : FilledButton(
-                        onPressed: () => _handleCheckout(cart),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 71, 164, 245),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: const Text('Checkout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 20),
+              // Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.brand} · ${product.size} · ${product.condition}',
+                      style:
+                          TextStyle(color: Colors.grey[500], fontSize: 13),
+                    ),
+                    if (product.sellerName != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Sold by ${product.sellerName}',
+                        style: TextStyle(
+                            color: Colors.grey[400], fontSize: 12),
                       ),
+                    ],
+                    const SizedBox(height: 10),
+                    Text(
+                      '£${product.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: _brand,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Remove button
+              IconButton(
+                icon: Icon(Icons.delete_outline, color: Colors.grey[400]),
+                tooltip: 'Remove',
+                onPressed: () => cart.removeItem(product.id),
               ),
             ],
           ),
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryPanel(BuildContext context, CartProvider cart) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Order summary',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${cart.items.length} ${cart.items.length == 1 ? 'item' : 'items'}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+              Text('£${cart.totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Shipping', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+              Text('Calculated at checkout',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('£${cart.totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _brand)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: _isProcessingCheckout
+                ? const Center(child: CircularProgressIndicator())
+                : FilledButton(
+                    onPressed: () => _handleCheckout(cart),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brand,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: const Text('Checkout',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.bold)),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

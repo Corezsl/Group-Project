@@ -4,7 +4,11 @@ enum NotificationType {
   other,
   wishlistAdd,
   wishlistPurchased,
-  offerReceived;
+  offerReceived,
+  offerAccepted,
+  offerDeclined,
+  orderShipped,
+  orderDelivered;
 
   static NotificationType fromString(String value) {
     switch (value) {
@@ -18,6 +22,14 @@ enum NotificationType {
         return NotificationType.wishlistPurchased;
       case 'offer_received':
         return NotificationType.offerReceived;
+      case 'offer_accepted':
+        return NotificationType.offerAccepted;
+      case 'offer_declined':
+        return NotificationType.offerDeclined;
+      case 'order_shipped':
+        return NotificationType.orderShipped;
+      case 'order_delivered':
+        return NotificationType.orderDelivered;
       default:
         return NotificationType.other;
     }
@@ -35,6 +47,14 @@ enum NotificationType {
         return 'wishlist_purchased';
       case NotificationType.offerReceived:
         return 'offer_received';
+      case NotificationType.offerAccepted:
+        return 'offer_accepted';
+      case NotificationType.offerDeclined:
+        return 'offer_declined';
+      case NotificationType.orderShipped:
+        return 'order_shipped';
+      case NotificationType.orderDelivered:
+        return 'order_delivered';
       case NotificationType.other:
         return 'other';
     }

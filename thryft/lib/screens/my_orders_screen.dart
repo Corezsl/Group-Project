@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/models/product.dart';
+import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/providers/notification_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyOrdersScreen extends StatefulWidget {
@@ -63,7 +65,13 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
               category: data['category']?.toString() ?? 'Other',
               department: data['department']?.toString() ?? 'All',
               material: data['material'].toString(),
-              colour: data['colour'].toString()
+              colour: data['colour'].toString(),
+              buyerId: data['buyer_id']?.toString(),
+              orderStatus: data['order_status']?.toString(),
+              createdAt: data['created_at'] != null
+                  ? DateTime.tryParse(data['created_at'].toString())
+                  : null,
+              description: data['description']?.toString(),
             ),
           )
           .toList();
@@ -81,6 +89,89 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     } catch (e) {
       debugPrint('Error fetching orders: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _confirmDelivery(Product product) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delivery'),
+        content: Text(
+          'Have you received "${product.name}"? This will notify the seller.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not yet'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF47A4F5),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, received it'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await Supabase.instance.client
+          .from('products')
+          .update({'order_status': 'delivered'})
+          .eq('id', product.id);
+
+      if (product.sellerId != null) {
+        await NotificationProvider.insertNotification(
+          userId: product.sellerId!,
+          type: NotificationType.orderDelivered,
+          content:
+              'The buyer confirmed delivery of "${product.name}". Order complete!',
+          listingId: product.id,
+        );
+      }
+
+      setState(() {
+        final idx = _orders.indexWhere((o) => o.id == product.id);
+        if (idx != -1) {
+          _orders[idx] = Product(
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            originalPrice: product.originalPrice,
+            size: product.size,
+            brand: product.brand,
+            condition: product.condition,
+            imageUrl: product.imageUrl,
+            sellerId: product.sellerId,
+            sellerName: product.sellerName,
+            isSold: product.isSold,
+            category: product.category,
+            department: product.department,
+            material: product.material,
+            colour: product.colour,
+            buyerId: product.buyerId,
+            orderStatus: 'delivered',
+            createdAt: product.createdAt,
+          );
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Delivery confirmed. Thank you!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to confirm delivery.')),
+        );
+      }
     }
   }
 
@@ -257,129 +348,218 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   }
 
   Widget _buildOrderCard(Product product, int? rating) {
+    final status = product.orderStatus ?? 'pending';
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: Colors.grey[200]!),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => context.push(
-          '/product/${product.id}',
-          extra: <String, String>{
-            'id': product.id,
-            'name': product.name,
-            'price': product.price.toString(),
-            'size': product.size,
-            'brand': product.brand,
-            'condition': product.condition,
-            'imageUrl': product.imageUrl ?? '',
-            'sellerId': product.sellerId ?? '',
-            'sellerName': product.sellerName ?? '',
-            'is_sold': product.isSold.toString(),
-            'category': product.category,
-          },
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: product.imageUrl != null
-                      ? Image.network(product.imageUrl!, fit: BoxFit.cover)
-                      : Container(
-                          color: Colors.grey[100],
-                          child: const Icon(
-                            Icons.image,
-                            size: 28,
-                            color: Colors.grey,
-                          ),
-                        ),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status + date row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatusBadge(status),
+                if (product.createdAt != null)
+                  Text(
+                    _formatDate(product.createdAt!),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Product row
+            InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: () => context.push(
+                '/product/${product.id}',
+                extra: <String, String>{
+                  'id': product.id,
+                  'name': product.name,
+                  'price': product.price.toString(),
+                  'size': product.size,
+                  'brand': product.brand,
+                  'condition': product.condition,
+                  'imageUrl': product.imageUrl ?? '',
+                  'sellerId': product.sellerId ?? '',
+                  'sellerName': product.sellerName ?? '',
+                  'is_sold': product.isSold.toString(),
+                  'category': product.category,
+                },
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      product.brand,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '£${product.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (product.sellerName != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Sold by ${product.sellerName}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (rating != null)
-                Column(
-                  children: [
-                    Row(
-                      children: List.generate(
-                        5,
-                        (i) => Icon(
-                          i < rating ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Reviewed',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                  ],
-                )
-              else
-                OutlinedButton(
-                  onPressed: () => _showRateDialog(product),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF47A4F5),
-                    side: const BorderSide(color: Color(0xFF47A4F5)),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: product.imageUrl != null
+                          ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                          : Container(
+                              color: Colors.grey[100],
+                              child: const Icon(
+                                Icons.image,
+                                size: 28,
+                                color: Colors.grey,
+                              ),
+                            ),
                     ),
                   ),
-                  child: const Text('Rate', style: TextStyle(fontSize: 13)),
-                ),
-            ],
-          ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          product.brand,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '£${product.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (product.sellerName != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Sold by ${product.sellerName}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Action row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (status == 'shipped')
+                  OutlinedButton(
+                    onPressed: () => _confirmDelivery(product),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green[700],
+                      side: BorderSide(color: Colors.green[400]!),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    child: const Text(
+                      'Confirm delivery',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                if (status == 'delivered') ...[
+                  if (rating != null)
+                    Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (i) => Icon(
+                            i < rating ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Reviewed',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    OutlinedButton(
+                      onPressed: () => _showRateDialog(product),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF47A4F5),
+                        side: const BorderSide(color: Color(0xFF47A4F5)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text(
+                        'Rate seller',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    final (label, color, bg) = switch (status) {
+      'shipped' => ('Shipped', const Color(0xFF1D6FB8), const Color(0xFFE0F0FF)),
+      'delivered' => ('Delivered', Colors.green[700]!, Colors.green[50]!),
+      _ => ('Pending', Colors.orange[700]!, Colors.orange[50]!),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
