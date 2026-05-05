@@ -15,8 +15,13 @@ class Product {
   final String department;
   final String material;
   final String colour;
+  final String? buyerId;
+  final String? orderStatus; // 'pending', 'shipped', 'delivered'
   final String? description;
-  final String? buyerAddress;
+  final String? imageUrl2;
+  final String? imageUrl3;
+  final String? imageUrl4;
+  final String? imageUrl5;
 
   const Product({
     required this.id,
@@ -35,30 +40,16 @@ class Product {
     required this.category,
     required this.material,
     required this.colour,
+    this.buyerId,
+    this.orderStatus,
     this.description,
-    this.buyerAddress,
+    this.imageUrl2,
+    this.imageUrl3,
+    this.imageUrl4,
+    this.imageUrl5,
   });
 
-  factory Product.fromMap(Map<String, dynamic> map) {
-    return Product(
-      id: map['id']?.toString() ?? '',
-      name: map['name'] ?? 'Unknown Item',
-      imageUrl: map['image_url'],
-      price: (map['price'] ?? 0).toDouble(),
-      originalPrice: map['original_price'] != null 
-          ? (map['original_price'] as num).toDouble() 
-          : null,
-      size: map['size'] ?? 'N/A',
-      brand: map['brand'] ?? 'Unbranded',
-      condition: map['condition'] ?? 'Unknown',
-      colour: map['colour'] ?? 'Not Provided',
-      category: map['category'] ?? 'Unknown',
-      department:  map['department'] ?? 'Unknown',
-      material: map['material'] ?? 'Not Provided',
-      description: map['description']
-    );
-  }
-
+  /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
   Map<String, String> toRouteExtra() => {
     'id': id,
     'name': name,
@@ -77,6 +68,9 @@ class Product {
     'material': material,
     'colour': colour,
     if (description != null) 'description': description!,
-    if (buyerAddress != null) 'buyerAddress': buyerAddress!,
+    if (imageUrl2 != null) 'image_url_2': imageUrl2!,
+    if (imageUrl3 != null) 'image_url_3': imageUrl3!,
+    if (imageUrl4 != null) 'image_url_4': imageUrl4!,
+    if (imageUrl5 != null) 'image_url_5': imageUrl5!,
   };
 }

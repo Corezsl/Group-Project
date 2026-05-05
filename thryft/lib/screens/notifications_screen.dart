@@ -382,6 +382,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         'colour': data['colour']?.toString() ?? '',
         'isSold': (data['is_sold'] == true).toString(),
         if (data['description'] != null) 'description': data['description'].toString(),
+        if (data['image_url_2'] != null) 'image_url_2': data['image_url_2'].toString(),
+        if (data['image_url_3'] != null) 'image_url_3': data['image_url_3'].toString(),
+        if (data['image_url_4'] != null) 'image_url_4': data['image_url_4'].toString(),
+        if (data['image_url_5'] != null) 'image_url_5': data['image_url_5'].toString(),
       };
 
       if (context.mounted) {

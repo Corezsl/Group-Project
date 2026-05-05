@@ -180,7 +180,11 @@ class SearchProvider extends ChangeNotifier {
           department: row['department']?.toString() ?? 'All',
           material: row['material'].toString(),
           colour: row['colour'].toString(),
-          description: row['description']?.toString()
+          description: row['description']?.toString(),
+          imageUrl2: row['image_url_2']?.toString(),
+          imageUrl3: row['image_url_3']?.toString(),
+          imageUrl4: row['image_url_4']?.toString(),
+          imageUrl5: row['image_url_5']?.toString(),
         );
       }).toList();
 

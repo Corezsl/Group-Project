@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/app_drawer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:uuid/uuid.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -17,11 +19,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool _isLoading = false;
 
   Map<String, dynamic>? _userAddress;
+  Map<String, dynamic>? _userPaymentMethod;
+  String? _currentAvatarUrl;
+  final _bioController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchAddress();
+    _fetchPaymentMethod();
+    _fetchProfile();
+  }
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchAddress() async {
@@ -42,6 +55,106 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       }
     } catch (e) {
       // Ignore if not present
+    }
+  }
+
+  Future<void> _fetchPaymentMethod() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await _supabase
+          .from('payment_methods')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (mounted) {
+        setState(() {
+          _userPaymentMethod = response;
+        });
+      }
+    } catch (e) {
+      // Ignore if not present
+    }
+  }
+
+  Future<void> _fetchProfile() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    try {
+      final data = await _supabase
+          .from('profiles')
+          .select('avatar_url, bio')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (mounted && data != null) {
+        setState(() {
+          _currentAvatarUrl = data['avatar_url']?.toString();
+          _bioController.text = data['bio']?.toString() ?? '';
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
+    if (image == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final bytes = await image.readAsBytes();
+      final ext = image.name.split('.').last;
+      final fileName = 'avatars/${user.id}.${const Uuid().v4()}.$ext';
+
+      await _supabase.storage
+          .from('product-images')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: FileOptions(contentType: 'image/$ext'),
+          );
+
+      final url = _supabase.storage
+          .from('product-images')
+          .getPublicUrl(fileName);
+
+      await _supabase
+          .from('profiles')
+          .update({'avatar_url': url})
+          .eq('id', user.id);
+
+      if (mounted) setState(() => _currentAvatarUrl = url);
+      _showSnackBar('Profile picture updated');
+    } catch (e) {
+      _showSnackBar('Error uploading avatar: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateBio() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    setState(() => _isLoading = true);
+    try {
+      await _supabase
+          .from('profiles')
+          .update({'bio': _bioController.text.trim()})
+          .eq('id', user.id);
+      _showSnackBar('Bio updated');
+    } catch (e) {
+      _showSnackBar('Error updating bio', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -111,6 +224,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       await _supabase.from('address').upsert(data);
       _showSnackBar('Successfully updated address');
       await _fetchAddress();
+    } catch (e) {
+      _showSnackBar('Error: ${e.toString()}', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updatePaymentMethod(
+    String cardholderName,
+    String cardNumber,
+    String expiryDate,
+    String cvv,
+  ) async {
+    setState(() => _isLoading = true);
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final Map<String, dynamic> data = {
+        'user_id': user.id,
+        'cardholder_name': cardholderName,
+        'card_number': cardNumber,
+        'expiry_date': expiryDate,
+        'cvv': cvv,
+      };
+
+      if (_userPaymentMethod != null && _userPaymentMethod!.containsKey('id')) {
+        data['id'] = _userPaymentMethod!['id'];
+      }
+
+      await _supabase.from('payment_methods').upsert(data);
+      _showSnackBar('Successfully updated payment method');
+      await _fetchPaymentMethod();
     } catch (e) {
       _showSnackBar('Error: ${e.toString()}', isError: true);
     } finally {
@@ -201,6 +349,102 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     cityCtrl.text.trim(),
                     postalCtrl.text.trim(),
                     countryCtrl.text.trim(),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPaymentDialog() {
+    final nameCtrl = TextEditingController(
+      text: _userPaymentMethod?['cardholder_name'] ?? '',
+    );
+    final numberCtrl = TextEditingController(
+      text: _userPaymentMethod?['card_number'] ?? '',
+    );
+    final expiryCtrl = TextEditingController(
+      text: _userPaymentMethod?['expiry_date'] ?? '',
+    );
+    final cvvCtrl = TextEditingController(
+      text: _userPaymentMethod?['cvv'] ?? '',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Payment Method'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Cardholder Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: numberCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Card Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: expiryCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Expiry Date (MM/YY)',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: cvvCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'CVV',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Required' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(context);
+                  await _updatePaymentMethod(
+                    nameCtrl.text.trim(),
+                    numberCtrl.text.trim(),
+                    expiryCtrl.text.trim(),
+                    cvvCtrl.text.trim(),
                   );
                 }
               },
@@ -318,6 +562,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                           const SizedBox(height: 24),
 
+                          // Avatar
+                          Center(
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 48,
+                                  backgroundColor: Colors.grey[200],
+                                  backgroundImage: _currentAvatarUrl != null
+                                      ? NetworkImage(_currentAvatarUrl!)
+                                      : null,
+                                  child: _currentAvatarUrl == null
+                                      ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                                      : null,
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: _pickAndUploadAvatar,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(255, 71, 164, 245),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                      padding: const EdgeInsets.all(6),
+                                      child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
                           // Username Card
                           Card(
                             child: ListTile(
@@ -382,6 +661,43 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 12),
+
+                          // Bio Card
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Bio',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: _bioController,
+                                    maxLines: 3,
+                                    maxLength: 200,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Tell buyers a little about yourself...',
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.all(12),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: ElevatedButton(
+                                      onPressed: _updateBio,
+                                      child: const Text('Save Bio'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
                           const SizedBox(height: 32),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -455,6 +771,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               subtitle: Text(
                                 _userAddress?['country'] ?? 'Not set',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Payment Method',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: _showPaymentDialog,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.credit_card, size: 32),
+                              title: Text(
+                                _userPaymentMethod?['cardholder_name'] ?? 'Not set',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                _userPaymentMethod?['card_number'] != null
+                                    ? '**** **** **** ${_userPaymentMethod!['card_number'].toString().length >= 4 ? _userPaymentMethod!['card_number'].toString().substring(_userPaymentMethod!['card_number'].toString().length - 4) : _userPaymentMethod!['card_number']}'
+                                    : 'No card added',
                               ),
                             ),
                           ),
