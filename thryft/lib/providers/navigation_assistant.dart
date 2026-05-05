@@ -134,7 +134,7 @@ class NavAssistantService {
         }
       }
 
-      if (score > bestScore) {
+      if (score >= bestScore) {
         bestScore = score;
         bestKey = key;
       }

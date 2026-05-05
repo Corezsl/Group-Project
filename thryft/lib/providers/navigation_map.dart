@@ -29,7 +29,6 @@ class AppNavigationMap {
       'my account',
       'profile',
       'my profile',
-      'me',
       'personal details',
       'my info',
       'user profile',
