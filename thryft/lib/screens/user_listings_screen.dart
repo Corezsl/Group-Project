@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/header.dart';
@@ -76,6 +77,17 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   Text(
                     'Manage the items you currently have up for sale.',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/create-listing'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create Listing'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   FutureBuilder<List<Product>>(
