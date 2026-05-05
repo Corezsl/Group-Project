@@ -33,7 +33,8 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         .eq('is_sold', true)
         .order('created_at', ascending: false);
 
-    final products = (response as List)
+    final rawData = response as List;
+    final products = rawData
         .map(
           (data) => Product(
             id: data['id'].toString(),
@@ -60,55 +61,98 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         )
         .toList();
 
-    // Fetch buyer addresses from notifications for sold listings.
-    final productIds = products.map((p) => p.id).toList();
-    if (productIds.isEmpty) return products;
+    if (products.isEmpty) return products;
 
+    final Map<String, String> addressByProductId = {};
+
+    // ── Primary: look up buyer addresses from the address table via buyer_id ──
+    final buyerIds = rawData
+        .map((d) => d['buyer_id']?.toString())
+        .where((id) => id != null && id.isNotEmpty)
+        .toSet()
+        .cast<String>()
+        .toList();
+
+    if (buyerIds.isNotEmpty) {
+      try {
+        final addressResponse = await Supabase.instance.client
+            .from('address')
+            .select('user_id, street, city, postal_code, country')
+            .inFilter('user_id', buyerIds);
+
+        final buyerAddressMap = <String, String>{};
+        for (final row in addressResponse as List) {
+          final uid = row['user_id']?.toString();
+          final parts = [
+            row['street'],
+            row['city'],
+            row['postal_code'],
+            row['country'],
+          ].where((p) => p != null && p.toString().isNotEmpty).toList();
+          if (uid != null && parts.isNotEmpty) {
+            buyerAddressMap[uid] = parts.join(', ');
+          }
+        }
+
+        // Map each product to its buyer's address
+        for (int i = 0; i < rawData.length; i++) {
+          final buyerId = rawData[i]['buyer_id']?.toString();
+          if (buyerId != null && buyerAddressMap.containsKey(buyerId)) {
+            addressByProductId[products[i].id] = buyerAddressMap[buyerId]!;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error fetching addresses from address table: $e');
+      }
+    }
+
+    // ── Fallback: notification table (for historical / edge-case coverage) ──
     try {
       final notifResponse = await Supabase.instance.client
           .from('notification')
           .select('listing_id, buyer_address')
           .eq('user_id', userId)
-          .eq('notif_type', NotificationType.listingSold.toDbString())
-          .inFilter('listing_id', productIds);
+          .eq('notif_type', NotificationType.listingSold.toDbString());
 
-      final addressMap = <String, String>{};
+      final productIdSet = products.map((p) => p.id).toSet();
       for (final row in notifResponse as List) {
         final listingId = row['listing_id']?.toString();
         final address = row['buyer_address']?.toString();
-        if (listingId != null && address != null && address.isNotEmpty) {
-          addressMap[listingId] = address;
+        if (listingId != null &&
+            productIdSet.contains(listingId) &&
+            address != null &&
+            address.isNotEmpty) {
+          addressByProductId[listingId] = address;
         }
       }
-
-      return products
-          .map(
-            (p) => Product(
-              id: p.id,
-              name: p.name,
-              imageUrl: p.imageUrl,
-              price: p.price,
-              originalPrice: p.originalPrice,
-              size: p.size,
-              brand: p.brand,
-              condition: p.condition,
-              createdAt: p.createdAt,
-              sellerId: p.sellerId,
-              sellerName: p.sellerName,
-              isSold: p.isSold,
-              category: p.category,
-              department: p.department,
-              material: p.material,
-              colour: p.colour,
-              description: p.description,
-              buyerAddress: addressMap[p.id],
-            ),
-          )
-          .toList();
     } catch (e) {
-      debugPrint('Error fetching buyer addresses: $e');
-      return products;
+      debugPrint('Error fetching notification addresses: $e');
     }
+
+    return products
+        .map(
+          (p) => Product(
+            id: p.id,
+            name: p.name,
+            imageUrl: p.imageUrl,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            size: p.size,
+            brand: p.brand,
+            condition: p.condition,
+            createdAt: p.createdAt,
+            sellerId: p.sellerId,
+            sellerName: p.sellerName,
+            isSold: p.isSold,
+            category: p.category,
+            department: p.department,
+            material: p.material,
+            colour: p.colour,
+            description: p.description,
+            buyerAddress: addressByProductId[p.id],
+          ),
+        )
+        .toList();
   }
 
   @override
