@@ -19,7 +19,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   String? _sellerId;
   String? _sellerName;
 
-  SupabaseClient get _supabase => widget.supabaseClient ?? Supabase.instance.client;
+  SupabaseClient get _supabase =>
+      widget.supabaseClient ?? Supabase.instance.client;
 
   @override
   void initState() {
@@ -47,7 +48,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
       final ratingsData = await _supabase
           .from('ratings')
-          .select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')
+          .select(
+            '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+          )
           .eq('seller_id', user.id)
           .order('created_at', ascending: false);
 
@@ -87,10 +90,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (confirmed != true) return;
 
     try {
-      await _supabase
-          .from('ratings')
-          .delete()
-          .eq('id', review['id']);
+      await _supabase.from('ratings').delete().eq('id', review['id']);
       setState(() => _ratings.removeWhere((r) => r['id'] == review['id']));
     } catch (e) {
       if (mounted) {
@@ -161,10 +161,13 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (submitted != true) return;
 
     try {
-      await _supabase.from('ratings').update({
-        'rating': localRating,
-        'comment': commentController.text.trim(),
-      }).eq('id', review['id']);
+      await _supabase
+          .from('ratings')
+          .update({
+            'rating': localRating,
+            'comment': commentController.text.trim(),
+          })
+          .eq('id', review['id']);
 
       setState(() {
         final index = _ratings.indexWhere((r) => r['id'] == review['id']);
@@ -187,7 +190,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = _supabase.auth.currentUser?.id;        
+    final currentUserId = _supabase.auth.currentUser?.id;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -260,8 +263,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                         final review = _ratings[index];
                         final buyerUsername =
                             review['profiles']?['username']?.toString() ??
-                                'Anonymous';
-                        final isOwnReview = currentUserId != null &&
+                            'Anonymous';
+                        final isOwnReview =
+                            currentUserId != null &&
                             review['buyer_id'] == currentUserId;
 
                         return _buildReviewCard(
@@ -316,7 +320,11 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 const Spacer(),
                 if (isOwnReview)
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, size: 18, color: Colors.grey[500]),
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 18,
+                      color: Colors.grey[500],
+                    ),
                     onSelected: (value) {
                       if (value == 'edit') _editReview(review);
                       if (value == 'delete') _deleteReview(review);
@@ -325,7 +333,10 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                       const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Text('Delete', style: TextStyle(color: Colors.red)),
+                        child: Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -335,7 +346,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             Row(
               children: List.generate(5, (i) {
                 return Icon(
-                  i < (review['rating'] as int) ? Icons.star : Icons.star_border,
+                  i < (review['rating'] as int)
+                      ? Icons.star
+                      : Icons.star_border,
                   color: Colors.amber,
                   size: 16,
                 );

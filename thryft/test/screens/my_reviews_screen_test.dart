@@ -10,31 +10,48 @@ import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/screens/my_reviews_screen.dart';
 import '../helpers/mock_supabase.dart';
 
-class FakeProfilesFilter extends Fake implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
+class FakeProfilesFilter extends Fake
+    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
   @override
   FakeProfilesFilter eq(String column, Object value) => this;
 
   @override
-  PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() => FakeProfilesTransform();
+  PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() =>
+      FakeProfilesTransform();
 }
 
-class FakeProfilesTransform extends Fake implements PostgrestTransformBuilder<Map<String, dynamic>?> {
+class FakeProfilesTransform extends Fake
+    implements PostgrestTransformBuilder<Map<String, dynamic>?> {
   @override
-  Future<U> then<U>(FutureOr<U> Function(Map<String, dynamic>?) onValue, {Function? onError}) =>
-      Future<Map<String, dynamic>?>.value({'username': 'TestSeller'}).then(onValue, onError: onError);
+  Future<U> then<U>(
+    FutureOr<U> Function(Map<String, dynamic>?) onValue, {
+    Function? onError,
+  }) => Future<Map<String, dynamic>?>.value({
+    'username': 'TestSeller',
+  }).then(onValue, onError: onError);
 }
 
-class FakeRatingsFilter extends Fake implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
+class FakeRatingsFilter extends Fake
+    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
   @override
   FakeRatingsFilter eq(String column, Object value) => this;
 
   @override
-  PostgrestTransformBuilder<List<Map<String, dynamic>>> order(String column, {bool ascending = false, bool nullsFirst = false, String? referencedTable}) => FakeRatingsTransform();
+  PostgrestTransformBuilder<List<Map<String, dynamic>>> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) => FakeRatingsTransform();
 }
 
-class FakeRatingsTransform extends Fake implements PostgrestTransformBuilder<List<Map<String, dynamic>>> {
+class FakeRatingsTransform extends Fake
+    implements PostgrestTransformBuilder<List<Map<String, dynamic>>> {
   @override
-  Future<U> then<U>(FutureOr<U> Function(List<Map<String, dynamic>>) onValue, {Function? onError}) {
+  Future<U> then<U>(
+    FutureOr<U> Function(List<Map<String, dynamic>>) onValue, {
+    Function? onError,
+  }) {
     final testData = <Map<String, dynamic>>[
       {
         'id': 1,
@@ -47,9 +64,11 @@ class FakeRatingsTransform extends Fake implements PostgrestTransformBuilder<Lis
           'price': 250.0,
         },
         'profiles': {'username': 'BuyerJohn'},
-      }
+      },
     ];
-    return Future<List<Map<String, dynamic>>>.value(testData).then(onValue, onError: onError);
+    return Future<List<Map<String, dynamic>>>.value(
+      testData,
+    ).then(onValue, onError: onError);
   }
 }
 
@@ -70,11 +89,17 @@ void main() {
 
     final profileQB = MockSupabaseQueryBuilder();
     when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-    when(() => profileQB.select('username')).thenAnswer((_) => FakeProfilesFilter());
+    when(
+      () => profileQB.select('username'),
+    ).thenAnswer((_) => FakeProfilesFilter());
 
     final ratingsQB = MockSupabaseQueryBuilder();
     when(() => mockClient.from('ratings')).thenAnswer((_) => ratingsQB);
-    when(() => ratingsQB.select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')).thenAnswer((_) => FakeRatingsFilter());
+    when(
+      () => ratingsQB.select(
+        '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+      ),
+    ).thenAnswer((_) => FakeRatingsFilter());
 
     await tester.pumpWidget(
       MultiProvider(
@@ -82,9 +107,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => NotificationProvider()),
           ChangeNotifierProvider(create: (_) => SearchProvider()),
         ],
-        child: MaterialApp(
-          home: MyReviewsScreen(supabaseClient: mockClient),
-        ),
+        child: MaterialApp(home: MyReviewsScreen(supabaseClient: mockClient)),
       ),
     );
 
