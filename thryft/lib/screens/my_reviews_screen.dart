@@ -5,7 +5,9 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 
 class MyReviewsScreen extends StatefulWidget {
-  const MyReviewsScreen({super.key});
+  final SupabaseClient? supabaseClient;
+
+  const MyReviewsScreen({super.key, this.supabaseClient});
 
   @override
   State<MyReviewsScreen> createState() => _MyReviewsScreenState();
@@ -17,6 +19,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   String? _sellerId;
   String? _sellerName;
 
+  SupabaseClient get _supabase => widget.supabaseClient ?? Supabase.instance.client;
+
   @override
   void initState() {
     super.initState();
@@ -24,7 +28,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   }
 
   Future<void> _fetchReviews() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = _supabase.auth.currentUser;
     if (user == null) {
       setState(() => _isLoading = false);
       return;
@@ -33,7 +37,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     _sellerId = user.id;
 
     try {
-      final profileData = await Supabase.instance.client
+      final profileData = await _supabase
           .from('profiles')
           .select('username')
           .eq('id', user.id)
@@ -41,7 +45,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
       _sellerName = profileData?['username']?.toString();
 
-      final ratingsData = await Supabase.instance.client
+      final ratingsData = await _supabase
           .from('ratings')
           .select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')
           .eq('seller_id', user.id)
@@ -83,7 +87,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (confirmed != true) return;
 
     try {
-      await Supabase.instance.client
+      await _supabase
           .from('ratings')
           .delete()
           .eq('id', review['id']);
@@ -157,9 +161,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (submitted != true) return;
 
     try {
-      await Supabase.instance.client.from('ratings').update({
+      await _supabase.from('ratings').update({
         'rating': localRating,
-        'comment': commentController.text,
+        'comment': commentController.text.trim(),
       }).eq('id', review['id']);
 
       setState(() {
@@ -183,7 +187,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = _supabase.auth.currentUser?.id;        
 
     return Scaffold(
       body: SingleChildScrollView(
