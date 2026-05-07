@@ -11,8 +11,8 @@ import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/screens/user_profile_screen.dart';
 import '../helpers/mock_supabase.dart';
 
-// Instead of talking to the real internet or waiting for a real database, 
-// these 'Fake' classes just pretend to run the database queries so the app doesn't crash. 
+// Instead of talking to the real internet or waiting for a real database,
+// these 'Fake' classes just pretend to run the database queries so the app doesn't crash.
 // They safely intercept the chain of commands and immediately hand over the ready-made data we give them.
 
 // This intercepts the `.eq()` command for single items (like a user profile)
@@ -28,7 +28,7 @@ class FakeFilterBuilder extends Fake
       FakeTransformBuilder(data);
 }
 
-// This is the end of the line for single-item queries. 
+// This is the end of the line for single-item queries.
 // It actually hands the mock data back to the app as if it just downloaded it.
 class FakeTransformBuilder extends Fake
     implements PostgrestTransformBuilder<Map<String, dynamic>?> {
@@ -42,7 +42,7 @@ class FakeTransformBuilder extends Fake
       Future<Map<String, dynamic>?>.value(data).then(onValue, onError: onError);
 }
 
-// This pretends to handle commands like `.eq()`, `.filter()`, and `.order()` 
+// This pretends to handle commands like `.eq()`, `.filter()`, and `.order()`
 // for lists (like a list of products or ratings) just to keep the program running happily.
 class FakeListFilterBuilder extends Fake
     implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
@@ -69,7 +69,7 @@ class FakeListFilterBuilder extends Fake
   ).then(onValue, onError: onError);
 }
 
-// This is the end of the line for list queries. 
+// This is the end of the line for list queries.
 // It hands our hard-coded lists of data back to the app as if they just downloaded.
 class FakeListTransformBuilder extends Fake
     implements PostgrestTransformBuilder<List<Map<String, dynamic>>> {
