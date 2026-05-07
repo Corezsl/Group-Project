@@ -212,4 +212,231 @@ void main() {
       expect(result, isNull);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Repository tests — live DB
+  // ---------------------------------------------------------------------------
+  if (!hasTestCredentials) {
+    test('FR3 repository tests', () {},
+        skip: 'No Supabase credentials — pass '
+            '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    return;
+  }
+
+  late SupabaseClient client;
+  late SupabaseClient admin;
+  late CreateListingRepository repo;
+  late String sellerId;
+
+  setUpAll(() async {
+    client = await getTestClient();
+    admin = getServiceClient();
+
+    sellerId = await _signInOrSignUp(
+        client, _sellerEmail, _sellerPassword, 'fr4_seller');
+
+    repo = CreateListingRepository(client);
+  });
+
+  tearDownAll(() async {
+    // Clean up any products created during tests
+    await admin.from('products').delete().eq('user_id', sellerId);
+    await client.auth.signOut();
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 1 — Create listing with all required fields
+  // -------------------------------------------------------------------------
+  group('FR3 #1 — create listing with all required fields', () {
+    late String productId;
+
+    test('insert succeeds and row appears in DB', () async {
+      productId = await repo.createListing({
+        'name': 'FR3 Test Jacket',
+        'price': 25.00,
+        'size': 'M',
+        'brand': 'Nike',
+        'condition': 'Good',
+        'department': 'Mens',
+        'category': 'Shirt',
+        'material': 'Cotton',
+        'colour': 'Blue',
+      });
+
+      // Verify the row exists in DB
+      final row = await client
+          .from('products')
+          .select('name, price, size, brand')
+          .eq('id', productId)
+          .single();
+
+      expect(row['name'], 'FR3 Test Jacket');
+      expect((row['price'] as num).toDouble(), 25.00);
+      expect(row['size'], 'M');
+      expect(row['brand'], 'Nike');
+    });
+
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', productId);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 2 — Create listing while logged out
+  // -------------------------------------------------------------------------
+  group('FR3 #2 — create listing while logged out', () {
+    setUp(() async {
+      await client.auth.signOut();
+    });
+
+    tearDown(() async {
+      await _signInOrSignUp(
+          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+    });
+
+    test('throws NotLoggedInException', () {
+      expect(
+        () => repo.createListing({
+          'name': 'Should Fail',
+          'price': 10.00,
+          'size': 'M',
+          'brand': 'Nike',
+          'condition': 'Good',
+          'department': 'Mens',
+          'category': 'Shirt',
+          'material': 'Cotton',
+          'colour': 'Blue',
+        }),
+        throwsA(isA<NotLoggedInException>()),
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 7 — Create listing with multiple pictures
+  // -------------------------------------------------------------------------
+  group('FR3 #7 — listing with multiple image URLs', () {
+    late String productId;
+
+    test('secondary image URLs are persisted in DB', () async {
+      productId = await repo.createListing({
+        'name': 'FR3 Multi Photo Item',
+        'price': 30.00,
+        'size': 'L',
+        'brand': 'Adidas',
+        'condition': 'Very good',
+        'department': 'Mens',
+        'category': 'Shirt',
+        'material': 'Polyester',
+        'colour': 'Black',
+        'image_url': 'https://example.com/main.jpg',
+        'image_url_2': 'https://example.com/photo2.jpg',
+        'image_url_3': 'https://example.com/photo3.jpg',
+        'image_url_4': 'https://example.com/photo4.jpg',
+        'image_url_5': 'https://example.com/photo5.jpg',
+      });
+
+      final row = await client
+          .from('products')
+          .select('image_url, image_url_2, image_url_3, image_url_4, image_url_5')
+          .eq('id', productId)
+          .single();
+
+      expect(row['image_url'], 'https://example.com/main.jpg');
+      expect(row['image_url_2'], 'https://example.com/photo2.jpg');
+      expect(row['image_url_3'], 'https://example.com/photo3.jpg');
+      expect(row['image_url_4'], 'https://example.com/photo4.jpg');
+      expect(row['image_url_5'], 'https://example.com/photo5.jpg');
+    });
+
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', productId);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 9 — No card details in account
+  // -------------------------------------------------------------------------
+  group('FR3 #9 — no card details', () {
+    test('hasPaymentMethod returns false for user with no card', () async {
+      final result = await repo.hasPaymentMethod(sellerId);
+      expect(result, isFalse);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 10 — No address in account
+  // -------------------------------------------------------------------------
+  group('FR3 #10 — no address', () {
+    test('hasAddress returns false for user with no address', () async {
+      final result = await repo.hasAddress(sellerId);
+      expect(result, isFalse);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 13 — Minimum acceptable price boundary (DB level)
+  // -------------------------------------------------------------------------
+  group('FR3 #13 — minimum price £0.01 in DB', () {
+    late String productId;
+
+    test('insert succeeds with price 0.01', () async {
+      productId = await repo.createListing({
+        'name': 'FR3 Cheap Item',
+        'price': 0.01,
+        'size': 'S',
+        'brand': 'Other',
+        'condition': 'Good',
+        'department': 'All',
+        'category': 'Shirt',
+        'material': 'Cotton',
+        'colour': 'White',
+      });
+
+      final row = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect((row['price'] as num).toDouble(), 0.01);
+    });
+
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', productId);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR3 Partition 14 — Maximum acceptable price boundary (DB level)
+  // -------------------------------------------------------------------------
+  group('FR3 #14 — maximum price £10000 in DB', () {
+    late String productId;
+
+    test('insert succeeds with price 10000', () async {
+      productId = await repo.createListing({
+        'name': 'FR3 Expensive Item',
+        'price': 10000.0,
+        'size': 'XL',
+        'brand': 'Other',
+        'condition': 'New with tags',
+        'department': 'All',
+        'category': 'Shirt',
+        'material': 'Silk',
+        'colour': 'Black',
+      });
+
+      final row = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect((row['price'] as num).toDouble(), 10000.0);
+    });
+
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', productId);
+    });
+  });
 }
