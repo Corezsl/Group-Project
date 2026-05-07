@@ -280,4 +280,72 @@ void main() {
     expect(find.text('1'), findsOneWidget);
     expect(find.text('Sold'), findsOneWidget);
   });
+
+  testWidgets(
+    'Partition 8: View review of a user that you bought an item from (Own review)',
+    (tester) async {
+      final mockClient = MockSupabaseClient();
+      await pumpProfileScreen(
+        tester,
+        mockClient: mockClient,
+        profileData: {
+          'username': 'TrustySeller',
+          'created_at': '2022-01-01T00:00:00.000Z',
+        },
+        ratingsData: [
+          {
+            'id': 1,
+            'buyer_id': 'testuser', // Matches mock user
+            'rating': 5,
+            'comment': 'I bought this and loved it!',
+            'created_at': '2023-01-01T00:00:00.000Z',
+            'products': {'brand': 'Nike', 'price': 100},
+            'profiles': {'username': 'testuser'},
+          },
+        ],
+      );
+
+      // Tap on the Reviews tab
+      await tester.tap(find.textContaining('Reviews'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('I bought this and loved it!'), findsOneWidget);
+      // Since it's our review, we expect the edit/delete options (more_vert icon) to be present
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Partition 9: View review of a user that you didnt buy item from (Other\'s review)',
+    (tester) async {
+      final mockClient = MockSupabaseClient();
+      await pumpProfileScreen(
+        tester,
+        mockClient: mockClient,
+        profileData: {
+          'username': 'TrustySeller',
+          'created_at': '2022-01-01T00:00:00.000Z',
+        },
+        ratingsData: [
+          {
+            'id': 2,
+            'buyer_id': 'otheruser', // Does NOT match mock user
+            'rating': 4,
+            'comment': 'Someone else bought this.',
+            'created_at': '2023-01-01T00:00:00.000Z',
+            'products': {'brand': 'Addidas', 'price': 80},
+            'profiles': {'username': 'otheruser'},
+          },
+        ],
+      );
+
+      // Tap on the Reviews tab
+      await tester.tap(find.textContaining('Reviews'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Someone else bought this.'), findsOneWidget);
+      // Not our review, so the edit/delete icon should be missing
+      expect(find.byIcon(Icons.more_vert), findsNothing);
+    },
+  );
 }
