@@ -68,3 +68,4 @@ android/local.properties
 
 # Environment Variables
 .env
+.env.test
