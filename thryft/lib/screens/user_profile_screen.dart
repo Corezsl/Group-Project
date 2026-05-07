@@ -6,8 +6,13 @@ import 'package:thryft/screens/reviews_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
+  final SupabaseClient? supabaseClient;
 
-  const UserProfileScreen({super.key, required this.userId});
+  const UserProfileScreen({
+    super.key,
+    required this.userId,
+    this.supabaseClient,
+  });
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -38,7 +43,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   Future<void> _fetchProfileAndProducts() async {
     try {
-      final client = Supabase.instance.client;
+      final client = widget.supabaseClient ?? Supabase.instance.client;
       // 1. Fetch Profile
       final profileData = await client
           .from('profiles')
@@ -145,9 +150,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     final ratingCount = _ratings.length;
     final rating = ratingCount > 0
         ? _ratings
-                .map((r) => (r['rating'] as num).toDouble())
-                .reduce((a, b) => a + b) /
-            ratingCount
+                  .map((r) => (r['rating'] as num).toDouble())
+                  .reduce((a, b) => a + b) /
+              ratingCount
         : 0.0;
     final avatarUrl = _profile?['avatar_url'];
     final bio = _profile?['bio']?.toString().trim();
@@ -231,10 +236,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           thickness: 1,
                           color: Colors.grey[300],
                         ),
-                        _StatBox(
-                          value: '$_soldCount',
-                          label: 'Sold',
-                        ),
+                        _StatBox(value: '$_soldCount', label: 'Sold'),
                         VerticalDivider(
                           width: 32,
                           thickness: 1,
@@ -292,8 +294,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               ratings: _ratings,
               sellerId: widget.userId,
               sellerName: _profile?['username'] ?? 'Unknown Seller',
-              currentUserId:
-                  Supabase.instance.client.auth.currentUser?.id,
+              currentUserId: (widget.supabaseClient ?? Supabase.instance.client)
+                  .auth
+                  .currentUser
+                  ?.id,
               onReviewChanged: _fetchProfileAndProducts,
             ),
           ],
@@ -380,18 +384,12 @@ class _StatBox extends StatelessWidget {
             ],
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
