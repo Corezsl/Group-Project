@@ -33,6 +33,15 @@ Future<String> _ensureSignedIn(SupabaseClient client) async {
 }
 
 void main() {
+  // Skip the entire suite when --dart-define credentials haven't been supplied
+  // (e.g. plain `flutter test` from the IDE). Run with run_integration_tests.ps1
+  // or pass the flags manually to execute against the real test DB.
+  if (!hasTestCredentials) {
+    test('FR4 integration tests', () {}, skip: 'No Supabase credentials — pass '
+        '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    return;
+  }
+
   late SupabaseClient client;
   late ListingRepository repo;
   late String sellerId;
@@ -212,9 +221,13 @@ void main() {
   // -------------------------------------------------------------------------
   group('FR4 #8 — mark as sold', () {
     test('is_sold, buyer_id and order_status all updated in db', () async {
-      // Use the real buyer account so the FK to auth.users is satisfied
-      // by a genuinely different user — matching the real purchase scenario.
-      await repo.markAsSold(id: productId, buyerId: buyerId);
+      // Sign in as the buyer because the seller can no longer purchase their own item.
+      await client.auth.signInWithPassword(
+        email: _buyerEmail,
+        password: _buyerPassword,
+      );
+
+      await repo.markAsSold(id: productId);
 
       final row = await client
           .from('products')
@@ -225,6 +238,9 @@ void main() {
       expect(row['is_sold'], isTrue);
       expect(row['buyer_id'], buyerId);
       expect(row['order_status'], 'pending');
+
+      // Sign back in as seller for subsequent tests
+      await _ensureSignedIn(client);
     });
   });
 
@@ -265,7 +281,7 @@ void main() {
 
     test('markAsSold throws NotAuthenticatedException', () {
       expect(
-        () => repo.markAsSold(id: productId, buyerId: sellerId),
+        () => repo.markAsSold(id: productId),
         throwsA(isA<NotAuthenticatedException>()),
       );
     });
@@ -280,21 +296,28 @@ void main() {
   group("FR4 #5 — edit another user's listing", () {
     test("update on a non-owned product does nothing (RLS silently filters)",
         () async {
-      // Seed a product owned by the seller, then try to update it
-      // with a mismatched userId. The repo sends the update; RLS filters
-      // it out server-side so the price stays the same.
+      // Get original price while signed in as seller.
       final originalRow = await client
           .from('products')
           .select('price')
           .eq('id', productId)
           .single();
 
-      // Call update — shouldn't throw, but also shouldn't change anything.
+      // Sign in as the buyer — they don't own productId, so RLS should
+      // silently filter the update (0 rows affected, no exception thrown).
+      await client.auth.signInWithPassword(
+        email: _buyerEmail,
+        password: _buyerPassword,
+      );
+
       await repo.updateListing(
         id: productId,
-        userId: 'wrong-user',
+        userId: buyerId,
         fields: {'price': 9999.0},
       );
+
+      // Sign back in as seller to verify the row.
+      await _ensureSignedIn(client);
 
       final afterRow = await client
           .from('products')

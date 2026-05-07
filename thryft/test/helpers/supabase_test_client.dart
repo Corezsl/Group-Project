@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ---------------------------------------------------------------------------
@@ -19,21 +22,28 @@ const _anonKey = String.fromEnvironment('TEST_SUPABASE_ANON_KEY');
 
 bool _initialised = false;
 
+/// Returns whether test credentials have been provided via --dart-define.
+bool get hasTestCredentials => _url.isNotEmpty && _anonKey.isNotEmpty;
+
 /// Returns a [SupabaseClient] connected to the test Supabase project.
 ///
 /// Safe to call from [setUpAll] in multiple test files — initialisation only
 /// runs once per test process.
 Future<SupabaseClient> getTestClient() async {
-  assert(
-    _url.isNotEmpty && _anonKey.isNotEmpty,
-    'Missing test credentials.\n'
-    'Run tests with:\n'
-    '  flutter test \\\n'
-    '    --dart-define=TEST_SUPABASE_URL=<url> \\\n'
-    '    --dart-define=TEST_SUPABASE_ANON_KEY=<key>',
-  );
+  if (!hasTestCredentials) {
+    throw StateError(
+      'Missing test credentials.\n'
+      'Run tests with:\n'
+      '  flutter test \\\n'
+      '    --dart-define=TEST_SUPABASE_URL=<url> \\\n'
+      '    --dart-define=TEST_SUPABASE_ANON_KEY=<key>',
+    );
+  }
 
   if (!_initialised) {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    HttpOverrides.global = null; // Re-enable real HTTP requests
+    SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(url: _url, anonKey: _anonKey);
     _initialised = true;
   }

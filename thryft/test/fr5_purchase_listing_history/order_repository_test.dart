@@ -36,6 +36,15 @@ Future<String> _signInOrSignUp(
 }
 
 void main() {
+  // Skip the entire suite when --dart-define credentials haven't been supplied
+  // (e.g. plain `flutter test` from the IDE). Run with run_integration_tests.ps1
+  // or pass the flags manually to execute against the real test DB.
+  if (!hasTestCredentials) {
+    test('FR5 integration tests', () {}, skip: 'No Supabase credentials — pass '
+        '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    return;
+  }
+
   late SupabaseClient client;
   late OrderRepository repo;
   late String sellerId;
