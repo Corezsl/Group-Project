@@ -120,6 +120,30 @@ Future<int> seedOffer(
   return response['offer_id'] as int;
 }
 
+/// Inserts a row into [ratings] and returns the rating id.
+Future<String> seedRating(
+  SupabaseClient client, {
+  required String sellerId,
+  required String buyerId,
+  required String productId,
+  int rating = 5,
+  String comment = 'Great test rating!',
+}) async {
+  final response = await client
+      .from('ratings')
+      .insert({
+        'seller_id': sellerId,
+        'buyer_id': buyerId,
+        'product_id': productId,
+        'rating': rating,
+        'comment': comment,
+      })
+      .select('id')
+      .single();
+
+  return response['id'] as String;
+}
+
 // ---------------------------------------------------------------------------
 // Teardown
 // ---------------------------------------------------------------------------
@@ -130,6 +154,7 @@ Future<int> seedOffer(
 /// constraints (child tables first).
 Future<void> tearDownTestData(SupabaseClient client) async {
   // Delete in FK-safe order (children before parents).
+  await client.from('ratings').delete().like('product_id', '%$runId%');
   await client.from('offers').delete().like('listing_id', '%$runId%');
   await client
       .from('products')
