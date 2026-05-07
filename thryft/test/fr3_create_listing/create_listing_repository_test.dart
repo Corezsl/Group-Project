@@ -52,9 +52,9 @@ void main() {
   // Validator tests — pure function, no DB needed
   // ---------------------------------------------------------------------------
   group('FR3 — validateListingForm', () {
-    test('Partition 3: required field missing returns error', () {
+    test('Partition 3a: missing title returns error', () {
       final result = validateListingForm(
-        title: '', // missing title
+        title: '',
         price: '25.00',
         condition: 'Good',
         brand: 'Nike',
@@ -68,7 +68,71 @@ void main() {
       expect(result, contains('required fields'));
     });
 
-    test('Partition 3b: missing image on new listing returns error', () {
+    test('Partition 3b: missing price returns error', () {
+      final result = validateListingForm(
+        title: 'Test Jacket',
+        price: '',
+        condition: 'Good',
+        brand: 'Nike',
+        department: 'Mens',
+        category: 'Shirt',
+        size: 'M',
+        isNewListing: true,
+        hasImage: true,
+      );
+      expect(result, isNotNull);
+      expect(result, contains('required fields'));
+    });
+
+    test('Partition 3c: missing condition returns error', () {
+      final result = validateListingForm(
+        title: 'Test Jacket',
+        price: '25.00',
+        condition: null,
+        brand: 'Nike',
+        department: 'Mens',
+        category: 'Shirt',
+        size: 'M',
+        isNewListing: true,
+        hasImage: true,
+      );
+      expect(result, isNotNull);
+      expect(result, contains('required fields'));
+    });
+
+    test('Partition 3d: missing brand returns error', () {
+      final result = validateListingForm(
+        title: 'Test Jacket',
+        price: '25.00',
+        condition: 'Good',
+        brand: null,
+        department: 'Mens',
+        category: 'Shirt',
+        size: 'M',
+        isNewListing: true,
+        hasImage: true,
+      );
+      expect(result, isNotNull);
+      expect(result, contains('required fields'));
+    });
+
+    test('Partition 3e: missing department returns error', () {
+      final result = validateListingForm(
+        title: 'Test Jacket',
+        price: '25.00',
+        condition: 'Good',
+        brand: 'Nike',
+        department: null,
+        category: 'Shirt',
+        size: 'M',
+        isNewListing: true,
+        hasImage: true,
+      );
+      expect(result, isNotNull);
+      expect(result, contains('required fields'));
+    });
+
+    test('Partition 3f: missing image on new listing returns error', () {
       final result = validateListingForm(
         title: 'Test Jacket',
         price: '25.00',
@@ -78,7 +142,7 @@ void main() {
         category: 'Shirt',
         size: 'M',
         isNewListing: true,
-        hasImage: false, // no image
+        hasImage: false,
       );
       expect(result, isNotNull);
       expect(result, contains('required fields'));
