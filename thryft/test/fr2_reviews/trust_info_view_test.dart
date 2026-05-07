@@ -158,130 +158,126 @@ void main() {
 
   testWidgets(
     'Partitions 1, 2 & 5: View existing account with ratings, reviews, and sold items',
-      (tester) async {
-        final mockClient = MockSupabaseClient();
-        await pumpProfileScreen(
-          tester,
-          mockClient: mockClient,
-          profileData: {
-            'username': 'TrustySeller',
-            'created_at': '2022-01-01T00:00:00.000Z',
-          },
-          ratingsData: [
-            {
-              'id': 1,
-              'rating': 5,
-              'comment': 'Perfect condition!',
-              'created_at': '2023-01-01T00:00:00.000Z',
-              'products': {'brand': 'Nike', 'price': 100},
-              'profiles': {'username': 'BuyerBob'},
-            },
-          ],
-          soldData: [
-            {'id': 'prod1'},
-            {'id': 'prod2'},
-            {'id': 'prod3'},
-          ],
-        );
-
-        expect(find.text('TrustySeller'), findsNWidgets(2));
-        expect(find.text('5.0'), findsOneWidget);
-        expect(find.text('Rating (1)'), findsOneWidget);
-        expect(find.text('3'), findsOneWidget);
-        expect(find.text('Sold'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Partitions 3 & 4: View existing account with 0 ratings and 0 reviews',
-      (tester) async {
-        final mockClient = MockSupabaseClient();
-        await pumpProfileScreen(
-          tester,
-          mockClient: mockClient,
-          profileData: {
-            'username': 'NewSeller',
-            'created_at': '2022-01-01T00:00:00.000Z',
-          },
-          ratingsData: [],
-          soldData: [],
-        );
-
-        expect(find.text('NewSeller'), findsNWidgets(2));
-        expect(find.text('N/A'), findsOneWidget);
-        expect(find.text('No reviews'), findsOneWidget);
-      },
-    );
-
-    testWidgets('Partition 6: View seller trust info of invalid userID', (
-      tester,
-    ) async {
+    (tester) async {
       final mockClient = MockSupabaseClient();
       await pumpProfileScreen(
         tester,
         mockClient: mockClient,
-        profileData: null,
-      );
-
-      expect(find.text('User not found.'), findsOneWidget);
-      expect(find.text('Sold'), findsNothing);
-    });
-
-    testWidgets('Partition 7: View seller trust info while logged out', (
-      tester,
-    ) async {
-      final mockClient = MockSupabaseClient();
-      final mockAuth = MockGoTrueClient();
-      when(() => mockClient.auth).thenReturn(mockAuth);
-      when(() => mockAuth.currentUser).thenReturn(null); // Logged out
-
-      final profileQB = MockSupabaseQueryBuilder();
-      when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-      when(() => profileQB.select('*, created_at')).thenAnswer(
-        (_) => FakeFilterBuilder({
-          'username': 'PublicSeller',
+        profileData: {
+          'username': 'TrustySeller',
           'created_at': '2022-01-01T00:00:00.000Z',
-        }),
-      );
-
-      final productsQB = MockSupabaseQueryBuilder();
-      when(() => mockClient.from('products')).thenAnswer((_) => productsQB);
-      when(
-        () => productsQB.select(),
-      ).thenAnswer((_) => FakeListFilterBuilder([]));
-      when(() => productsQB.select('id')).thenAnswer(
-        (_) => FakeListFilterBuilder([
+        },
+        ratingsData: [
+          {
+            'id': 1,
+            'rating': 5,
+            'comment': 'Perfect condition!',
+            'created_at': '2023-01-01T00:00:00.000Z',
+            'products': {'brand': 'Nike', 'price': 100},
+            'profiles': {'username': 'BuyerBob'},
+          },
+        ],
+        soldData: [
           {'id': 'prod1'},
-        ]),
+          {'id': 'prod2'},
+          {'id': 'prod3'},
+        ],
       );
 
-      final ratingsQB = MockSupabaseQueryBuilder();
-      when(() => mockClient.from('ratings')).thenAnswer((_) => ratingsQB);
-      when(
-        () => ratingsQB.select(
-          '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
-        ),
-      ).thenAnswer((_) => FakeListFilterBuilder([]));
+      expect(find.text('TrustySeller'), findsNWidgets(2));
+      expect(find.text('5.0'), findsOneWidget);
+      expect(find.text('Rating (1)'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('Sold'), findsOneWidget);
+    },
+  );
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider(create: (_) => NotificationProvider()),
-            ChangeNotifierProvider(create: (_) => SearchProvider()),
-            ChangeNotifierProvider(create: (_) => CartProvider()),
-          ],
-          child: MaterialApp(
-            home: UserProfileScreen(
-              userId: 'test_seller_id',
-              supabaseClient: mockClient,
-            ),
+  testWidgets(
+    'Partitions 3 & 4: View existing account with 0 ratings and 0 reviews',
+    (tester) async {
+      final mockClient = MockSupabaseClient();
+      await pumpProfileScreen(
+        tester,
+        mockClient: mockClient,
+        profileData: {
+          'username': 'NewSeller',
+          'created_at': '2022-01-01T00:00:00.000Z',
+        },
+        ratingsData: [],
+        soldData: [],
+      );
+
+      expect(find.text('NewSeller'), findsNWidgets(2));
+      expect(find.text('N/A'), findsOneWidget);
+      expect(find.text('No reviews'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Partition 6: View seller trust info of invalid userID', (
+    tester,
+  ) async {
+    final mockClient = MockSupabaseClient();
+    await pumpProfileScreen(tester, mockClient: mockClient, profileData: null);
+
+    expect(find.text('User not found.'), findsOneWidget);
+    expect(find.text('Sold'), findsNothing);
+  });
+
+  testWidgets('Partition 7: View seller trust info while logged out', (
+    tester,
+  ) async {
+    final mockClient = MockSupabaseClient();
+    final mockAuth = MockGoTrueClient();
+    when(() => mockClient.auth).thenReturn(mockAuth);
+    when(() => mockAuth.currentUser).thenReturn(null); // Logged out
+
+    final profileQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
+    when(() => profileQB.select('*, created_at')).thenAnswer(
+      (_) => FakeFilterBuilder({
+        'username': 'PublicSeller',
+        'created_at': '2022-01-01T00:00:00.000Z',
+      }),
+    );
+
+    final productsQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('products')).thenAnswer((_) => productsQB);
+    when(
+      () => productsQB.select(),
+    ).thenAnswer((_) => FakeListFilterBuilder([]));
+    when(() => productsQB.select('id')).thenAnswer(
+      (_) => FakeListFilterBuilder([
+        {'id': 'prod1'},
+      ]),
+    );
+
+    final ratingsQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('ratings')).thenAnswer((_) => ratingsQB);
+    when(
+      () => ratingsQB.select(
+        '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+      ),
+    ).thenAnswer((_) => FakeListFilterBuilder([]));
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => NotificationProvider()),
+          ChangeNotifierProvider(create: (_) => SearchProvider()),
+          ChangeNotifierProvider(create: (_) => CartProvider()),
+        ],
+        child: MaterialApp(
+          home: UserProfileScreen(
+            userId: 'test_seller_id',
+            supabaseClient: mockClient,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('PublicSeller'), findsNWidgets(2));
-      expect(find.text('1'), findsOneWidget);
-      expect(find.text('Sold'), findsOneWidget);
-    });
+    expect(find.text('PublicSeller'), findsNWidgets(2));
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Sold'), findsOneWidget);
+  });
 }
