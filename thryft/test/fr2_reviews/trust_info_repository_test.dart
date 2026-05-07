@@ -134,4 +134,151 @@ void main() {
       expect(ratings.first['comment'], 'Perfect condition!');
     });
   });
+
+  // -------------------------------------------------------------------------
+  // FR2 Partitions 3 & 4 — Profile with 0 ratings and 0 reviews
+  // -------------------------------------------------------------------------
+  group('FR2 #3,4 — profile with 0 ratings', () {
+    test('fetchRatings returns empty list for seller with no reviews', () async {
+      // Use a UUID that won't match any seller
+      const ghostSeller = '00000000-ffff-4000-8000-000000000000';
+      final ratings = await repo.fetchRatings(ghostSeller);
+      expect(ratings, isEmpty);
+    });
+
+    test('fetchSoldCount returns 0 for seller with no sold items', () async {
+      const ghostSeller = '00000000-ffff-4000-8000-000000000000';
+      final count = await repo.fetchSoldCount(ghostSeller);
+      expect(count, 0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR2 Partition 6 — Invalid user ID
+  // -------------------------------------------------------------------------
+  group('FR2 #6 — invalid user ID', () {
+    test('fetchProfile returns null for non-existent user', () async {
+      const invalidId = '00000000-ffff-4000-8000-000000000000';
+      final profile = await repo.fetchProfile(invalidId);
+      expect(profile, isNull);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR2 Partition 7 — Fetch while logged out
+  // -------------------------------------------------------------------------
+  group('FR2 #7 — fetch while logged out', () {
+    late String p1;
+
+    setUp(() async {
+      await _signInOrSignUp(
+          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+      p1 = await seedProduct(client,
+          sellerId: sellerId, isSold: true, orderStatus: 'delivered');
+      await client.auth.signOut();
+    });
+
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', p1);
+      // Restore buyer session for subsequent tests
+      await _signInOrSignUp(
+          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+    });
+
+    test('fetchProfile still returns data when signed out', () async {
+      final profile = await repo.fetchProfile(sellerId);
+      expect(profile, isNotNull);
+      expect(profile!['username'], 'fr4_seller');
+    });
+
+    test('fetchSoldCount still works when signed out', () async {
+      final count = await repo.fetchSoldCount(sellerId);
+      expect(count, greaterThanOrEqualTo(1));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR2 Partition 8 — Own review (buyer_id matches current user)
+  // -------------------------------------------------------------------------
+  group('FR2 #8 — own review', () {
+    late String p1, r1;
+
+    setUp(() async {
+      await _signInOrSignUp(
+          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+      p1 = await seedProduct(client,
+          sellerId: sellerId,
+          buyerId: buyerId,
+          isSold: true,
+          orderStatus: 'delivered');
+
+      await _signInOrSignUp(
+          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      r1 = await seedRating(client,
+          sellerId: sellerId,
+          buyerId: buyerId,
+          productId: p1,
+          rating: 5,
+          comment: 'I bought this and loved it!');
+    });
+
+    tearDown(() async {
+      await admin.from('ratings').delete().eq('id', r1);
+      await admin.from('products').delete().eq('id', p1);
+    });
+
+    test('rating buyer_id matches the current user', () async {
+      final ratings = await repo.fetchRatings(sellerId);
+      final ownReview = ratings.firstWhere((r) => r['id'] == r1);
+      expect(ownReview['buyer_id'], buyerId);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FR2 Partition 9 — Other's review (buyer_id != current user)
+  // -------------------------------------------------------------------------
+  group("FR2 #9 — other user's review", () {
+    late String p1, r1, otherUserId;
+
+    setUp(() async {
+      // Use the fr5 buyer as a 3rd user
+      otherUserId = await _signInOrSignUp(
+          client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+
+      await _signInOrSignUp(
+          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+      p1 = await seedProduct(client,
+          sellerId: sellerId,
+          buyerId: otherUserId,
+          isSold: true,
+          orderStatus: 'delivered');
+
+      // Rate as the other user
+      await _signInOrSignUp(
+          client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+      r1 = await seedRating(client,
+          sellerId: sellerId,
+          buyerId: otherUserId,
+          productId: p1,
+          rating: 4,
+          comment: 'Someone else bought this.');
+
+      // Switch back to main buyer
+      await _signInOrSignUp(
+          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+    });
+
+    tearDown(() async {
+      await admin.from('ratings').delete().eq('id', r1);
+      await admin.from('products').delete().eq('id', p1);
+    });
+
+    test('rating buyer_id does NOT match the current user', () async {
+      final ratings = await repo.fetchRatings(sellerId);
+      final otherReview = ratings.firstWhere((r) => r['id'] == r1);
+      // The review was left by otherUserId, not buyerId
+      expect(otherReview['buyer_id'], isNot(buyerId));
+      expect(otherReview['buyer_id'], otherUserId);
+    });
+  });
 }
