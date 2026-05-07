@@ -121,5 +121,103 @@ void main() {
       await client.from('ratings').delete().eq('id', r1);
       await client.from('products').delete().inFilter('id', [p1, p2, p3]);
     });
+
+    testWidgets('Partitions 3 & 4: View existing account with 0 ratings and 0 reviews', (tester) async {
+      await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
+
+      expect(find.text('fr2_seller'), findsNWidgets(2));
+      expect(find.text('N/A'), findsOneWidget);
+      expect(find.text('No reviews'), findsOneWidget);
+    });
+
+    testWidgets('Partition 6: View seller trust info of invalid userID', (tester) async {
+      await pumpProfileScreen(tester, supabaseClient: client, targetUserId: '00000000-0000-0000-0000-000000000000');
+
+      expect(find.text('User not found.'), findsOneWidget);
+      expect(find.text('Sold'), findsNothing);
+    });
+
+    testWidgets('Partition 7: View seller trust info while logged out', (tester) async {
+      // Sign in as seller to seed a product they own
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      final p1 = await seedProduct(client, sellerId: sellerId, isSold: true, orderStatus: 'delivered');
+
+      // Temporarily sign out to test public view
+      await client.auth.signOut();
+
+      await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
+
+      expect(find.text('fr2_seller'), findsNWidgets(2));
+      expect(find.text('1'), findsOneWidget);
+      expect(find.text('Sold'), findsOneWidget);
+
+      // Sign back in as seller to clean up
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      await client.from('products').delete().eq('id', p1);
+
+      // Restore buyer session for subsequent tests
+      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+    });
+
+    testWidgets('Partition 8: View review of a user that you bought an item from (Own review)', (tester) async {
+      // Seed as seller, buy/rate as buyer. But seedProduct can be done by seller.
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      final p1 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+      
+      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      final r1 = await seedRating(client, sellerId: sellerId, buyerId: buyerId, productId: p1, rating: 5, comment: 'I bought this and loved it!');
+
+      await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
+
+      // Tap on the Reviews tab
+      await tester.tap(find.textContaining('Reviews'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('I bought this and loved it!'), findsOneWidget);
+      // Since it's our review, we expect the edit/delete options (more_vert icon) to be present
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+
+      // Cleanup
+      await client.from('ratings').delete().eq('id', r1);
+      
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      await client.from('products').delete().eq('id', p1);
+      
+      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+    });
+
+    testWidgets('Partition 9: View review of a user that you didnt buy item from (Other\'s review)', (tester) async {
+      // 1. Create a 3rd user
+      final otherUserId = await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
+      
+      // 2. Seed product as seller
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      final p1 = await seedProduct(client, sellerId: sellerId, buyerId: otherUserId, isSold: true, orderStatus: 'delivered');
+
+      // 3. Rate as the other user
+      await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
+      final r1 = await seedRating(client, sellerId: sellerId, buyerId: otherUserId, productId: p1, rating: 4, comment: 'Someone else bought this.');
+
+      // 4. View as main buyer
+      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
+
+      // Tap on the Reviews tab
+      await tester.tap(find.textContaining('Reviews'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Someone else bought this.'), findsOneWidget);
+      // Not our review, so the edit/delete icon should be missing
+      expect(find.byIcon(Icons.more_vert), findsNothing);
+
+      // Cleanup
+      await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
+      await client.from('ratings').delete().eq('id', r1);
+      
+      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+      await client.from('products').delete().eq('id', p1);
+      
+      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+    });
   });
 }
