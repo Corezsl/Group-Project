@@ -83,3 +83,74 @@ class FakeListTransformBuilder extends Fake
     data,
   ).then(onValue, onError: onError);
 }
+
+void main() {
+  setUpAll(() async {
+    // Avoid Shared Preferences breaking tests that use context features internally
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(url: 'https://mock.supabase.co', anonKey: 'mock');
+  });
+
+  // A helper function that injects mock datasets into our specific Supabase Tables and mounts the screen.
+  Future<void> pumpProfileScreen(
+    WidgetTester tester, {
+    required MockSupabaseClient mockClient,
+    Map<String, dynamic>? profileData,
+    List<Map<String, dynamic>> productsData = const [],
+    List<Map<String, dynamic>> ratingsData = const [],
+    List<Map<String, dynamic>> soldData = const [],
+  }) async {
+    final mockAuth = MockGoTrueClient();
+    final mockUser = MockUser();
+
+    // Mock the active authorized user session
+    when(() => mockClient.auth).thenReturn(mockAuth);
+    when(() => mockAuth.currentUser).thenReturn(mockUser);
+    when(() => mockUser.id).thenReturn('testuser');
+
+    // 1. Mock 'profiles' table fetch
+    final profileQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
+    when(
+      () => profileQB.select('*, created_at'),
+    ).thenAnswer((_) => FakeFilterBuilder(profileData));
+
+    // 2. Mock 'products' table fetch (active listings vs sold items)
+    final productsQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('products')).thenAnswer((_) => productsQB);
+    when(
+      () => productsQB.select(),
+    ).thenAnswer((_) => FakeListFilterBuilder(productsData));
+    when(
+      () => productsQB.select('id'),
+    ).thenAnswer((_) => FakeListFilterBuilder(soldData));
+
+    // 3. Mock 'ratings' table fetch (with foreign key mappings correctly expanded)
+    final ratingsQB = MockSupabaseQueryBuilder();
+    when(() => mockClient.from('ratings')).thenAnswer((_) => ratingsQB);
+    when(
+      () => ratingsQB.select(
+        '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+      ),
+    ).thenAnswer((_) => FakeListFilterBuilder(ratingsData));
+
+    // 4. Pump the actual widget, wrapping it with necessary architecture (Providers)
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => NotificationProvider()),
+          ChangeNotifierProvider(create: (_) => SearchProvider()),
+          ChangeNotifierProvider(create: (_) => CartProvider()),
+        ],
+        child: MaterialApp(
+          home: UserProfileScreen(
+            userId: 'test_seller_id',
+            supabaseClient: mockClient,
+          ),
+        ),
+      ),
+    );
+    await tester
+        .pumpAndSettle(); // Allows parsing / animations to finish loading
+  }
+}
