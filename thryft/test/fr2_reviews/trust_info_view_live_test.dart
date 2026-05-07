@@ -14,10 +14,10 @@ import '../helpers/seed_helper.dart';
 // Test credentials — fixed per file so re-runs reuse the same auth user
 // instead of creating a new one each time.
 // ---------------------------------------------------------------------------
-const _sellerEmail = 'fr2.seller@thryft-test.local';
+const _sellerEmail = 'fr4.seller@thryft-test.local';
 const _sellerPassword = 'Thryft!test99';
 
-const _buyerEmail = 'fr2.buyer@thryft-test.local';
+const _buyerEmail = 'fr4.buyer@thryft-test.local';
 const _buyerPassword = 'Thryft!test99';
 
 /// Sign in if the user already exists, sign up on first run.
@@ -64,10 +64,7 @@ void main() {
   });
 
   tearDownAll(() async {
-    // Clean up seeded data for this run using the helper.
-    await tearDownTestData(client);
-    
-    // Also explicitly clean up products and ratings associated with the test seller.
+    // Explicitly clean up products and ratings associated with the test seller.
     await client.from('ratings').delete().eq('seller_id', sellerId);
     await client.from('products').delete().eq('user_id', sellerId);
     await client.auth.signOut();
@@ -94,18 +91,26 @@ void main() {
         ),
       ),
     );
+    
+    // Let real network requests finish outside the fake clock
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(seconds: 2));
+    });
+    
     await tester.pumpAndSettle();
   }
 
   group('FR2 Live Tests', () {
     testWidgets('Partitions 1, 2 & 5: View existing account with ratings, reviews, and sold items', (tester) async {
-      // 1. Seed 3 sold products
-      final p1 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
-      final p2 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
-      final p3 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
-
-      // 2. Seed 1 rating
-      final r1 = await seedRating(client, sellerId: sellerId, buyerId: buyerId, productId: p1, rating: 5, comment: 'Perfect condition!');
+      late String p1, p2, p3, r1;
+      
+      // 1. Seed 3 sold products and 1 rating
+      await tester.runAsync(() async {
+        p1 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+        p2 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+        p3 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+        r1 = await seedRating(client, sellerId: sellerId, buyerId: buyerId, productId: p1, rating: 5, comment: 'Perfect condition!');
+      });
 
       // 3. Mount the screen
       await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
@@ -118,8 +123,10 @@ void main() {
       expect(find.text('Sold'), findsOneWidget);
 
       // 5. Cleanup
-      await client.from('ratings').delete().eq('id', r1);
-      await client.from('products').delete().inFilter('id', [p1, p2, p3]);
+      await tester.runAsync(() async {
+        await client.from('ratings').delete().eq('id', r1);
+        await client.from('products').delete().inFilter('id', [p1, p2, p3]);
+      });
     });
 
     testWidgets('Partitions 3 & 4: View existing account with 0 ratings and 0 reviews', (tester) async {
@@ -138,12 +145,14 @@ void main() {
     });
 
     testWidgets('Partition 7: View seller trust info while logged out', (tester) async {
+      late String p1;
       // Sign in as seller to seed a product they own
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      final p1 = await seedProduct(client, sellerId: sellerId, isSold: true, orderStatus: 'delivered');
-
-      // Temporarily sign out to test public view
-      await client.auth.signOut();
+      await tester.runAsync(() async {
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        p1 = await seedProduct(client, sellerId: sellerId, isSold: true, orderStatus: 'delivered');
+        // Temporarily sign out to test public view
+        await client.auth.signOut();
+      });
 
       await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
 
@@ -152,20 +161,25 @@ void main() {
       expect(find.text('Sold'), findsOneWidget);
 
       // Sign back in as seller to clean up
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      await client.from('products').delete().eq('id', p1);
-
-      // Restore buyer session for subsequent tests
-      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      await tester.runAsync(() async {
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        await client.from('products').delete().eq('id', p1);
+        // Restore buyer session for subsequent tests
+        await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      });
     });
 
     testWidgets('Partition 8: View review of a user that you bought an item from (Own review)', (tester) async {
-      // Seed as seller, buy/rate as buyer. But seedProduct can be done by seller.
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      final p1 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+      late String p1, r1;
       
-      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
-      final r1 = await seedRating(client, sellerId: sellerId, buyerId: buyerId, productId: p1, rating: 5, comment: 'I bought this and loved it!');
+      await tester.runAsync(() async {
+        // Seed as seller, buy/rate as buyer. But seedProduct can be done by seller.
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        p1 = await seedProduct(client, sellerId: sellerId, buyerId: buyerId, isSold: true, orderStatus: 'delivered');
+        
+        await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+        r1 = await seedRating(client, sellerId: sellerId, buyerId: buyerId, productId: p1, rating: 5, comment: 'I bought this and loved it!');
+      });
 
       await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
 
@@ -178,28 +192,35 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
 
       // Cleanup
-      await client.from('ratings').delete().eq('id', r1);
-      
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      await client.from('products').delete().eq('id', p1);
-      
-      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      await tester.runAsync(() async {
+        await client.from('ratings').delete().eq('id', r1);
+        
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        await client.from('products').delete().eq('id', p1);
+        
+        await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      });
     });
 
     testWidgets('Partition 9: View review of a user that you didnt buy item from (Other\'s review)', (tester) async {
-      // 1. Create a 3rd user
-      final otherUserId = await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
+      late String p1, r1;
       
-      // 2. Seed product as seller
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      final p1 = await seedProduct(client, sellerId: sellerId, buyerId: otherUserId, isSold: true, orderStatus: 'delivered');
+      await tester.runAsync(() async {
+        // 1. Create a 3rd user
+        final otherUserId = await _ensureSignedIn(client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+        
+        // 2. Seed product as seller
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        p1 = await seedProduct(client, sellerId: sellerId, buyerId: otherUserId, isSold: true, orderStatus: 'delivered');
 
-      // 3. Rate as the other user
-      await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
-      final r1 = await seedRating(client, sellerId: sellerId, buyerId: otherUserId, productId: p1, rating: 4, comment: 'Someone else bought this.');
+        // 3. Rate as the other user
+        await _ensureSignedIn(client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+        r1 = await seedRating(client, sellerId: sellerId, buyerId: otherUserId, productId: p1, rating: 4, comment: 'Someone else bought this.');
 
-      // 4. View as main buyer
-      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+        // 4. View as main buyer
+        await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      });
+
       await pumpProfileScreen(tester, supabaseClient: client, targetUserId: sellerId);
 
       // Tap on the Reviews tab
@@ -211,13 +232,15 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsNothing);
 
       // Cleanup
-      await _ensureSignedIn(client, 'fr2.other@thryft-test.local', 'Thryft!test99', 'fr2_other');
-      await client.from('ratings').delete().eq('id', r1);
-      
-      await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
-      await client.from('products').delete().eq('id', p1);
-      
-      await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      await tester.runAsync(() async {
+        await _ensureSignedIn(client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+        await client.from('ratings').delete().eq('id', r1);
+        
+        await _ensureSignedIn(client, _sellerEmail, _sellerPassword, 'fr2_seller');
+        await client.from('products').delete().eq('id', p1);
+        
+        await _ensureSignedIn(client, _buyerEmail, _buyerPassword, 'fr2_buyer');
+      });
     });
   });
 }

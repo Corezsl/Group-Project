@@ -154,7 +154,7 @@ Future<String> seedRating(
 /// constraints (child tables first).
 Future<void> tearDownTestData(SupabaseClient client) async {
   // Delete in FK-safe order (children before parents).
-  await client.from('ratings').delete().like('product_id', '%$runId%');
+  // Note: Cannot use like('%') on UUID columns without casting.
   await client.from('offers').delete().like('listing_id', '%$runId%');
   await client
       .from('products')
