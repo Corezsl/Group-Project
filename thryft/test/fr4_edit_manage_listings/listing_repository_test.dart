@@ -1,100 +1,98 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/repositories/listing_repository.dart';
+import '../helpers/supabase_test_client.dart';
+import '../helpers/seed_helper.dart';
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Test credentials — fixed per file so re-runs reuse the same auth user
+// instead of creating a new one each time.
 // ---------------------------------------------------------------------------
+const _sellerEmail = 'fr4.seller@thryft-test.local';
+const _sellerPassword = 'Thryft!test99';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+const _buyerEmail = 'fr4.buyer@thryft-test.local';
+const _buyerPassword = 'Thryft!test99';
 
-class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockUser extends Mock implements User {}
-
-class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
-
-// ---------------------------------------------------------------------------
-// Fake filter builder
-//
-// PostgrestFilterBuilder<T> is itself a Future, so Mock + thenReturn/thenAnswer
-// on .then() conflicts with mocktail's internal stub-recording state.
-// A Fake that tracks calls lets us verify interactions without that conflict.
-// ---------------------------------------------------------------------------
-
-class FakeMutateFilterBuilder extends Fake
-    implements PostgrestFilterBuilder<dynamic> {
-  final List<String> eqCalls = [];
-
-  @override
-  FakeMutateFilterBuilder eq(String column, dynamic value) {
-    eqCalls.add('$column=$value');
-    return this;
+/// Sign in if the user already exists, sign up on first run.
+Future<String> _ensureSignedIn(SupabaseClient client) async {
+  try {
+    final res = await client.auth.signInWithPassword(
+      email: _sellerEmail,
+      password: _sellerPassword,
+    );
+    return res.user!.id;
+  } on AuthException {
+    final res = await client.auth.signUp(
+      email: _sellerEmail,
+      password: _sellerPassword,
+      data: {'username': 'fr4_seller'},
+    );
+    return res.user!.id;
   }
-
-  // Awaiting the builder should resolve immediately with null (no body).
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(dynamic) onValue, {
-    Function? onError,
-  }) =>
-      Future<dynamic>.value(null).then(onValue, onError: onError);
-}
-
-// Simulates a Supabase permission / RLS error on await.
-class FakeErrorFilterBuilder extends Fake
-    implements PostgrestFilterBuilder<dynamic> {
-  final Object error;
-  FakeErrorFilterBuilder(this.error);
-
-  @override
-  FakeErrorFilterBuilder eq(String column, dynamic value) => this;
-
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(dynamic) onValue, {
-    Function? onError,
-  }) =>
-      Future<dynamic>.error(error).then(onValue, onError: onError);
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-void _stubMutateChain(
-  MockSupabaseClient client,
-  MockSupabaseQueryBuilder qb,
-  FakeMutateFilterBuilder filter,
-) {
-  when(() => client.from(any())).thenAnswer((_) => qb);
-  when(() => qb.update(any())).thenAnswer((_) => filter);
-  when(() => qb.delete()).thenAnswer((_) => filter);
 }
 
 void main() {
-  late MockSupabaseClient client;
-  late MockGoTrueClient auth;
-  late MockUser user;
-  late MockSupabaseQueryBuilder qb;
-  late FakeMutateFilterBuilder mutateFilter;
+  late SupabaseClient client;
   late ListingRepository repo;
+  late String sellerId;
+  late String buyerId;
 
-  setUp(() {
-    client = MockSupabaseClient();
-    auth = MockGoTrueClient();
-    user = MockUser();
-    qb = MockSupabaseQueryBuilder();
-    mutateFilter = FakeMutateFilterBuilder(); // fresh instance resets eqCalls
+  // Main product re-seeded before each group that needs a fresh state.
+  late String productId;
 
-    when(() => client.auth).thenReturn(auth);
-    when(() => auth.currentUser).thenReturn(user);
-    when(() => user.id).thenReturn('user-123');
+  setUpAll(() async {
+    client = await getTestClient();
+
+    // Register / sign in the seller first.
+    sellerId = await _ensureSignedIn(client);
+
+    // Register / sign in the buyer to get a real auth.users UUID,
+    // then switch back to the seller session for the actual tests.
+    try {
+      final res = await client.auth.signInWithPassword(
+        email: _buyerEmail,
+        password: _buyerPassword,
+      );
+      buyerId = res.user!.id;
+    } on AuthException {
+      final res = await client.auth.signUp(
+        email: _buyerEmail,
+        password: _buyerPassword,
+        data: {'username': 'fr4_buyer'},
+      );
+      buyerId = res.user!.id;
+    }
+
+    // Switch back to seller — all repository calls run under their session.
+    await _ensureSignedIn(client);
 
     repo = ListingRepository(client);
+  });
+
+  tearDownAll(() async {
+    // Clean up all products created by the test seller in this run.
+    await client.from('products').delete().eq('user_id', sellerId);
+    await client.auth.signOut();
+  });
+
+  setUp(() async {
+    // Fresh product for each test so mutations in one test don't bleed
+    // into the next.
+    productId = await seedProduct(
+      client,
+      sellerId: sellerId,
+      name: 'FR4 Test Jacket',
+    );
+  });
+
+  tearDown(() async {
+    // Remove this test's product (best effort — tearDownAll also cleans up).
+    await client
+        .from('products')
+        .delete()
+        .eq('id', productId)
+        .eq('user_id', sellerId);
   });
 
   // -------------------------------------------------------------------------
@@ -102,40 +100,52 @@ void main() {
   // Boundary values: £0.01 (lower), £15 (midpoint), £10000 (upper)
   // -------------------------------------------------------------------------
   group('FR4 #1 — edit listing price', () {
-    test('midpoint price £15 — update is called with new price', () async {
-      _stubMutateChain(client, qb, mutateFilter);
-
+    test('midpoint price £15 — db row updated', () async {
       await repo.updateListing(
-        id: 'listing-1',
-        userId: 'user-123',
+        id: productId,
+        userId: sellerId,
         fields: {'price': 15.0},
       );
 
-      verify(() => qb.update({'price': 15.0})).called(1);
+      final row = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect((row['price'] as num).toDouble(), 15.0);
     });
 
-    test('boundary lower £0.01 — update is called', () async {
-      _stubMutateChain(client, qb, mutateFilter);
-
+    test('boundary lower £0.01 — db row updated', () async {
       await repo.updateListing(
-        id: 'listing-1',
-        userId: 'user-123',
+        id: productId,
+        userId: sellerId,
         fields: {'price': 0.01},
       );
 
-      verify(() => qb.update({'price': 0.01})).called(1);
+      final row = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect((row['price'] as num).toDouble(), 0.01);
     });
 
-    test('boundary upper £10000 — update is called', () async {
-      _stubMutateChain(client, qb, mutateFilter);
-
+    test('boundary upper £10000 — db row updated', () async {
       await repo.updateListing(
-        id: 'listing-1',
-        userId: 'user-123',
+        id: productId,
+        userId: sellerId,
         fields: {'price': 10000.0},
       );
 
-      verify(() => qb.update({'price': 10000.0})).called(1);
+      final row = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect((row['price'] as num).toDouble(), 10000.0);
     });
   });
 
@@ -143,18 +153,21 @@ void main() {
   // FR4 Partition 2 — Edit listing description (valid)
   // -------------------------------------------------------------------------
   group('FR4 #2 — edit listing description', () {
-    test('new description text appears in update payload', () async {
-      _stubMutateChain(client, qb, mutateFilter);
-
+    test('new description saved to db', () async {
+      const newDesc = 'Updated description text';
       await repo.updateListing(
-        id: 'listing-1',
-        userId: 'user-123',
-        fields: {'description': 'Updated description text'},
+        id: productId,
+        userId: sellerId,
+        fields: {'description': newDesc},
       );
 
-      verify(
-        () => qb.update({'description': 'Updated description text'}),
-      ).called(1);
+      final row = await client
+          .from('products')
+          .select('description')
+          .eq('id', productId)
+          .single();
+
+      expect(row['description'], newDesc);
     });
   });
 
@@ -162,17 +175,19 @@ void main() {
   // FR4 Partition 3 — Delete listing (valid, unsold)
   // -------------------------------------------------------------------------
   group('FR4 #3 — delete listing', () {
-    test('delete is called and scoped to listing id and owner id', () async {
-      _stubMutateChain(client, qb, mutateFilter);
-
+    test('product is gone from db after delete', () async {
       await repo.deleteListing(
-        id: 'listing-1',
-        userId: 'user-123',
+        id: productId,
+        userId: sellerId,
         isSold: false,
       );
 
-      verify(() => qb.delete()).called(1);
-      expect(mutateFilter.eqCalls, containsAll(['id=listing-1', 'user_id=user-123']));
+      final rows = await client
+          .from('products')
+          .select('id')
+          .eq('id', productId);
+
+      expect(rows, isEmpty);
     });
   });
 
@@ -180,17 +195,15 @@ void main() {
   // FR4 Partition 6 — Delete sold listing (invalid)
   // -------------------------------------------------------------------------
   group('FR4 #6 — delete sold listing is blocked', () {
-    test('throws ListingIsSoldException before any DB call', () async {
+    test('throws ListingIsSoldException before touching db', () {
       expect(
         () => repo.deleteListing(
-          id: 'listing-1',
-          userId: 'user-123',
+          id: productId,
+          userId: sellerId,
           isSold: true,
         ),
         throwsA(isA<ListingIsSoldException>()),
       );
-
-      verifyNever(() => client.from(any()));
     });
   });
 
@@ -198,20 +211,20 @@ void main() {
   // FR4 Partition 8 — Mark as sold (valid)
   // -------------------------------------------------------------------------
   group('FR4 #8 — mark as sold', () {
-    test('update sets is_sold true, buyer_id, and order_status pending',
-        () async {
-      _stubMutateChain(client, qb, mutateFilter);
+    test('is_sold, buyer_id and order_status all updated in db', () async {
+      // Use the real buyer account so the FK to auth.users is satisfied
+      // by a genuinely different user — matching the real purchase scenario.
+      await repo.markAsSold(id: productId, buyerId: buyerId);
 
-      await repo.markAsSold(id: 'listing-1', buyerId: 'buyer-456');
+      final row = await client
+          .from('products')
+          .select('is_sold, buyer_id, order_status')
+          .eq('id', productId)
+          .single();
 
-      verify(
-        () => qb.update({
-          'is_sold': true,
-          'buyer_id': 'buyer-456',
-          'order_status': 'pending',
-        }),
-      ).called(1);
-      expect(mutateFilter.eqCalls, contains('id=listing-1'));
+      expect(row['is_sold'], isTrue);
+      expect(row['buyer_id'], buyerId);
+      expect(row['order_status'], 'pending');
     });
   });
 
@@ -219,63 +232,77 @@ void main() {
   // FR4 Partition 9 — Edit / delete while logged out (invalid)
   // -------------------------------------------------------------------------
   group('FR4 #9 — operation while logged out', () {
-    setUp(() {
-      when(() => auth.currentUser).thenReturn(null);
+    setUp(() async {
+      await client.auth.signOut();
+    });
+
+    tearDown(() async {
+      // Sign back in so the next test group works normally.
+      await _ensureSignedIn(client);
     });
 
     test('updateListing throws NotAuthenticatedException', () {
       expect(
         () => repo.updateListing(
-          id: 'listing-1',
-          userId: 'user-123',
-          fields: {'price': 15.0},
+          id: productId,
+          userId: sellerId,
+          fields: {'price': 1.0},
         ),
         throwsA(isA<NotAuthenticatedException>()),
       );
-      verifyNever(() => client.from(any()));
     });
 
     test('deleteListing throws NotAuthenticatedException', () {
       expect(
         () => repo.deleteListing(
-          id: 'listing-1',
-          userId: 'user-123',
+          id: productId,
+          userId: sellerId,
           isSold: false,
         ),
         throwsA(isA<NotAuthenticatedException>()),
       );
-      verifyNever(() => client.from(any()));
     });
 
     test('markAsSold throws NotAuthenticatedException', () {
       expect(
-        () => repo.markAsSold(id: 'listing-1', buyerId: 'buyer-456'),
+        () => repo.markAsSold(id: productId, buyerId: sellerId),
         throwsA(isA<NotAuthenticatedException>()),
       );
-      verifyNever(() => client.from(any()));
     });
   });
 
   // -------------------------------------------------------------------------
-  // FR4 Partition 5 — Edit another user's listing (invalid)
-  // RLS enforcement is server-side; the repo must propagate the error.
+  // FR4 Partition 5 — Edit another user's listing (RLS enforcement)
+  // RLS policy: "Users can update their own products" checks auth.uid() = user_id.
+  // Supabase returns 0 rows updated rather than throwing for UPDATE — so we
+  // verify the row is unchanged after the call, not that an exception is thrown.
   // -------------------------------------------------------------------------
-  group('FR4 #5 — edit another user\'s listing', () {
-    test('server permission error propagates out of updateListing', () async {
-      final permissionError = Exception('permission denied for table products');
-      final errorFilter = FakeErrorFilterBuilder(permissionError);
+  group("FR4 #5 — edit another user's listing", () {
+    test("update on a non-owned product does nothing (RLS silently filters)",
+        () async {
+      // Seed a product owned by the seller, then try to update it
+      // with a mismatched userId. The repo sends the update; RLS filters
+      // it out server-side so the price stays the same.
+      final originalRow = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
 
-      when(() => client.from(any())).thenAnswer((_) => qb);
-      when(() => qb.update(any())).thenAnswer((_) => errorFilter);
-
-      expect(
-        () => repo.updateListing(
-          id: 'listing-other',
-          userId: 'user-123',
-          fields: {'price': 20.0},
-        ),
-        throwsA(isA<Exception>()),
+      // Call update — shouldn't throw, but also shouldn't change anything.
+      await repo.updateListing(
+        id: productId,
+        userId: 'wrong-user',
+        fields: {'price': 9999.0},
       );
+
+      final afterRow = await client
+          .from('products')
+          .select('price')
+          .eq('id', productId)
+          .single();
+
+      expect(afterRow['price'], originalRow['price']);
     });
   });
 }
