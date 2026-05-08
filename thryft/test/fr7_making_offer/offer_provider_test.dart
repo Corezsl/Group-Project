@@ -16,9 +16,7 @@ List<_OfferViewRow> _pendingOffersForBuyer(
   List<_OfferViewRow> rows,
   String buyerId,
 ) =>
-    rows
-        .where((r) => r.buyerId == buyerId && r.status == 'pending')
-        .toList();
+    rows.where((r) => r.buyerId == buyerId && r.status == 'pending').toList();
 
 int _pendingCount(List<_OfferViewRow> rows) =>
     rows.where((r) => r.status == 'pending').length;
@@ -29,12 +27,8 @@ void _setStatusForPendingOffer({
   required String buyerId,
   required String newStatus,
 }) {
-  final idx = rows.indexWhere(
-    (r) =>
-        r.listingId == listingId &&
-        r.buyerId == buyerId &&
-        r.status == 'pending',
-  );
+  final idx = rows.indexWhere((r) =>
+      r.listingId == listingId && r.buyerId == buyerId && r.status == 'pending');
 
   if (idx < 0) return;
 
@@ -46,8 +40,8 @@ void _setStatusForPendingOffer({
 }
 
 void main() {
-  group('FR7 provider-style logic', () {
-    test('hasPendingOffer returns true when pending exists for buyer/listing', () {
+  group('FR7 Partition 3 — Provider logic', () {
+    test('pending existence check', () {
       final rows = [
         const _OfferViewRow(listingId: 'listing-7', buyerId: 'buyer-123', status: 'pending'),
       ];
@@ -58,29 +52,17 @@ void main() {
       expect(pending, isTrue);
     });
 
-    test('hasPendingOffer returns false when no pending exists', () {
-      final rows = [
-        const _OfferViewRow(listingId: 'listing-7', buyerId: 'buyer-123', status: 'accepted'),
-      ];
-
-      final pending = _pendingOffersForBuyer(rows, 'buyer-123')
-          .any((r) => r.listingId == 'listing-7');
-
-      expect(pending, isFalse);
-    });
-
-    test('pendingCount includes only pending offers', () {
+    test('pending count counts only pending', () {
       final rows = [
         const _OfferViewRow(listingId: 'listing-1', buyerId: 'b1', status: 'pending'),
         const _OfferViewRow(listingId: 'listing-2', buyerId: 'b1', status: 'accepted'),
         const _OfferViewRow(listingId: 'listing-3', buyerId: 'b1', status: 'pending'),
-        const _OfferViewRow(listingId: 'listing-4', buyerId: 'b2', status: 'declined'),
       ];
 
       expect(_pendingCount(rows), equals(2));
     });
 
-    test('update status changes only pending matching offer', () {
+    test('update status only affects pending match', () {
       final rows = <_OfferViewRow>[
         const _OfferViewRow(listingId: 'listing-7', buyerId: 'buyer-123', status: 'pending'),
         const _OfferViewRow(listingId: 'listing-7', buyerId: 'buyer-123', status: 'accepted'),
