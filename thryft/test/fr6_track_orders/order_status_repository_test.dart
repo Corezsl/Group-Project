@@ -10,8 +10,11 @@ const _sellerPassword = 'Thryft!test99';
 const _buyerEmail = 'fr6.buyer@thryft-test.local';
 const _buyerPassword = 'Thryft!test99';
 
+// Uses the admin client to create the user when they don't exist yet,
+// bypassing email confirmation and avoiding rate limits.
 Future<String> _signInOrSignUp(
   SupabaseClient client,
+  SupabaseClient admin,
   String email,
   String password,
   String username,
@@ -23,10 +26,15 @@ Future<String> _signInOrSignUp(
     );
     return res.user!.id;
   } on AuthException {
-    final res = await client.auth.signUp(
+    await admin.auth.admin.createUser(AdminUserAttributes(
       email: email,
       password: password,
-      data: {'username': username},
+      emailConfirm: true,
+      userMetadata: {'username': username},
+    ));
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
     );
     return res.user!.id;
   }
@@ -51,12 +59,12 @@ void main() {
     admin = getServiceClient();
 
     sellerId = await _signInOrSignUp(
-        client, _sellerEmail, _sellerPassword, 'fr6_seller');
+        client, admin, _sellerEmail, _sellerPassword, 'fr6_seller');
     buyerId = await _signInOrSignUp(
-        client, _buyerEmail, _buyerPassword, 'fr6_buyer');
+        client, admin, _buyerEmail, _buyerPassword, 'fr6_buyer');
 
     // Run tests as the seller so RLS allows product reads.
-    await _signInOrSignUp(client, _sellerEmail, _sellerPassword, 'fr6_seller');
+    await _signInOrSignUp(client, admin, _sellerEmail, _sellerPassword, 'fr6_seller');
 
     repo = OrderRepository(client);
   });
