@@ -1,9 +1,15 @@
+// Integration tests for FR9 (notifications) at the repository level.
+// Hits a real Supabase test DB — seeds notifications, then checks that
+// the fetch query returns the right rows and respects user scoping / RLS.
+// Requires TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to be set.
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 import '../helpers/supabase_test_client.dart';
 import '../helpers/seed_helper.dart';
 
+// Two dedicated test accounts — keeps test data separate from production.
 const _user1Email = 'fr9.user1@thryft-test.local';
 const _user1Password = 'Thryft!test99';
 
@@ -65,8 +71,8 @@ void main() {
     return;
   }
 
-  late SupabaseClient client;
-  late SupabaseClient admin;
+  late SupabaseClient client; // regular user client — respects RLS
+  late SupabaseClient admin;  // service-role client — bypasses RLS for seeding/cleanup
   late String user1Id;
   late String user2Id;
 
@@ -95,14 +101,13 @@ void main() {
     await client.auth.signOut();
   });
 
-  // ---------------------------------------------------------------------------
-  // FR9 Partition 5 — Only user's own notifications are returned
-  // ---------------------------------------------------------------------------
+  // FR9 #5 — the fetch query must only return notifications belonging to the given user.
   group('FR9 #5 — only user\'s own notifications are returned', () {
     late int notif1;
     late int notif2;
 
     setUp(() async {
+      // Seed two different notification types for user1 to verify both come back.
       notif1 = await seedNotification(admin,
           userId: user1Id,
           notifType: 'order_shipped',
@@ -142,14 +147,13 @@ void main() {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // FR9 Partition 8 — Query is scoped to the requesting user (not another user)
-  // ---------------------------------------------------------------------------
+  // FR9 #8 — RLS and the eq filter together should prevent one user seeing another's rows.
   group('FR9 #8 — query is scoped to the requesting user', () {
     late int notifForUser1;
     late int notifForUser2;
 
     setUp(() async {
+      // One notification per user so we can check neither leaks into the other's fetch.
       notifForUser1 = await seedNotification(admin,
           userId: user1Id,
           notifType: 'listing_sold',
@@ -209,13 +213,12 @@ void main() {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // FR9 — Notification count boundary
-  // ---------------------------------------------------------------------------
+  // Boundary tests — checks the fetch works with 1 notification and with 3.
   group('FR9 — notification count boundary', () {
     late List<int> seededIds;
 
     tearDown(() async {
+      // Only delete if something was seeded — avoids an error on empty list.
       if (seededIds.isNotEmpty) {
         await admin
             .from('notification')
@@ -240,6 +243,7 @@ void main() {
     });
 
     test('3 notifications — all mapped', () async {
+      // Seed all three in parallel to keep the test fast.
       seededIds = await Future.wait([
         seedNotification(admin,
             userId: user1Id,
