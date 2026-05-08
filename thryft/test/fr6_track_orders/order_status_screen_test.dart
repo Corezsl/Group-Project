@@ -1,9 +1,13 @@
+// Tests for FR6 (track orders) at the widget level.
+// Checks that the right buttons appear or disappear depending on order status.
+// Uses small stub widgets instead of mounting the real screens, so there's no
+// need for Supabase or a full navigation setup.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Minimal sold card stub — mirrors SoldItemsScreen._buildSoldCard:
-//   "Mark as shipped" button appears ONLY when status == 'pending' AND isSold.
-
+// Stub for the seller-side sold item card (mirrors SoldItemsScreen._buildSoldCard).
+// "Mark as shipped" only shows up when the item is sold and still pending.
 class _SoldCardStub extends StatelessWidget {
   final String orderStatus;
   final bool isSold;
@@ -15,7 +19,9 @@ class _SoldCardStub extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
+          // Shows the current status as a readable label.
           Text(_statusLabel(orderStatus), key: const Key('status_badge')),
+          // Ship button only appears when the item has been sold and not yet shipped.
           if (isSold && orderStatus == 'pending')
             ElevatedButton(
               key: const Key('mark_shipped_btn'),
@@ -27,6 +33,7 @@ class _SoldCardStub extends StatelessWidget {
     );
   }
 
+  // Maps raw DB status to the label displayed in the UI.
   String _statusLabel(String status) => switch (status) {
         'shipped' => 'Shipped',
         'delivered' => 'Delivered',
@@ -34,9 +41,8 @@ class _SoldCardStub extends StatelessWidget {
       };
 }
 
-// Minimal order card stub — mirrors MyOrdersScreen._buildOrderCard:
-//   "Confirm delivery" button appears ONLY when status == 'shipped'.
-
+// Stub for the buyer-side order card (mirrors MyOrdersScreen._buildOrderCard).
+// "Confirm delivery" only shows up once the seller has marked the item as shipped.
 class _OrderCardStub extends StatelessWidget {
   final String orderStatus;
 
@@ -47,7 +53,9 @@ class _OrderCardStub extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
+          // Shows the current order stage to the buyer.
           Text(_statusLabel(orderStatus), key: const Key('status_badge')),
+          // Confirm button is only available when status is 'shipped'.
           if (orderStatus == 'shipped')
             OutlinedButton(
               key: const Key('confirm_delivery_btn'),
@@ -59,6 +67,7 @@ class _OrderCardStub extends StatelessWidget {
     );
   }
 
+  // Maps raw DB status to the label displayed in the UI.
   String _statusLabel(String status) => switch (status) {
         'shipped' => 'Shipped',
         'delivered' => 'Delivered',
@@ -67,7 +76,7 @@ class _OrderCardStub extends StatelessWidget {
 }
 
 void main() {
-  // FR6 Partition 2 — Valid shipping update: seller UI shows ship button
+  // FR6 #2 — seller can only mark as shipped when the order is still pending.
   group('FR6 #2 — seller ship button visibility', () {
     testWidgets('pending sold item shows Mark as shipped button', (tester) async {
       await tester.pumpWidget(
@@ -81,6 +90,7 @@ void main() {
     });
 
     testWidgets('shipped item does NOT show Mark as shipped button', (tester) async {
+      // Already shipped — don't let the seller trigger it again.
       await tester.pumpWidget(
         const MaterialApp(
           home: _SoldCardStub(orderStatus: 'shipped', isSold: true),
@@ -103,7 +113,7 @@ void main() {
     });
   });
 
-  // FR6 Partition 3 — Valid received update: buyer UI shows confirm button
+  // FR6 #3 — buyer can only confirm delivery once the item is shipped.
   group('FR6 #3 — buyer confirm delivery button visibility', () {
     testWidgets('shipped order shows Confirm delivery button', (tester) async {
       await tester.pumpWidget(
@@ -115,6 +125,7 @@ void main() {
     });
 
     testWidgets('pending order does NOT show Confirm delivery button', (tester) async {
+      // Seller hasn't shipped yet, so the buyer can't confirm.
       await tester.pumpWidget(
         const MaterialApp(home: _OrderCardStub(orderStatus: 'pending')),
       );
@@ -124,6 +135,7 @@ void main() {
     });
 
     testWidgets('delivered order does NOT show Confirm delivery button', (tester) async {
+      // Already confirmed — button shouldn't reappear.
       await tester.pumpWidget(
         const MaterialApp(home: _OrderCardStub(orderStatus: 'delivered')),
       );
@@ -133,10 +145,11 @@ void main() {
     });
   });
 
-  // FR6 Partition 5 — Ship before sold: system prevents shipping unsold items
+  // FR6 #5 — seller can't mark as shipped if the item hasn't actually been sold.
   group('FR6 #5 — ship before sold is prevented at UI level', () {
     testWidgets('unsold item (isSold=false) does NOT show Mark as shipped button',
         (tester) async {
+      // isSold=false means no purchase yet, so the ship button must not appear.
       await tester.pumpWidget(
         const MaterialApp(
           home: _SoldCardStub(orderStatus: 'pending', isSold: false),
@@ -148,6 +161,7 @@ void main() {
 
     testWidgets('item with no sold status shows To Ship badge but no button when unsold',
         (tester) async {
+      // The status label still renders, but there's no action the seller can take.
       await tester.pumpWidget(
         const MaterialApp(
           home: _SoldCardStub(orderStatus: 'pending', isSold: false),
@@ -159,8 +173,7 @@ void main() {
     });
   });
 
-
-  // FR6 Partition 6 — Receive before shipped: system prevents out-of-order updates
+  // FR6 #6 — buyer can't confirm delivery before the item has been shipped.
   group('FR6 #6 — receive before shipped is prevented at UI level', () {
     testWidgets('pending order does NOT show Confirm delivery button', (tester) async {
       await tester.pumpWidget(
@@ -180,7 +193,8 @@ void main() {
     });
   });
 
-  // FR6 Partition 7 — Invalid seller: only seller's own items show ship button
+  // FR6 #7 — ship button should only appear for the seller's own sold items.
+  // Non-owners see isSold=false so the button is never rendered for them.
   group('FR6 #7 — invalid seller (non-owner has no ship button)', () {
     testWidgets('status badge correctly shows "To Ship" label for pending', (tester) async {
       await tester.pumpWidget(
@@ -203,8 +217,8 @@ void main() {
     });
   });
 
-  
-  // FR6 Partition 8 — Invalid buyer: only shipped items expose confirm button
+  // FR6 #8 — confirm delivery button should only appear for the actual buyer
+  // once the item is shipped. Wrong status means no button.
   group('FR6 #8 — invalid buyer (non-buyer has no confirm button)', () {
     testWidgets('confirm delivery only available on shipped status', (tester) async {
       await tester.pumpWidget(
