@@ -1,3 +1,7 @@
+// Shows all offers the logged-in user has made on other listings.
+// Reached from the account hub. Reads from OfferProvider which fetches
+// from Supabase and exposes loading/error/data states.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -15,11 +19,12 @@ class MyOffersScreen extends StatefulWidget {
 }
 
 class _MyOffersScreenState extends State<MyOffersScreen> {
-  static const Color _brand = Color.fromARGB(255, 71, 164, 245);
+  static const Color _brand = Color.fromARGB(255, 71, 164, 245); // app blue
 
   @override
   void initState() {
     super.initState();
+    // Deferred to post-frame so the provider is available in the widget tree.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OfferProvider>().fetchMyOffers();
     });
@@ -35,6 +40,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
+              // minHeight ensures the footer stays pinned to the bottom on short lists.
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,6 +75,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                                 ),
                                 const SizedBox(height: 24),
+                                // Four mutually exclusive states — guest, loading, error, or offer list.
                                 if (user == null)
                                   _buildLoginPrompt(context)
                                 else if (provider.isLoading)
@@ -99,6 +106,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Shown instead of the list when the user is not logged in.
   Widget _buildLoginPrompt(BuildContext context) {
     return SizedBox(
       height: 300,
@@ -124,6 +132,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Shown when OfferProvider sets hasError — displays the raw error message if available.
   Widget _buildErrorState(String? errorMessage) {
     return SizedBox(
       height: 300,
@@ -153,6 +162,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Shown when the fetch succeeded but returned no offers.
   Widget _buildEmptyState() {
     return SizedBox(
       height: 300,
@@ -177,6 +187,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Non-scrolling list — the parent SingleChildScrollView handles all scrolling.
   Widget _buildOfferList(BuildContext context, List<Offer> offers) {
     return ListView.separated(
       shrinkWrap: true,
@@ -187,6 +198,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Declined offers are not tappable — only pending and accepted ones link to the listing.
   Widget _buildOfferTile(BuildContext context, Offer offer) {
     return InkWell(
       onTap: offer.isPending || offer.isAccepted
@@ -258,6 +270,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Colour-coded pill badge — green for accepted, red for declined, orange for pending.
   Widget _buildStatusBadge(String status) {
     final (Color bg, Color fg, String label) = switch (status) {
       'accepted' => (Colors.green.shade50, Colors.green.shade700, 'Accepted'),
@@ -276,6 +289,8 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     );
   }
 
+  // Fetches the full product row before navigating so the product detail screen
+  // receives all the fields it needs via the route extra map.
   Future<void> _navigateToListing(BuildContext context, Offer offer) async {
     try {
       final data = await Supabase.instance.client
@@ -286,6 +301,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
 
       if (data == null || !context.mounted) return;
 
+      // Route extra is a String map — all values are stringified here.
       final product = <String, String>{
         'id': data['id'].toString(),
         'name': data['name']?.toString() ?? '',
@@ -317,6 +333,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     }
   }
 
+  // Returns a human-readable relative timestamp — falls back to a date once older than a week.
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 1) return 'Just now';

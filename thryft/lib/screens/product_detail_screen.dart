@@ -1,3 +1,7 @@
+// Product detail screen at /product/:id. Receives the full product data as a
+// String map via the GoRouter route extra so no extra fetch is needed on load.
+// Handles wishlist toggling, add-to-cart, offer submission, and owner edit/delete.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -13,13 +17,13 @@ import 'package:thryft/providers/offer_provider.dart';
 import 'package:thryft/models/notification_model.dart';
 
 class ProductDetailScreen extends StatelessWidget {
+  // All product fields as strings — passed in via GoRouter route extra.
   final Map<String, String> product;
 
   const ProductDetailScreen({super.key, required this.product});
 
   static const Color brandColor = Color.fromARGB(255, 71, 164, 245);
 
-  // Fixed: Defined the missing helper method
   bool _isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= 800;
 
@@ -33,6 +37,7 @@ class ProductDetailScreen extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          // Share button copies the product URL to the clipboard.
           IconButton(
             icon: const Icon(Icons.share_outlined),
             onPressed: () {
@@ -44,6 +49,7 @@ class ProductDetailScreen extends StatelessWidget {
               );
             },
           ),
+          // Wishlist heart — red when already wishlisted, toggled on tap.
           Consumer<WishlistProvider>(
             builder: (context, wishlist, _) {
               final wishlisted = wishlist.isWishlisted(product['id'] ?? '');
@@ -81,6 +87,8 @@ class ProductDetailScreen extends StatelessWidget {
         builder: (context, constraints) {
           final isDesktopView = constraints.maxWidth >= 800;
 
+          // Desktop: image gallery takes 60% width, info panel takes 40%.
+          // Mobile: gallery stacks above the info panel.
           if (isDesktopView) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +137,10 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Builds the image gallery — single image shows without controls;
+  // multiple images get left/right arrows and a thumbnail strip.
   Widget _buildImageGallery(BuildContext context) {
+    // Collect all non-empty image URLs from the product map.
     final allImages = [
       product['imageUrl'],
       product['image_url_2'],
@@ -173,7 +184,7 @@ class ProductDetailScreen extends StatelessWidget {
       );
     }
 
-    // Multiple images — use ValueNotifier for selected index
+    // Multiple images — ValueNotifier avoids rebuilding the whole widget tree on index change.
     final indexNotifier = ValueNotifier<int>(0);
 
     return Hero(
@@ -257,6 +268,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Semi-transparent "SOLD" banner overlaid on the image when the item is no longer available.
   Widget _buildSoldOverlay(BuildContext context) {
     return Container(
       color: Colors.black.withValues(alpha: 0.5),
@@ -334,7 +346,7 @@ class ProductDetailScreen extends StatelessWidget {
           const SizedBox(height: 24),
         ],
 
-        // Action Buttons with logic for single items [cite: 2026-02-20]
+        // Action area — four mutually exclusive states based on ownership and sold status.
         Consumer<CartProvider>(
           builder: (context, cart, child) {
             final currentUser = Supabase.instance.client.auth.currentUser;
@@ -415,6 +427,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Constructs a Product from the string map and adds it to the cart provider.
   void _addItemToCart(BuildContext context, CartProvider cart) {
     cart.addItem(
       Product(
@@ -479,6 +492,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Edit and delete buttons — only shown to the seller of the listing.
   Widget _buildOwnerActions(BuildContext context) {
     return Column(
       children: [
@@ -518,6 +532,8 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Confirms with a dialog then deletes the product row — only succeeds if the
+  // current user is the owner (enforced by the .eq('user_id') filter).
   Future<void> _confirmAndDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -566,6 +582,8 @@ class ProductDetailScreen extends StatelessWidget {
     }
   }
 
+  // Offer dialog — validates that the offer is below the listing price and
+  // that no pending offer from this buyer already exists before inserting.
   void _showOfferDialog(BuildContext context) {
     final sellerId = product['sellerId'];
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -577,6 +595,7 @@ class ProductDetailScreen extends StatelessWidget {
       context.push('/auth');
       return;
     }
+    // Silently ignore if sellerId is missing or the user is viewing their own listing.
     if (sellerId == null || sellerId == currentUser.id) return;
 
     final priceController = TextEditingController();
@@ -732,6 +751,8 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Key-value row used for Brand, Department, Size, and Condition.
+  // isLink highlights the value in brand blue (used for Brand to suggest it's filterable).
   Widget _buildDetailRow(String key, String value, {bool isLink = false}) {
     return Row(
       children: [
@@ -756,6 +777,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Returns the seller's average star rating and review count from the ratings table.
   Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
     final data = await Supabase.instance.client
         .from('ratings')
@@ -771,6 +793,8 @@ class ProductDetailScreen extends StatelessWidget {
     return {'avg': avg, 'count': list.length};
   }
 
+  // Seller card at the bottom of the info panel — tapping navigates to their profile.
+  // Fetches the rating async so the rest of the panel renders immediately.
   Widget _buildSellerProfile(BuildContext context) {
     if (product['sellerId'] == null) return const SizedBox.shrink();
     return FutureBuilder<Map<String, dynamic>>(
@@ -847,6 +871,8 @@ class ProductDetailScreen extends StatelessWidget {
   }
 }
 
+// Private widget shown on a sold listing's detail page when the viewer is the seller.
+// Fetches the buyer's delivery address from Supabase so the seller knows where to ship.
 class _BuyerAddressWidget extends StatefulWidget {
   final String productId;
 
@@ -866,6 +892,7 @@ class _BuyerAddressWidgetState extends State<_BuyerAddressWidget> {
     _fetchAddress();
   }
 
+  // Two-step fetch: first get the buyer_id from the product, then look up their address.
   Future<void> _fetchAddress() async {
     try {
       final supabase = Supabase.instance.client;

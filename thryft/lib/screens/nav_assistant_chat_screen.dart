@@ -1,3 +1,7 @@
+// AI assistant chat screen at /chat-assistant. Opened via the FAB on the home page.
+// Talks to AssistantChatProvider which handles message history and can trigger
+// GoRouter navigation when the assistant responds with a route intent.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/providers/assistant_chat_provider.dart';
@@ -13,11 +17,13 @@ class NavAssistantChatScreen extends StatefulWidget {
 class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  // Provider is created locally so each screen instance has its own chat history.
   late final AssistantChatProvider _chat;
 
   @override
   void initState() {
     super.initState();
+    // Register listener immediately so new messages trigger a scroll and rebuild.
     _chat = AssistantChatProvider()..addListener(_onChatChanged);
   }
 
@@ -30,8 +36,8 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
     super.dispose();
   }
 
+  // Scrolls to the bottom whenever the provider emits a new message.
   void _onChatChanged() {
-    // Keep the latest message visible.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
@@ -43,9 +49,11 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
     if (mounted) setState(() {});
   }
 
+  // Clears the input field before sending so the user sees immediate feedback.
   Future<void> _handleSendMessage() async {
     final text = _controller.text;
     _controller.clear();
+    // The router is passed in so the provider can navigate on the user's behalf.
     await _chat.send(text, router: GoRouter.of(context));
   }
 
@@ -56,6 +64,7 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
       appBar: AppBar(
         title: const Text("Assistant"),
         actions: [
+          // Disabled while a response is in flight to avoid clearing mid-stream.
           IconButton(
             tooltip: 'Clear',
             onPressed: _chat.isSending ? null : _chat.clear,
@@ -65,6 +74,7 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
       ),
       body: Column(
         children: [
+          // Message list — grows to fill available space above the input bar.
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -74,9 +84,11 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
                 final m = messages[index];
                 final isUser = m.role == ChatRole.user;
                 final isSystem = m.role == ChatRole.system;
+                // System messages (e.g. navigation confirmations) use orange to stand out.
                 final bg = isSystem
                     ? Colors.orange[50]
                     : (isUser ? Colors.blue[100] : Colors.grey[200]);
+                // User messages align right; assistant and system messages align left.
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
@@ -92,6 +104,7 @@ class _NavAssistantChatScreenState extends State<NavAssistantChatScreen> {
               },
             ),
           ),
+          // Input bar — send button is disabled while a response is in flight.
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

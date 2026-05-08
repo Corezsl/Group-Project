@@ -1,10 +1,12 @@
+// Tests for FR9 (notifications) at the provider logic level.
+// Covers deduplication, unread count, mark-all-as-read, and realtime
+// insert/delete — all without Supabase. Tests the in-memory list operations
+// that NotificationProvider performs after receiving data from the DB.
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thryft/models/notification_model.dart';
 
-// FR9 Partition 7 — Duplicate notification prevention
-
-// Helpers
-
+// Builds an AppNotification directly (no DB row needed here).
 AppNotification _makeNotif({
   int id = 1,
   String userId = 'user-1',
@@ -21,6 +23,8 @@ AppNotification _makeNotif({
       createdAt: DateTime(2026, 1, 1),
     );
 
+// Deduplicates by notificationId — later entry wins if the same id appears twice.
+// Mirrors the logic used in the provider when merging realtime updates.
 List<AppNotification> _deduplicate(List<AppNotification> notifications) =>
     notifications
         .fold<Map<int, AppNotification>>({}, (map, n) {
@@ -31,7 +35,7 @@ List<AppNotification> _deduplicate(List<AppNotification> notifications) =>
         .toList();
 
 void main() {
-  // FR9 Partition 7 — Duplicate notification prevention
+  // FR9 #7 — realtime updates can produce duplicate rows; the provider must deduplicate.
   group('FR9 #7 — duplicate notification prevention', () {
     test('two notifications with the same id deduplicate to one entry', () {
       final n1 = _makeNotif(id: 1, content: 'First');
@@ -68,7 +72,7 @@ void main() {
     });
   });
 
-  // FR9 — unreadCount logic
+  // Unread count is derived from the list in the provider — these test that logic.
   group('FR9 — unread count calculation', () {
     test('unreadCount is 0 when all notifications are read', () {
       final notifications = [
@@ -102,6 +106,7 @@ void main() {
     });
 
     test('unreadCount is total length when all are unread', () {
+      // Generates 5 unread notifications to confirm the count matches the total.
       final notifications = List.generate(5, (i) => _makeNotif(id: i, isRead: false));
 
       final unreadCount = notifications.where((n) => !n.isRead).length;
@@ -111,13 +116,14 @@ void main() {
   });
 
 
-  // FR9 — markAllAsRead logic (via copyWith)
+  // markAllAsRead maps over the list and uses copyWith to flip unread items.
+  // Already-read ones are passed through unchanged (identity check in last test).
   group('FR9 — markAllAsRead sets all notifications to read', () {
     test('all notifications become read after markAllAsRead', () {
       final notifications = [
         _makeNotif(id: 1, isRead: false),
         _makeNotif(id: 2, isRead: false),
-        _makeNotif(id: 3, isRead: true),
+        _makeNotif(id: 3, isRead: true), // already read — should stay the same object
       ];
 
       final updated = notifications
@@ -147,6 +153,7 @@ void main() {
     });
 
     test('already-read notifications are unchanged by markAllAsRead', () {
+      // identical() confirms the exact same object is returned, not a copy.
       final notif = _makeNotif(id: 1, isRead: true);
       final after = notif.isRead ? notif : notif.copyWith(isRead: true);
 
@@ -154,7 +161,7 @@ void main() {
     });
   });
 
-  // FR9 — realtime insert logic
+  // The provider prepends new realtime notifications so the latest appears first.
   group('FR9 — realtime notification insert', () {
     test('new notification is prepended to the front of the list', () {
       final existing = [_makeNotif(id: 1), _makeNotif(id: 2)];
@@ -167,6 +174,7 @@ void main() {
     });
 
     test('delete removes the notification with matching id', () {
+      // Realtime DELETE events trigger a filter to remove the row from the list.
       final notifications = [
         _makeNotif(id: 1),
         _makeNotif(id: 2),

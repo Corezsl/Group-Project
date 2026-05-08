@@ -1,3 +1,7 @@
+// Shows all buyer reviews left on the logged-in user's sold listings.
+// Reached from the account hub. Accepts an optional supabaseClient so the
+// screen can be driven by a mock in tests without hitting the real DB.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,6 +9,7 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 
 class MyReviewsScreen extends StatefulWidget {
+  // Injected in tests; falls back to the real Supabase singleton in production.
   final SupabaseClient? supabaseClient;
 
   const MyReviewsScreen({super.key, this.supabaseClient});
@@ -16,9 +21,10 @@ class MyReviewsScreen extends StatefulWidget {
 class _MyReviewsScreenState extends State<MyReviewsScreen> {
   List<Map<String, dynamic>> _ratings = [];
   bool _isLoading = true;
-  String? _sellerId;
-  String? _sellerName;
+  String? _sellerId;   // current user's id — used when building product navigation extras
+  String? _sellerName; // current user's username — displayed on product detail
 
+  // Uses the injected client in tests, the global singleton otherwise.
   SupabaseClient get _supabase =>
       widget.supabaseClient ?? Supabase.instance.client;
 
@@ -28,6 +34,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     _fetchReviews();
   }
 
+  // Fetches the seller's username then all ratings on their listings, newest first.
   Future<void> _fetchReviews() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -46,6 +53,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
       _sellerName = profileData?['username']?.toString();
 
+      // The foreign-key hint on profiles selects the buyer's username, not the seller's.
       final ratingsData = await _supabase
           .from('ratings')
           .select(
@@ -64,6 +72,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     }
   }
 
+  // Asks for confirmation before removing the review row from the ratings table.
   Future<void> _deleteReview(Map<String, dynamic> review) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -101,6 +110,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     }
   }
 
+  // Opens a star-picker pre-filled with the existing rating and saves the update.
   Future<void> _editReview(Map<String, dynamic> review) async {
     int localRating = review['rating'] as int;
     final commentController = TextEditingController(
@@ -169,6 +179,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
           })
           .eq('id', review['id']);
 
+      // Patch the local list in place so the card reflects the new values immediately.
       setState(() {
         final index = _ratings.indexWhere((r) => r['id'] == review['id']);
         if (index != -1) {
@@ -216,6 +227,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
+                  // Three states: loading spinner, empty message, or the review list.
                   if (_isLoading)
                     const SizedBox(
                       height: 300,
@@ -264,6 +276,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                         final buyerUsername =
                             review['profiles']?['username']?.toString() ??
                             'Anonymous';
+                        // Only the buyer who left the review can edit or delete it.
                         final isOwnReview =
                             currentUserId != null &&
                             review['buyer_id'] == currentUserId;
@@ -285,6 +298,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     );
   }
 
+  // Review card: buyer avatar and name at top, star row, optional comment,
+  // and a tappable product thumbnail that navigates to the listing detail.
   Widget _buildReviewCard({
     required Map<String, dynamic> review,
     required String buyerUsername,
