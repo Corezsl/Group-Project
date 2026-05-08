@@ -12,8 +12,7 @@ class WishlistScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allItems = context.watch<WishlistProvider>().wishlistItems;
-    final products = allItems.map((i) => i.product).toList();
+    final products = context.watch<WishlistProvider>().wishlistItems;
 
     return Scaffold(
       body: SingleChildScrollView(
