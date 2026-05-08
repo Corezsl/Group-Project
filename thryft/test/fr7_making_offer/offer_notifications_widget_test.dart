@@ -39,9 +39,8 @@ class _OfferNotificationsList extends StatelessWidget {
 }
 
 void main() {
-  group('FR7 widget behavior', () {
-    testWidgets('multiple offers on same listing render as separate entries',
-        (tester) async {
+  group('FR7 Partition 4 — Notification widget', () {
+    testWidgets('renders multiple offer notifications separately', (tester) async {
       await tester.pumpWidget(
         const _OfferNotificationsList(
           offers: [
@@ -58,7 +57,7 @@ void main() {
       expect(find.textContaining('Proposed price:'), findsNWidgets(3));
     });
 
-    testWidgets('each row shows Accept and Reject actions', (tester) async {
+    testWidgets('shows Accept and Reject affordances', (tester) async {
       await tester.pumpWidget(
         const _OfferNotificationsList(
           offers: [
