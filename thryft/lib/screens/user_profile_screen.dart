@@ -47,7 +47,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       // 1. Fetch Profile
       final profileData = await client
           .from('profiles')
-          .select('*, created_at')
+          .select()
           .eq('id', widget.userId)
           .maybeSingle();
 
@@ -89,7 +89,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               category: data['category']?.toString() ?? 'Other',
               material: data['material'].toString(),
               colour: data['colour'].toString(),
-              description: data['description']?.toString(),
             ),
           )
           .toList();
@@ -155,9 +154,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               ratingCount
         : 0.0;
     final avatarUrl = _profile?['avatar_url'];
-    final bio = _profile?['bio']?.toString().trim();
-    final createdAt = _profile?['created_at']?.toString();
-    final accountAge = _calculateAccountAge(createdAt);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -176,23 +172,20 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           // Header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  // Avatar
                   CircleAvatar(
-                    radius: 44,
+                    radius: 40,
                     backgroundColor: Colors.grey[200],
                     backgroundImage: avatarUrl != null
                         ? NetworkImage(avatarUrl) as ImageProvider
                         : null,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person, size: 44, color: Colors.grey)
+                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
                         : null,
                   ),
-                  const SizedBox(height: 14),
-
-                  // Username
+                  const SizedBox(height: 16),
                   Text(
                     username,
                     style: const TextStyle(
@@ -200,41 +193,19 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  // Bio
-                  if (bio != null && bio.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      bio,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-
-                  // Account Age
-                  if (accountAge != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Member for $accountAge',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
-
-                  const SizedBox(height: 20),
-
-                  // Stats row
-                  IntrinsicHeight(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _StatBox(
-                          value: '${_products.length}',
-                          label: 'Listings',
-                        ),
-                        VerticalDivider(
-                          width: 32,
-                          thickness: 1,
-                          color: Colors.grey[300],
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating is double
+                            ? rating.toStringAsFixed(1)
+                            : '$rating',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                         _StatBox(value: '$_soldCount', label: 'Sold'),
                         VerticalDivider(
@@ -305,30 +276,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         ],
       ),
     );
-  }
-
-  String? _calculateAccountAge(String? createdAtStr) {
-    if (createdAtStr == null) return null;
-
-    try {
-      final createdAt = DateTime.parse(createdAtStr);
-      final now = DateTime.now();
-      final difference = now.difference(createdAt);
-
-      if (difference.inDays < 1) {
-        return 'Less than a day';
-      } else if (difference.inDays < 30) {
-        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
-      } else if (difference.inDays < 365) {
-        final months = (difference.inDays / 30).floor();
-        return '$months month${months == 1 ? '' : 's'}';
-      } else {
-        final years = (difference.inDays / 365).floor();
-        return '$years year${years == 1 ? '' : 's'}';
-      }
-    } catch (e) {
-      return null;
-    }
   }
 }
 
