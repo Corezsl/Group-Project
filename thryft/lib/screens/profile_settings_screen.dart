@@ -1,3 +1,7 @@
+// Profile settings at /profile-settings. Reached from the account hub.
+// Lets the user update their avatar, bio, username, email, password,
+// delivery address, and saved payment method — all via Supabase upserts.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,16 +20,17 @@ class ProfileSettingsScreen extends StatefulWidget {
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final _supabase = Supabase.instance.client;
-  bool _isLoading = false;
+  bool _isLoading = false; // true while any async operation is running — shows a full-screen overlay
 
-  Map<String, dynamic>? _userAddress;
-  Map<String, dynamic>? _userPaymentMethod;
+  Map<String, dynamic>? _userAddress;       // null until the address row is fetched
+  Map<String, dynamic>? _userPaymentMethod; // null if no card has been saved yet
   String? _currentAvatarUrl;
   final _bioController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    // Three independent fetches — kick them all off on load.
     _fetchAddress();
     _fetchPaymentMethod();
     _fetchProfile();
@@ -97,6 +102,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     } catch (_) {}
   }
 
+  // Picks an image from the gallery (max 512×512), uploads it to Supabase storage,
+  // then updates the profiles.avatar_url column with the new public URL.
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -113,6 +120,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
       final bytes = await image.readAsBytes();
       final ext = image.name.split('.').last;
+      // UUID suffix prevents browser caching of the old avatar after an update.
       final fileName = 'avatars/${user.id}.${const Uuid().v4()}.$ext';
 
       await _supabase.storage
@@ -158,6 +166,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Green on success, red on error — used by all save operations.
   void _showSnackBar(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +177,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Handles username, email, and password updates via Supabase auth.
+  // Email shows a separate snackbar reminding the user to verify their inbox.
   Future<void> _updateField(String field, String value) async {
     setState(() => _isLoading = true);
     try {
@@ -194,6 +205,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Upserts the address row — merges with any existing row so the DB id is preserved.
   Future<void> _updateFullAddress(
     String street,
     String city,
@@ -213,6 +225,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         'country': country,
       };
 
+      // Spread the existing row first so the primary key is included in the upsert.
       if (_userAddress != null) {
         data.addAll(_userAddress!);
         data['street'] = street;
@@ -233,6 +246,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Upserts the payment method — includes the existing row id if one already exists.
   Future<void> _updatePaymentMethod(
     String cardholderName,
     String cardNumber,
@@ -268,6 +282,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Pre-fills the address form with the current values so the user only edits what changed.
   void _showAddressDialog() {
     final streetCtrl = TextEditingController(
       text: _userAddress?['street'] ?? '',
@@ -360,6 +375,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Pre-fills the payment form with the saved card details and validates format on save.
   void _showPaymentDialog() {
     final nameCtrl = TextEditingController(
       text: _userPaymentMethod?['cardholder_name'] ?? '',
@@ -476,6 +492,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Generic single-field edit dialog used for username, email, and password.
+  // Password field starts empty and is obscured; others pre-fill with the current value.
   void _showEditDialog(String title, String field, String? currentValue) {
     final controller = TextEditingController(
       text: field == 'password' ? '' : currentValue,
@@ -546,7 +564,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final email = user.email ?? 'No Email Provided';
 
     return Scaffold(
-      drawer: const AppDrawer(), // Added AppDrawer in case of mobile view
+      drawer: const AppDrawer(),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -861,6 +879,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               ],
             ),
           ),
+          // Full-screen overlay that blocks interaction while any save is in flight.
           if (_isLoading)
             Container(
               color: Colors.black54,
