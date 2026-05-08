@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 export 'package:thryft/repositories/listing_repository.dart' show NotAuthenticatedException;
@@ -14,7 +15,7 @@ class OrderRepository {
         .eq('buyer_id', userId)
         .order('created_at', ascending: false);
 
-    return (response as List).map(_rowToProduct).toList();
+    return (response as List).map(rowToProduct).toList();
   }
 
   Future<List<Product>> fetchSoldItems(String userId) async {
@@ -25,10 +26,11 @@ class OrderRepository {
         .eq('is_sold', true)
         .order('created_at', ascending: false);
 
-    return (response as List).map(_rowToProduct).toList();
+    return (response as List).map(rowToProduct).toList();
   }
 
-  static Product _rowToProduct(dynamic data) {
+  @visibleForTesting
+  static Product rowToProduct(dynamic data) {
     return Product(
       id: data['id'].toString(),
       name: data['name']?.toString() ?? '',

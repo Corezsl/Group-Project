@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/models/product.dart';
 //test 
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;
-  final List<CartItem> _items = [];
+  final List<Product> _items = [];
 
   CartProvider() {
     _initAuthListener();
@@ -61,7 +60,7 @@ class CartProvider extends ChangeNotifier {
               colour: pData['colour'].toString(),
               description: pData['description']?.toString(),
             );
-            _items.add(CartItem(product: product));
+            _items.add(product);
           }
         }
       } catch (e) {
@@ -71,20 +70,20 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<CartItem> get items => List.unmodifiable(_items);
+  List<Product> get items => List.unmodifiable(_items);
 
-  int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
+  int get itemCount => _items.length;
 
   double get totalPrice =>
-      _items.fold(0, (sum, item) => sum + item.product.price * item.quantity);
+      _items.fold(0, (sum, item) => sum + item.price);
 
   bool isInCart(String productId) {
-    return _items.any((item) => item.product.id == productId);
+    return _items.any((item) => item.id == productId);
   }
 
   Future<void> addItem(Product product) async {
     if (!isInCart(product.id)) {
-      _items.add(CartItem(product: product));
+      _items.add(product);
       notifyListeners();
 
       if (_currentUserId != null) {
@@ -101,7 +100,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> removeItem(String productId) async {
-    _items.removeWhere((i) => i.product.id == productId);
+    _items.removeWhere((p) => p.id == productId);
     notifyListeners();
     
     if (_currentUserId != null) {

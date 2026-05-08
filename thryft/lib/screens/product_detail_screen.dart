@@ -1,3 +1,7 @@
+// Product detail screen at /product/:id. Receives the full product data as a
+// String map via the GoRouter route extra so no extra fetch is needed on load.
+// Handles wishlist toggling, add-to-cart, offer submission, and owner edit/delete.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -12,13 +16,13 @@ import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/widgets/making_offer_system.dart';
 
 class ProductDetailScreen extends StatelessWidget {
+  // All product fields as strings — passed in via GoRouter route extra.
   final Map<String, String> product;
 
   const ProductDetailScreen({super.key, required this.product});
 
   static const Color brandColor = Color.fromARGB(255, 71, 164, 245);
 
-  // Fixed: Defined the missing helper method
   bool _isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= 800;
 
@@ -32,6 +36,7 @@ class ProductDetailScreen extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          // Share button copies the product URL to the clipboard.
           IconButton(
             icon: const Icon(Icons.share_outlined),
             onPressed: () {
@@ -43,6 +48,7 @@ class ProductDetailScreen extends StatelessWidget {
               );
             },
           ),
+          // Wishlist heart — red when already wishlisted, toggled on tap.
           Consumer<WishlistProvider>(
             builder: (context, wishlist, _) {
               final wishlisted = wishlist.isWishlisted(product['id'] ?? '');
@@ -79,6 +85,8 @@ class ProductDetailScreen extends StatelessWidget {
         builder: (context, constraints) {
           final isDesktopView = constraints.maxWidth >= 800;
 
+          // Desktop: image gallery takes 60% width, info panel takes 40%.
+          // Mobile: gallery stacks above the info panel.
           if (isDesktopView) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +135,56 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Builds the image gallery — single image shows without controls;
+  // multiple images get left/right arrows and a thumbnail strip.
   Widget _buildImageGallery(BuildContext context) {
+    // Collect all non-empty image URLs from the product map.
+    final allImages = [
+      product['imageUrl'],
+      product['image_url_2'],
+      product['image_url_3'],
+      product['image_url_4'],
+      product['image_url_5'],
+    ].where((u) => u != null && u.isNotEmpty).cast<String>().toList();
+
+    if (allImages.isEmpty) {
+      return Hero(
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: const Icon(Icons.image, size: 100, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Single image — no PageView needed
+    if (allImages.length == 1) {
+      return Hero(
+        tag:
+            product['heroTag'] ??
+            'product_image_${product['id'] ?? product['name']}',
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey[100],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(allImages[0], fit: BoxFit.contain),
+              if (product['is_sold'] == 'true') _buildSoldOverlay(context),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Multiple images — ValueNotifier avoids rebuilding the whole widget tree on index change.
+    final indexNotifier = ValueNotifier<int>(0);
+
     return Hero(
       tag: 'product_image_${product['name']}',
       child: Container(
@@ -157,6 +214,22 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Semi-transparent "SOLD" banner overlaid on the image when the item is no longer available.
+  Widget _buildSoldOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        'SOLD',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 4.0,
         ),
       ),
     );
@@ -205,7 +278,7 @@ class ProductDetailScreen extends StatelessWidget {
         _buildDetailRow("Condition", product['condition'] ?? '-'),
         const SizedBox(height: 24),
 
-        // Action Buttons with logic for single items [cite: 2026-02-20]
+        // Action area — four mutually exclusive states based on ownership and sold status.
         Consumer<CartProvider>(
           builder: (context, cart, child) {
             final currentUser = Supabase.instance.client.auth.currentUser;
@@ -323,6 +396,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Constructs a Product from the string map and adds it to the cart provider.
   void _addItemToCart(BuildContext context, CartProvider cart) {
     cart.addItem(
       Product(
@@ -527,6 +601,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Edit and delete buttons — only shown to the seller of the listing.
   Widget _buildOwnerActions(BuildContext context) {
     return Column(
       children: [
@@ -563,6 +638,8 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Confirms with a dialog then deletes the product row — only succeeds if the
+  // current user is the owner (enforced by the .eq('user_id') filter).
   Future<void> _confirmAndDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -601,6 +678,155 @@ class ProductDetailScreen extends StatelessWidget {
     }
   }
 
+  // Offer dialog — validates that the offer is below the listing price and
+  // that no pending offer from this buyer already exists before inserting.
+  void _showOfferDialog(BuildContext context) {
+    final sellerId = product['sellerId'];
+    final currentUser = Supabase.instance.client.auth.currentUser;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to make an offer')),
+      );
+      context.push('/auth');
+      return;
+    }
+    // Silently ignore if sellerId is missing or the user is viewing their own listing.
+    if (sellerId == null || sellerId == currentUser.id) return;
+
+    final priceController = TextEditingController();
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Make an Offer'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Listed price: £${product['price']}'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Your offer (£)',
+                  border: OutlineInputBorder(),
+                  prefixText: '£',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: isSending
+                  ? null
+                  : () async {
+                      final offerPrice = double.tryParse(
+                        priceController.text.trim(),
+                      );
+                      final listingPrice = double.tryParse(
+                        product['price'] ?? '',
+                      );
+                      if (offerPrice == null || offerPrice < 0.01) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Offer must be at least £0.01'),
+                          ),
+                        );
+                        return;
+                      }
+                      if (listingPrice != null && offerPrice >= listingPrice) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Your offer must be less than the listed price of £${listingPrice.toStringAsFixed(2)}',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      setDialogState(() => isSending = true);
+                      try {
+                        // Prevent duplicate pending offers.
+                        final alreadyPending =
+                            await OfferProvider.hasPendingOffer(
+                              buyerId: currentUser.id,
+                              listingId: product['id'] ?? '',
+                            );
+                        if (alreadyPending) {
+                          if (dialogContext.mounted)
+                            Navigator.of(dialogContext).pop();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'You already have a pending offer on this item.',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Record the offer in the offers table.
+                        await OfferProvider.createOffer(
+                          buyerId: currentUser.id,
+                          sellerId: sellerId,
+                          listingId: product['id'] ?? '',
+                          offerAmount: offerPrice,
+                          listingTitle: product['name'],
+                          listingImageUrl: product['imageUrl'],
+                        );
+
+                        // Notify the seller.
+                        await NotificationProvider.insertNotification(
+                          userId: sellerId,
+                          type: NotificationType.offerReceived,
+                          content:
+                              '${currentUser.userMetadata?['username'] ?? currentUser.email ?? 'Someone'} offered £${offerPrice.toStringAsFixed(2)} for "${product['name']}"',
+                          listingId: product['id'],
+                          relatedUserId: currentUser.id,
+                          offerPrice: offerPrice,
+                        );
+
+                        if (dialogContext.mounted)
+                          Navigator.of(dialogContext).pop();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Offer sent!')),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSending = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to send offer: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Send Offer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildSecondaryButton(String text, VoidCallback onPressed) {
     return SizedBox(
@@ -621,6 +847,8 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
+  // Key-value row used for Brand, Department, Size, and Condition.
+  // isLink highlights the value in brand blue (used for Brand to suggest it's filterable).
   Widget _buildDetailRow(String key, String value, {bool isLink = false}) {
     return Row(
       children: [
@@ -645,44 +873,7 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBuyerProtectionBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.shield, color: brandColor, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Buyer Protection fee",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Includes our Refund Policy and helps keep our community safe.",
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Returns the seller's average star rating and review count from the ratings table.
   Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
     final data = await Supabase.instance.client
         .from('ratings')
@@ -697,6 +888,8 @@ class ProductDetailScreen extends StatelessWidget {
     return {'avg': avg, 'count': list.length};
   }
 
+  // Seller card at the bottom of the info panel — tapping navigates to their profile.
+  // Fetches the rating async so the rest of the panel renders immediately.
   Widget _buildSellerProfile(BuildContext context) {
     if (product['sellerId'] == null) return const SizedBox.shrink();
     return FutureBuilder<Map<String, dynamic>>(
@@ -765,6 +958,129 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// Private widget shown on a sold listing's detail page when the viewer is the seller.
+// Fetches the buyer's delivery address from Supabase so the seller knows where to ship.
+class _BuyerAddressWidget extends StatefulWidget {
+  final String productId;
+
+  const _BuyerAddressWidget({required this.productId});
+
+  @override
+  State<_BuyerAddressWidget> createState() => _BuyerAddressWidgetState();
+}
+
+class _BuyerAddressWidgetState extends State<_BuyerAddressWidget> {
+  String? _address;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  // Two-step fetch: first get the buyer_id from the product, then look up their address.
+  Future<void> _fetchAddress() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final productRes = await supabase
+          .from('products')
+          .select('buyer_id')
+          .eq('id', widget.productId)
+          .maybeSingle();
+
+      if (productRes != null && productRes['buyer_id'] != null) {
+        final addressRes = await supabase
+            .from('address')
+            .select()
+            .eq('user_id', productRes['buyer_id'])
+            .maybeSingle();
+
+        if (addressRes != null) {
+          if (mounted) {
+            setState(() {
+              _address =
+                  "${addressRes['street_name']} ${addressRes['house_number']}, ${addressRes['city']} ${addressRes['postal_code']}, ${addressRes['country']}";
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching buyer address: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 16.0),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_address == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_shipping_outlined,
+                size: 18,
+                color: Colors.grey[700],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Ship to Buyer',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _address!,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

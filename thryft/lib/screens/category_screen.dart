@@ -1,3 +1,6 @@
+// Shows all unsold products for a given category. Reached from the nav header
+// and home page category links. An empty category string fetches all listings.
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
@@ -6,6 +9,7 @@ import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 
 class CategoryScreen extends StatefulWidget {
+  // Category name passed in from the router — e.g. "Tops", "Jackets".
   final String category;
 
   const CategoryScreen({super.key, required this.category});
@@ -20,12 +24,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = _fetchByCategory();
+    _productsFuture = _fetchByCategory(); // kick off the initial fetch
   }
 
   @override
   void didUpdateWidget(CategoryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Re-fetch if the user navigates to a different category without rebuilding the widget.
     if (oldWidget.category != widget.category) {
       _productsFuture = _fetchByCategory();
     }
@@ -33,6 +38,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   Future<List<Product>> _fetchByCategory() async {
     final categoryParam = widget.category.trim();
+    // Empty category means "show everything" — used for the All Listings page.
     if (categoryParam.isEmpty) {
       final response = await Supabase.instance.client
           .from('products')
@@ -67,7 +73,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       )).toList();
     }
 
-    // Normalize and build singular/plural variants, then search with wildcards.
+    // Build both singular and plural variants so "Tops" also matches "Top" and vice versa.
     final normalized = categoryParam.toLowerCase();
     final altVariant = normalized.endsWith('s')
         ? normalized.substring(0, normalized.length - 1)
@@ -140,6 +146,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   FutureBuilder<List<Product>>(
                     future: _productsFuture,
                     builder: (context, snapshot) {
+                      // Show a spinner while the query is running.
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(
                           height: 300,
@@ -147,7 +154,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         );
                       }
 
-                      final items = snapshot.data ?? [];
+                      final items = snapshot.data ?? []; // empty list if fetch failed
 
                       return SizedBox(
                         width: double.infinity,

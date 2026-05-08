@@ -1,3 +1,7 @@
+// Static FAQ page at /help-center. Linked from the site footer and app drawer.
+// Renders a responsive card grid — 1, 2, or 3 columns depending on screen width.
+// FAQ entries are defined as a compile-time constant list so no network call is needed.
+
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
@@ -7,6 +11,7 @@ import '../widgets/header.dart';
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
+  // All FAQ entries — add new ones here to have them appear in the grid automatically.
   static const List<Map<String, String>> _faqItems = [
     {
       'question': 'How do I buy an item?',
@@ -27,6 +32,7 @@ class HelpCenterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive sizing — padding and font sizes scale down on mobile.
     final isMobile = Responsive.isMobile(context);
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
@@ -67,6 +73,8 @@ class HelpCenterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // LayoutBuilder lets us pick column count based on available width
+                  // rather than device type, so the grid works in split-screen too.
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth;
@@ -76,6 +84,7 @@ class HelpCenterScreen extends StatelessWidget {
                               ? 2
                               : 1;
 
+                      // Aspect ratio tightens as columns increase so cards stay readable.
                       final aspectRatio = crossAxisCount == 1
                           ? 2.6
                           : crossAxisCount == 2
@@ -112,6 +121,7 @@ class HelpCenterScreen extends StatelessWidget {
     );
   }
 
+  // Single FAQ card — question as the bold heading, answer as body text below.
   Widget _faqItem(String question, String answer) {
     return Card(
       elevation: 2,

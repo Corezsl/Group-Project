@@ -1,24 +1,31 @@
+// Core product/listing model. Used pretty much everywhere — product cards,
+// search, cart, wishlist, listing creation, my orders etc. Mirrors the
+// supabase 'products' table with a couple of joined fields (sellerName).
 class Product {
   final String id;
   final String name;
+  // main thumbnail shown in cards and carousels
   final String? imageUrl;
   final double price;
+  // shown crossed out next to price when the seller has dropped it
   final double? originalPrice;
   final String size;
   final String brand;
   final String condition;
   final DateTime? createdAt; // used for sorting lists
   final String? sellerId;
+  // joined from profiles table when loading, so we dont have to look it up later
   final String? sellerName;
   final bool isSold;
   final String category;
   final String department;
   final String material;
   final String colour;
+  // only set once the item has been bought
   final String? buyerId;
   final String? orderStatus; // 'pending', 'shipped', 'delivered'
   final String? description;
-  final String? buyerAddress;
+  // extra images for the product detail gallery (up to 5 total)
   final String? imageUrl2;
   final String? imageUrl3;
   final String? imageUrl4;
@@ -51,7 +58,9 @@ class Product {
     this.imageUrl5,
   });
 
-  /// Convenience – convert to a simple map for GoRouter's [extra] parameter.
+  // GoRouter's extra param has to be serialisable, so we flatten the product
+  // into a string map before pushing to the product detail route.
+  // Used by product cards and the search dropdown when navigating.
   Map<String, String> toRouteExtra() => {
     'id': id,
     'name': name,
