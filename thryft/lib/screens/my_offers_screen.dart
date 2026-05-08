@@ -40,6 +40,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
+              // minHeight ensures the footer stays pinned to the bottom on short lists.
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -74,6 +75,7 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                                 ),
                                 const SizedBox(height: 24),
+                                // Four mutually exclusive states — guest, loading, error, or offer list.
                                 if (user == null)
                                   _buildLoginPrompt(context)
                                 else if (provider.isLoading)

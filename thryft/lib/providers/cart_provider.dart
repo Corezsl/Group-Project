@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
+
+/// Manages shopping cart state and synchronizes data with Supabase.
 //test 
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;
@@ -9,7 +11,7 @@ class CartProvider extends ChangeNotifier {
   CartProvider() {
     _initAuthListener();
   }
-
+  /// Listens for authentication state changes to sync the cart accordingly.
   void _initAuthListener() {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final user = data.session?.user;
@@ -18,6 +20,7 @@ class CartProvider extends ChangeNotifier {
     _handleUserChange(Supabase.instance.client.auth.currentUser?.id);
   }
 
+  /// Updates the local cart when a user logs in or out.
   Future<void> _handleUserChange(String? userId) async {
     if (_currentUserId == userId) return;
     
@@ -26,6 +29,7 @@ class CartProvider extends ChangeNotifier {
     
     if (userId != null) {
       try {
+        // Fetch cart items from Supabase for the current user.
         final data = await Supabase.instance.client
             .from('cart_items')
             .select('product_id')
@@ -34,6 +38,7 @@ class CartProvider extends ChangeNotifier {
         if (data.isNotEmpty) {
           final productIds = data.map((row) => row['product_id'] as String).toList();
           
+          // Fetch full product details for items in the cart.
           final productsData = await Supabase.instance.client
               .from('products')
               .select('*, profiles(username)')
@@ -77,10 +82,12 @@ class CartProvider extends ChangeNotifier {
   double get totalPrice =>
       _items.fold(0, (sum, item) => sum + item.price);
 
+  
+  /// Checks if a specific product is already in the cart.
   bool isInCart(String productId) {
     return _items.any((item) => item.id == productId);
   }
-
+  /// Adds a product to the cart and persists it to the database.
   Future<void> addItem(Product product) async {
     if (!isInCart(product.id)) {
       _items.add(product);
@@ -98,7 +105,7 @@ class CartProvider extends ChangeNotifier {
       }
     }
   }
-
+  /// Removes a product from the cart and the database.
   Future<void> removeItem(String productId) async {
     _items.removeWhere((p) => p.id == productId);
     notifyListeners();
@@ -116,6 +123,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> clear() async {
+    /// Clears all items from the local cart and database.
     _items.clear();
     notifyListeners();
     
