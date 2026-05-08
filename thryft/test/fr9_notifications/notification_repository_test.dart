@@ -10,8 +10,11 @@ const _user1Password = 'Thryft!test99';
 const _user2Email = 'fr9.user2@thryft-test.local';
 const _user2Password = 'Thryft!test99';
 
+// Uses the admin client to create the user when they don't exist yet,
+// bypassing email confirmation and avoiding rate limits.
 Future<String> _signInOrSignUp(
   SupabaseClient client,
+  SupabaseClient admin,
   String email,
   String password,
   String username,
@@ -23,10 +26,15 @@ Future<String> _signInOrSignUp(
     );
     return res.user!.id;
   } on AuthException {
-    final res = await client.auth.signUp(
+    await admin.auth.admin.createUser(AdminUserAttributes(
       email: email,
       password: password,
-      data: {'username': username},
+      emailConfirm: true,
+      userMetadata: {'username': username},
+    ));
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
     );
     return res.user!.id;
   }
@@ -68,10 +76,10 @@ void main() {
 
     // Register / sign in both users; end session as user1.
     user1Id = await _signInOrSignUp(
-        client, _user1Email, _user1Password, 'fr9_user1');
+        client, admin, _user1Email, _user1Password, 'fr9_user1');
     user2Id = await _signInOrSignUp(
-        client, _user2Email, _user2Password, 'fr9_user2');
-    await _signInOrSignUp(client, _user1Email, _user1Password, 'fr9_user1');
+        client, admin, _user2Email, _user2Password, 'fr9_user2');
+    await _signInOrSignUp(client, admin, _user1Email, _user1Password, 'fr9_user1');
   });
 
   tearDownAll(() async {
@@ -184,7 +192,7 @@ void main() {
 
       // Sign in as user2 and verify they see their own, not user1's.
       await _signInOrSignUp(
-          client, _user2Email, _user2Password, 'fr9_user2');
+          client, admin, _user2Email, _user2Password, 'fr9_user2');
       final user2Notifs = await _fetchNotificationsForUser(client, user2Id);
       expect(
         user2Notifs.map((n) => n.notificationId),
@@ -197,7 +205,7 @@ void main() {
 
       // Restore session as user1 for remaining tests.
       await _signInOrSignUp(
-          client, _user1Email, _user1Password, 'fr9_user1');
+          client, admin, _user1Email, _user1Password, 'fr9_user1');
     });
   });
 
