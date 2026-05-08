@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:thryft/models/cart_item.dart';
 import 'package:thryft/models/product.dart';
 
 /// Manages shopping cart state and syncs it with the `cart_items` table in Supabase.
@@ -10,7 +9,7 @@ import 'package:thryft/models/product.dart';
 /// Consumed via Provider by cart screens, the cart badge, and checkout.
 class CartProvider extends ChangeNotifier {
   String? _currentUserId;       // Tracks the logged-in user; null when signed out.
-  final List<CartItem> _items = []; // In-memory cart contents.
+  final List<Product> _items = []; // In-memory cart contents.
 
   /// On creation, starts listening for auth changes so the cart
   /// is automatically loaded/cleared on login/logout.
@@ -75,7 +74,7 @@ class CartProvider extends ChangeNotifier {
               colour: pData['colour'].toString(),
               description: pData['description']?.toString(),
             );
-            _items.add(CartItem(product: product));
+            _items.add(product);
           }
         }
       } catch (e) {
@@ -88,18 +87,18 @@ class CartProvider extends ChangeNotifier {
   // --------------- Public getters ---------------
 
   /// Unmodifiable snapshot of the cart — used by the cart screen's ListView.
-  List<CartItem> get items => List.unmodifiable(_items);
+  List<Product> get items => List.unmodifiable(_items);
 
   /// Total number of items (respects quantity) — drives the badge count.
-  int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
+  int get itemCount => _items.length;
 
   /// Sum of (price × quantity) for every item — shown at checkout.
   double get totalPrice =>
-      _items.fold(0, (sum, item) => sum + item.product.price * item.quantity);
+      _items.fold(0, (sum, item) => sum + item.price);
 
   /// Checks if a specific product is already in the cart.
   bool isInCart(String productId) {
-    return _items.any((item) => item.product.id == productId);
+    return _items.any((item) => item.id == productId);
   }
 
   
@@ -108,7 +107,7 @@ class CartProvider extends ChangeNotifier {
   /// inserts a row into `cart_items` in Supabase.
   Future<void> addItem(Product product) async {
     if (!isInCart(product.id)) {
-      _items.add(CartItem(product: product));
+      _items.add(product);
       notifyListeners();
 
       if (_currentUserId != null) {
@@ -127,7 +126,7 @@ class CartProvider extends ChangeNotifier {
   /// Removes a single product from the cart and deletes the
   /// matching row in `cart_items` tablr
   Future<void> removeItem(String productId) async {
-    _items.removeWhere((i) => i.product.id == productId);
+    _items.removeWhere((p) => p.id == productId);
     notifyListeners();
     
     if (_currentUserId != null) {
