@@ -11,10 +11,9 @@ import 'package:thryft/providers/cart_provider.dart';
 import 'package:thryft/providers/wishlist_provider.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:thryft/providers/notification_provider.dart';
-import 'package:thryft/providers/offer_provider.dart';
 import 'package:thryft/models/notification_model.dart';
+import 'package:thryft/providers/notification_provider.dart';
+import 'package:thryft/widgets/making_offer_system.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   // All product fields as strings — passed in via GoRouter route extra.
@@ -74,7 +73,6 @@ class ProductDetailScreen extends StatelessWidget {
                       department: product['department'] ?? 'All',
                       material: product['material'] ?? '',
                       colour: product['colour'] ?? '',
-                      description: product['description'],
                     ),
                   );
                 },
@@ -188,80 +186,33 @@ class ProductDetailScreen extends StatelessWidget {
     final indexNotifier = ValueNotifier<int>(0);
 
     return Hero(
-      tag:
-          product['heroTag'] ??
-          'product_image_${product['id'] ?? product['name']}',
-      child: ValueListenableBuilder<int>(
-        valueListenable: indexNotifier,
-        builder: (context, currentIndex, _) => Column(
-          mainAxisSize: MainAxisSize.min,
+      tag: 'product_image_${product['name']}',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 400),
+        width: double.infinity,
+        color: Colors.grey[100],
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Container(
-              height: 400,
-              width: double.infinity,
-              color: Colors.grey[100],
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Image.network(allImages[currentIndex], fit: BoxFit.contain),
-                  if (product['is_sold'] == 'true') _buildSoldOverlay(context),
-                  // Left arrow
-                  if (currentIndex > 0)
-                    Positioned(
-                      left: 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.chevron_left, size: 32),
-                        color: Colors.black87,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        ),
-                        onPressed: () => indexNotifier.value = currentIndex - 1,
-                      ),
-                    ),
-                  // Right arrow
-                  if (currentIndex < allImages.length - 1)
-                    Positioned(
-                      right: 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.chevron_right, size: 32),
-                        color: Colors.black87,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.8),
-                        ),
-                        onPressed: () => indexNotifier.value = currentIndex + 1,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  allImages.length,
-                  (i) => GestureDetector(
-                    onTap: () => indexNotifier.value = i,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      clipBehavior: Clip.hardEdge,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: i == currentIndex
-                              ? const Color.fromARGB(255, 71, 164, 245)
-                              : Colors.grey[300]!,
-                          width: i == currentIndex ? 2.5 : 1.5,
-                        ),
-                      ),
-                      child: Image.network(allImages[i], fit: BoxFit.cover),
-                    ),
+            product['imageUrl'] != null
+                ? Image.network(product['imageUrl']!, fit: BoxFit.contain)
+                : const Icon(Icons.image, size: 100, color: Colors.grey),
+            if (product['is_sold'] == 'true')
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: Text(
+                  'SOLD',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4.0,
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -322,29 +273,10 @@ class ProductDetailScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDetailRow("Brand", product['brand'] ?? '-', isLink: true),
         const SizedBox(height: 12),
-        _buildDetailRow("Department", product['department'] ?? '-'),
-        const SizedBox(height: 12),
         _buildDetailRow("Size", product['size'] ?? '-'),
         const SizedBox(height: 12),
         _buildDetailRow("Condition", product['condition'] ?? '-'),
         const SizedBox(height: 24),
-        if (product['description'] != null &&
-            product['description']!.isNotEmpty) ...[
-          const Text(
-            'Description',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            product['description']!,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
 
         // Action area — four mutually exclusive states based on ownership and sold status.
         Consumer<CartProvider>(
@@ -356,23 +288,58 @@ class ProductDetailScreen extends StatelessWidget {
             final isInCart = cart.isInCart(product['id'] ?? '');
 
             if (isSold) {
-              final soldBanner = _buildFullWidthBanner(
-                Icons.sell_outlined,
-                'This item has been sold',
-                Colors.grey[600]!,
-                Colors.grey[100]!,
-              );
-
-              if (isOwner) {
-                return Column(
-                  children: [
-                    soldBanner,
-                    _BuyerAddressWidget(productId: product['id'] ?? ''),
+              return Column(
+                children: [
+                  _buildFullWidthBanner(
+                    Icons.sell_outlined,
+                    'This item has been sold',
+                    Colors.grey[600]!,
+                    Colors.grey[100]!,
+                  ),
+                  if (product['buyerAddress'] != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F7FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFB3D7FF)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.local_shipping_outlined, color: brandColor, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Ship to buyer',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Color(0xFF1A73E8),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  product['buyerAddress']!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
-                );
-              }
-
-              return soldBanner;
+                ],
+              );
             }
 
             if (isOwner) {
@@ -410,15 +377,17 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                 ),
                 const SizedBox(height: 12),
-                _buildSecondaryButton(
+                  _buildSecondaryButton(
                   "Make an offer",
-                  () => _showOfferDialog(context),
+                  () => _showMakeOfferSheet(context),
                 ),
               ],
             );
           },
         ),
 
+        const SizedBox(height: 32),
+        _buildBuyerProtectionBox(),
         const SizedBox(height: 32),
         _buildSellerProfile(context),
         const SizedBox(height: 40),
@@ -445,7 +414,6 @@ class ProductDetailScreen extends StatelessWidget {
         department: product['department'] ?? 'All',
         material: product['material'] ?? '',
         colour: product['colour'] ?? '',
-        description: product['description'],
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(
@@ -457,6 +425,147 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showMakeOfferSheet(BuildContext context) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      context.push('/auth');
+      return;
+    }
+
+    final sellerId = product['sellerId'];
+    if (sellerId == null || sellerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This listing is missing seller details.')),
+      );
+      return;
+    }
+
+    if (sellerId == currentUser.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot make an offer on your own listing.')),
+      );
+      return;
+    }
+
+    final askingPrice = double.tryParse(product['price'] ?? '0') ?? 0;
+    if (askingPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This listing has an invalid price.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (modalContext) => MakingOfferSystem(
+        listingName: product['name'] ?? 'Listing',
+        askingPrice: askingPrice,
+        onSubmit: (offerPrice) => _submitOffer(context, offerPrice),
+      ),
+    ).then((created) {
+      if (created == true && context.mounted) {
+        context.push('/my-offers');
+      }
+    });
+  }
+
+  Future<void> _submitOffer(BuildContext context, double offerPrice) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    final listingId = product['id'];
+    final sellerId = product['sellerId'];
+    if (user == null || listingId == null || sellerId == null) {
+      throw Exception('missing_offer_context');
+    }
+
+    final buyerName =
+        (user.userMetadata?['username']?.toString().trim().isNotEmpty ?? false)
+        ? user.userMetadata!['username'].toString().trim()
+        : 'A buyer';
+
+    final listingName = product['name'] ?? 'your item';
+
+    var isOfferUpdate = false;
+    final existingOffer = await supabase
+        .from('offers')
+        .select('offer_id')
+        .eq('listing_id', listingId)
+        .eq('buyer_id', user.id)
+        .order('updated_at', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (existingOffer != null) {
+      isOfferUpdate = true;
+      await supabase
+          .from('offers')
+          .update({
+            'offered_price': offerPrice,
+            'status': 'pending',
+            'seller_id': sellerId,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('offer_id', existingOffer['offer_id']);
+    } else {
+      await supabase.from('offers').insert({
+        'listing_id': listingId,
+        'buyer_id': user.id,
+        'seller_id': sellerId,
+        'offered_price': offerPrice,
+        'status': 'pending',
+      });
+    }
+
+    try {
+      await supabase
+          .from('notification')
+          .delete()
+          .eq('user_id', sellerId)
+          .eq('notif_type', NotificationType.offerReceived.toDbString())
+          .eq('listing_id', listingId)
+          .eq('related_user_id', user.id);
+    } catch (_) {
+      // Ignore cleanup errors; this is only to avoid duplicate seller notifications.
+    }
+
+    await NotificationProvider.insertNotification(
+      userId: sellerId,
+      type: NotificationType.offerReceived,
+      content:
+          isOfferUpdate
+              ? '$buyerName updated their offer to £${offerPrice.toStringAsFixed(2)} for $listingName'
+              : '$buyerName offered £${offerPrice.toStringAsFixed(2)} for $listingName',
+      listingId: listingId,
+      relatedUserId: user.id,
+      offerPrice: offerPrice,
+    );
+
+    await NotificationProvider.insertNotification(
+      userId: user.id,
+      type: NotificationType.other,
+      content:
+          isOfferUpdate
+              ? 'You updated your offer to £${offerPrice.toStringAsFixed(2)} for $listingName.'
+              : 'You successfully made an offer of £${offerPrice.toStringAsFixed(2)} for $listingName.',
+      listingId: listingId,
+      offerPrice: offerPrice,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isOfferUpdate
+                ? 'Offer updated and sent to the seller.'
+                : 'Offer sent to the seller.',
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildFullWidthBanner(
@@ -522,10 +631,7 @@ class ProductDetailScreen extends StatelessWidget {
               side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text(
-              'Delete listing',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+            child: const Text('Delete listing', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -541,14 +647,8 @@ class ProductDetailScreen extends StatelessWidget {
         title: const Text('Delete listing'),
         content: const Text('Are you sure you want to delete this product?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -568,16 +668,12 @@ class ProductDetailScreen extends StatelessWidget {
             .eq('user_id', currentUser.id);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Product deleted')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product deleted')));
         context.go('/my-listings');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting product: $e')));
       }
     }
   }
@@ -785,8 +881,7 @@ class ProductDetailScreen extends StatelessWidget {
         .eq('seller_id', sellerId);
     final list = data as List;
     if (list.isEmpty) return {'avg': 0.0, 'count': 0};
-    final avg =
-        list
+    final avg = list
             .map((r) => (r['rating'] as num).toDouble())
             .reduce((a, b) => a + b) /
         list.length;
@@ -843,11 +938,7 @@ class ProductDetailScreen extends StatelessWidget {
                       else
                         Row(
                           children: [
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 16,
-                            ),
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               '${avg.toStringAsFixed(1)} ($count)',

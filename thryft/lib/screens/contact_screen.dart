@@ -74,7 +74,7 @@ class _ContactPageState extends State<ContactScreen> {
               ),
               child: Column(
                 children: [
-                  // Page Title and descriptive header.
+                  // Page Title
                   Text(
                     'Contact Us',
                     style: TextStyle(
@@ -97,7 +97,7 @@ class _ContactPageState extends State<ContactScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Form container with shadow and padding.
+                      // Contact Form
                       Expanded(
                         child: Card(
                           elevation: 3,

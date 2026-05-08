@@ -99,7 +99,7 @@ class AccountScreen extends StatelessWidget {
                         child: ListTile(
                           leading: const Icon(Icons.local_offer_outlined),
                           title: const Text('My Offers'),
-                          subtitle: const Text('Track offers you have made'),
+                          subtitle: const Text('View offers you have made'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
                             context.push('/my-offers');

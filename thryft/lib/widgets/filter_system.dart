@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/size_options.dart';
-import 'package:thryft/providers/search_provider.dart'; // new import
-import 'package:thryft/screens/filter_results_screen.dart'; // added import
 
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
-  final ValueChanged<SearchFilters>? onApply; // changed type
+  final ValueChanged<Map<String, String>>? onApply;
 
   @override
   State<FilterPanel> createState() => _FilterPanelState();
@@ -153,31 +151,16 @@ class _FilterPanelState extends State<FilterPanel> {
                     ),
 
                     TextButton(
-                      onPressed: () {
-                        final maxPrice = _priceController.text.trim().isEmpty
-                            ? null
-                            : double.tryParse(_priceController.text.trim());
-                        final filters = SearchFilters(
-                          department: _department == 'All' ? null : _department,
-                          size: _size == 'All' ? null : _size,
-                          brand: _brands == 'All' ? null : _brands,
-                          condition: _condition == 'All' ? null : _condition,
-                          fitting: _fitting == 'All' ? null : _fitting,
-                          material: _material == 'All' ? null : _material,
-                          colour: _colour == 'All' ? null : _colour,
-                          minPrice: null,
-                          maxPrice: maxPrice,
-                          sortBy: 'newest',
-                        );
-                        widget.onApply?.call(filters);
-
-                        // navigate to the filter results screen
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => FilterResultsScreen(filters: filters),
-                          ),
-                        );
-                      },
+                      onPressed: () => widget.onApply?.call({
+                        'department': _department,
+                        'size': _size,
+                        'brand': _brands,
+                        'price': _priceController.text.trim(),
+                        'condition': _condition,
+                        'fitting': _fitting,
+                        'material': _material,
+                        'colour': _colour,
+                      }),
                       child: const Text('Apply'),
                     ),
 

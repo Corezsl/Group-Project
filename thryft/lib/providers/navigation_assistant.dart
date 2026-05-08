@@ -10,20 +10,52 @@ class NavMatch {
 
 class NavAssistantService {
   static final RegExp _navVerb = RegExp(
-    r'\b(go to|open|show|take me to|navigate to|bring me to|head to)\b',
+    r'\b(go to|open|show|take me to|navigate to|bring me to|head to|send me to|jump to|launch|get me to|direct me to)\b',
     caseSensitive: false,
   );
 
   // Patterns for search-with-query and category-browsing
   static final RegExp _searchForPattern = RegExp(
-    r'\b(?:search|find|look for|look up)\s+(?:for\s+)?(.+)',
+    r'\b(?:search|find|look for|look up|seek)\s+(?:for\s+)?(.+)',
     caseSensitive: false,
   );
 
   static final RegExp _categoryPattern = RegExp(
-    r'\b(?:show|browse|view|see|shop)\s+(?:me\s+)?(?:the\s+)?(\w+)\s*(?:category|collection|section)?',
+    r'\b(?:show|browse|view|see|shop|display)\s+(?:me\s+)?(?:the\s+)?(\w+)\s*(?:category|collection|section|items)?',
     caseSensitive: false,
   );
+
+  // Simple greetings and farewells — handled locally without backend call
+  static final RegExp _greetingPattern = RegExp(
+    r'\b(hi|hello|hey|howdy|good morning|good afternoon|good evening|greetings|what\s*up|yo)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _farewellPattern = RegExp(
+    r'\b(bye|goodbye|see ya|see you|later|farewell|quit|exit)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _thanksPattern = RegExp(
+    r'\b(thanks|thank you|cheers|appreciate it|ty)\b',
+    caseSensitive: false,
+  );
+
+  /// Checks if a message is a greeting, farewell, or thanks, and returns an
+  /// appropriate social response. Returns null for regular navigational intents.
+  String? detectSocialIntent(String message) {
+    final clean = message.toLowerCase().trim();
+    if (_greetingPattern.hasMatch(clean)) {
+      return "Hey there! I can help you navigate the app, search for items, or answer questions. What would you like to do?";
+    }
+    if (_farewellPattern.hasMatch(clean)) {
+      return "Goodbye! Feel free to come back anytime if you need help.";
+    }
+    if (_thanksPattern.hasMatch(clean)) {
+      return "You're very welcome! Let me know if there's anything else I can help with.";
+    }
+    return null;
+  }
 
   /// Analyzes the user's message to find a matching route based on keywords.
   /// Returns the route string if a match is found, otherwise returns null.
@@ -102,7 +134,7 @@ class NavAssistantService {
         }
       }
 
-      if (score > bestScore) {
+      if (score >= bestScore) {
         bestScore = score;
         bestKey = key;
       }
