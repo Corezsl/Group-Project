@@ -1,3 +1,6 @@
+// Static info page shown at /about. Linked from the site footer and nav drawer.
+// Covers the company story, mission, values, and a CTA to the contact page.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
@@ -11,6 +14,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    // All sizing is driven by whether we're on mobile — avoids separate layouts.
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
     final headingSize = isMobile ? 22.0 : 32.0;
@@ -109,13 +113,13 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
 
-                  // Value cards: Column on mobile, Row on desktop
+                  // Switch layout based on screen size — row on desktop, column on mobile.
                   isMobile
                       ? _buildMobileValueCards()
                       : _buildDesktopValueCards(),
                   SizedBox(height: sectionGap),
 
-                  // Contact CTA
+                  // CTA at the bottom — navigates to /contact.
                   Center(
                     child: Column(
                       children: [
@@ -154,8 +158,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  // ─── Desktop: 3 cards side by side ──────────────────────────────────────
-
+  // Three value cards laid out in a row for wider screens.
   Widget _buildDesktopValueCards() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,8 +193,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  // ─── Mobile: cards stacked vertically ─────────────────────────────────
-
+  // Same three cards stacked vertically for mobile screens.
   Widget _buildMobileValueCards() {
     return Column(
       children: [
@@ -219,6 +221,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
+  // Shared card layout used by both mobile and desktop value sections.
   Widget _buildValueCard(String title, String description, IconData icon) {
     return Card(
       elevation: 2,

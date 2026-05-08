@@ -1,3 +1,7 @@
+// The main account hub shown at /account. Linked from the header when logged in.
+// Lists navigation cards to all user-specific sections (listings, orders, etc.)
+// and provides the logout button.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,10 +37,10 @@ class AccountScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Login Status Pill
+                      // Shows username, logged-in badge, email, and account age.
                       _buildUserStatus(),
                       const SizedBox(height: 24),
-                      // Placeholder buttons for account management options
+                      // Navigation cards — each goes to a different account section.
                       Card(
                         child: ListTile(
                           leading: const Icon(Icons.person),
@@ -127,7 +131,7 @@ class AccountScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Logout Button
+                      // Signs out and redirects to the home page.
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -167,9 +171,11 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
+  // Reads the current Supabase session and renders the user's name, email,
+  // a green "Logged In" badge, and how long they've had their account.
   Widget _buildUserStatus() {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return const SizedBox.shrink();
+    if (user == null) return const SizedBox.shrink(); // nothing to show if logged out
 
     final username = user.userMetadata?['username'] ?? 'No Username Provided';
     final createdAt = DateTime.parse(user.createdAt);
@@ -230,6 +236,7 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
+  // Converts the account creation date into a readable string like "3 months" or "2 years".
   String _calculateAccountAge(DateTime? createdAt) {
     if (createdAt == null) return 'Unknown';
 
