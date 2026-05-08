@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:thryft/providers/offer_provider.dart';
 
 import '../helpers/supabase_test_client.dart';
 import 'fr7_offer_test_helpers.dart';
 
 void main() {
   // Skip the integration suite when .env.test has not been supplied via
-  // --dart-define-from-file, matching the FR4/FR5 integration test pattern.
+  // --dart-define-from-file
   if (!hasTestCredentials) {
     test(
       'FR7 offer validation integration tests',
@@ -35,16 +36,18 @@ void main() {
         price: 100,
       );
 
-      final error = await ctx.submitOfferThroughBackend(
-        offerInput: '120',
-        listingPrice: 100,
-        listingId: listingId,
-        listingTitle: 'FR7 High Offer',
-        buyerId: ctx.buyer1Id,
-        sellerId: ctx.sellerId,
+      await expectLater(
+        () => ctx.submitOfferThroughBackend(
+          offerInput: '120',
+          listingPrice: 100,
+          listingId: listingId,
+          listingTitle: 'FR7 High Offer',
+          buyerId: ctx.buyer1Id,
+          sellerId: ctx.sellerId,
+        ),
+        throwsA(isA<OfferExceedsListingPriceException>()),
       );
 
-      expect(error, 'Offer cannot exceed listing price');
       expect(await ctx.offersForListing(listingId), isEmpty);
       expect(await ctx.notificationsForListing(listingId), isEmpty);
     });
@@ -64,25 +67,29 @@ void main() {
           price: 100,
         );
 
-        final nullError = await ctx.submitOfferThroughBackend(
-          offerInput: null,
-          listingPrice: 100,
-          listingId: listingId,
-          listingTitle: 'FR7 Empty Offer',
-          buyerId: ctx.buyer1Id,
-          sellerId: ctx.sellerId,
+        await expectLater(
+          () => ctx.submitOfferThroughBackend(
+            offerInput: null,
+            listingPrice: 100,
+            listingId: listingId,
+            listingTitle: 'FR7 Empty Offer',
+            buyerId: ctx.buyer1Id,
+            sellerId: ctx.sellerId,
+          ),
+          throwsA(isA<OfferAmountRequiredException>()),
         );
-        final emptyError = await ctx.submitOfferThroughBackend(
-          offerInput: '',
-          listingPrice: 100,
-          listingId: listingId,
-          listingTitle: 'FR7 Empty Offer',
-          buyerId: ctx.buyer1Id,
-          sellerId: ctx.sellerId,
+        await expectLater(
+          () => ctx.submitOfferThroughBackend(
+            offerInput: '',
+            listingPrice: 100,
+            listingId: listingId,
+            listingTitle: 'FR7 Empty Offer',
+            buyerId: ctx.buyer1Id,
+            sellerId: ctx.sellerId,
+          ),
+          throwsA(isA<OfferAmountRequiredException>()),
         );
 
-        expect(nullError, 'Offer amount required');
-        expect(emptyError, 'Offer amount required');
         expect(await ctx.offersForListing(listingId), isEmpty);
         expect(await ctx.notificationsForListing(listingId), isEmpty);
       },
@@ -101,16 +108,18 @@ void main() {
         price: 100,
       );
 
-      final error = await ctx.submitOfferThroughBackend(
-        offerInput: '35',
-        listingPrice: 100,
-        listingId: listingId,
-        listingTitle: 'FR7 Own Listing',
-        buyerId: ctx.sellerId,
-        sellerId: ctx.sellerId,
+      await expectLater(
+        () => ctx.submitOfferThroughBackend(
+          offerInput: '35',
+          listingPrice: 100,
+          listingId: listingId,
+          listingTitle: 'FR7 Own Listing',
+          buyerId: ctx.sellerId,
+          sellerId: ctx.sellerId,
+        ),
+        throwsA(isA<SelfOfferException>()),
       );
 
-      expect(error, 'Buyer cannot offer on own listing');
       expect(await ctx.offersForListing(listingId), isEmpty);
       expect(await ctx.notificationsForListing(listingId), isEmpty);
     });
