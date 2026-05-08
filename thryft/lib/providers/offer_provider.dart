@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/offer_model.dart';
 
+class OfferAmountRequiredException implements Exception {
+  const OfferAmountRequiredException();
+
+  @override
+  String toString() => 'OfferAmountRequiredException';
+}
+
+class OfferExceedsListingPriceException implements Exception {
+  const OfferExceedsListingPriceException();
+
+  @override
+  String toString() => 'OfferExceedsListingPriceException';
+}
+
+class SelfOfferException implements Exception {
+  const SelfOfferException();
+
+  @override
+  String toString() => 'SelfOfferException';
+}
+
 class OfferProvider extends ChangeNotifier {
   List<Offer> _offers = [];
   bool _isLoading = false;
@@ -65,6 +86,23 @@ class OfferProvider extends ChangeNotifier {
 
   /// Creates a new offer record in the database.
   /// Returns the new offer_id, or null on failure.
+  static void validateOfferOrThrow({
+    required double? offerAmount,
+    required double listingPrice,
+    required String buyerId,
+    required String sellerId,
+  }) {
+    if (offerAmount == null || offerAmount < 0.01) {
+      throw const OfferAmountRequiredException();
+    }
+    if (offerAmount >= listingPrice) {
+      throw const OfferExceedsListingPriceException();
+    }
+    if (buyerId == sellerId) {
+      throw const SelfOfferException();
+    }
+  }
+
   static Future<int?> createOffer({
     required String buyerId,
     required String sellerId,
