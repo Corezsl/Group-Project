@@ -1,3 +1,7 @@
+// Shows all items the logged-in user has purchased, grouped as order cards.
+// Reached from the account hub. Fetches from the products table (filtered by
+// buyer_id) and the ratings table so the review state is known per order.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/widgets/header.dart';
@@ -16,7 +20,7 @@ class MyOrdersScreen extends StatefulWidget {
 
 class _MyOrdersScreenState extends State<MyOrdersScreen> {
   List<Product> _orders = [];
-  Map<String, int> _ratingsByProductId = {};
+  Map<String, int> _ratingsByProductId = {}; // productId → star rating the buyer gave
   bool _isLoading = true;
 
   @override
@@ -25,6 +29,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     _fetchOrders();
   }
 
+  // Fetches the buyer's orders and their existing ratings in parallel-sequential calls.
   Future<void> _fetchOrders() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
@@ -33,12 +38,14 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     }
 
     try {
+      // Orders are products where this user is the buyer.
       final ordersData = await Supabase.instance.client
           .from('products')
           .select('*, profiles(username)')
           .eq('buyer_id', userId)
           .order('created_at', ascending: false);
 
+      // Pre-load existing ratings so the card knows whether to show "Rate seller" or stars.
       final ratingsData = await Supabase.instance.client
           .from('ratings')
           .select('product_id, rating')
@@ -92,6 +99,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     }
   }
 
+  // Shows a confirmation dialog then marks the order as delivered and notifies the seller.
   Future<void> _confirmDelivery(Product product) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -135,6 +143,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
         );
       }
 
+      // Update the local list so the UI reflects delivered status without a full re-fetch.
       setState(() {
         final idx = _orders.indexWhere((o) => o.id == product.id);
         if (idx != -1) {
@@ -175,6 +184,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     }
   }
 
+  // Opens a star-picker dialog and inserts a row into the ratings table on submit.
   Future<void> _showRateDialog(Product product) async {
     int localRating = 5;
     final commentController = TextEditingController();
@@ -288,6 +298,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
+                  // Three states: loading spinner, empty message, or the order list.
                   if (_isLoading)
                     const SizedBox(
                       height: 300,
@@ -347,6 +358,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
+  // Card showing status badge, product thumbnail, price, and the appropriate action button.
   Widget _buildOrderCard(Product product, int? rating) {
     final status = product.orderStatus ?? 'pending';
     return Card(
@@ -481,6 +493,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
+                // "Confirm delivery" only appears while shipped; "Rate seller" after delivered.
                 if (status == 'delivered') ...[
                   if (rating != null)
                     Row(
@@ -531,6 +544,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
+  // Colour-coded pill: blue for shipped, green for delivered, orange for pending.
   Widget _buildStatusBadge(String status) {
     final (label, color, bg) = switch (status) {
       'shipped' => ('Shipped', const Color(0xFF1D6FB8), const Color(0xFFE0F0FF)),
@@ -555,6 +569,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
+  // Returns a readable date string like "4 May 2025" for order cards.
   String _formatDate(DateTime date) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
