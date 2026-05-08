@@ -1,3 +1,6 @@
+// Displays products matching the filters chosen in the search/filter panel.
+// Pushed onto the nav stack from the home or search screen with a SearchFilters object.
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
@@ -5,6 +8,7 @@ import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/providers/search_provider.dart';
 
 class FilterResultsScreen extends StatefulWidget {
+  // All the active filter values — only non-null ones are applied to the query.
   final SearchFilters filters;
   const FilterResultsScreen({super.key, required this.filters});
 
@@ -18,9 +22,10 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
   @override
   void initState() {
     super.initState();
-    _resultsFuture = _fetchFiltered();
+    _resultsFuture = _fetchFiltered(); // kick off the query immediately
   }
 
+  // Builds and runs a dynamic Supabase query from the active filters.
   Future<List<Product>> _fetchFiltered() async {
     try {
       final currentUserId = Supabase.instance.client.auth.currentUser?.id;
@@ -29,11 +34,12 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
           .select('*, profiles(username)')
           .eq('is_sold', false);
 
-      // exclude current user's items if we have a logged-in user
+      // Hide the logged-in user's own listings from their results.
       if (currentUserId != null) {
         query = query.neq('user_id', currentUserId);
       }
 
+      // Each filter is only applied if the user actually set it.
       final f = widget.filters;
       if (f.department != null) query = query.eq('department', f.department!);
       if (f.size != null) query = query.eq('size', f.size!);
@@ -45,6 +51,7 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
       if (f.minPrice != null) query = query.gte('price', f.minPrice!);
       if (f.maxPrice != null) query = query.lte('price', f.maxPrice!);
 
+      // Apply sort order — defaults to newest first if none selected.
       List data;
       switch (f.sortBy) {
         case 'price_asc':
@@ -95,6 +102,7 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
       body: FutureBuilder<List<Product>>(
         future: _resultsFuture,
         builder: (context, snapshot) {
+          // Show a spinner while the filtered query is in flight.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
           }
@@ -102,10 +110,12 @@ class _FilterResultsScreenState extends State<FilterResultsScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
+          // Falls back to an empty list if the fetch returned nothing.
           final items = snapshot.data ?? [];
           return SingleChildScrollView(
             child: Column(
               children: [
+                // StandardProductGrid handles the empty state message internally.
                 StandardProductGrid(
                   items: items,
                   emptyIcon: Icons.search_off,

@@ -1,3 +1,7 @@
+// Landing page at /. Shows the hero banner followed by category carousels.
+// The FAB in the bottom-right opens the AI chat assistant.
+// Each ProductCarousel fetches its own category independently from Supabase.
+
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import 'package:thryft/widgets/footer.dart';
@@ -18,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive sizing — slightly less padding and smaller headings on mobile.
     final isMobile = Responsive.isMobile(context);
     final hPadding = isMobile ? 12.0 : 16.0;
     final sectionGap = isMobile ? 20.0 : 32.0;
@@ -25,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       drawer: const AppDrawer(),
+      // FAB routes to the chat assistant — always visible over all home content.
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/chat-assistant'),
         backgroundColor: const Color.fromARGB(255, 71, 164, 245),
@@ -35,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Header(),
+            // Hero banner with the main CTA (browse listings or create one).
             const HeroBanner(),
             SizedBox(height: isMobile ? 16 : 24),
 
