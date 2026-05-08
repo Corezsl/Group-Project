@@ -1,229 +1,287 @@
-import 'dart:async';
+// Integration tests for FR6 (track orders) at the repository level.
+// Hits a real Supabase test database — seeds products, updates their order
+// status, then checks that OrderRepository returns the right values.
+// Requires TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to be set.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/repositories/order_repository.dart';
+import '../helpers/supabase_test_client.dart';
+import '../helpers/seed_helper.dart';
 
-// Mocks
+// Dedicated test accounts — kept separate from production data.
+const _sellerEmail = 'fr6.seller@thryft-test.local';
+const _sellerPassword = 'Thryft!test99';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+const _buyerEmail = 'fr6.buyer@thryft-test.local';
+const _buyerPassword = 'Thryft!test99';
 
-class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
-
-// Fake select filter builder — same pattern as FR5 order_repository_test.
-
-class FakeSelectFilterBuilder extends Fake
-    implements PostgrestFilterBuilder<PostgrestList> {
-  final List<dynamic> _rows;
-
-  FakeSelectFilterBuilder(this._rows);
-
-  @override
-  FakeSelectFilterBuilder eq(String column, dynamic value) => this;
-
-  @override
-  FakeSelectFilterBuilder order(
-    String column, {
-    bool ascending = false,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) =>
-      this;
-
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestList value) onValue, {
-    Function? onError,
-  }) =>
-      Future.value(List<PostgrestMap>.from(_rows)).then(
-        onValue,
-        onError: onError,
-      );
-}
-
-// Helper — build a minimal raw DB row map
-
-Map<String, dynamic> _row({
-  String id = 'product-1',
-  String? name = 'Blue Jacket',
-  double price = 20.0,
-  String userId = 'seller-1',
-  String? buyerId = 'buyer-1',
-  bool isSold = true,
-  String? orderStatus = 'pending',
-  String? createdAt = '2026-01-01T00:00:00.000Z',
-}) =>
-    {
-      'id': id,
-      'name': name,
-      'price': price,
-      'original_price': null,
-      'size': 'M',
-      'brand': 'Nike',
-      'condition': 'Good',
-      'image_url': null,
-      'user_id': userId,
-      'profiles': {'username': 'seller_user'},
-      'is_sold': isSold,
-      'department': 'Menswear',
-      'category': 'Tops',
-      'material': 'Cotton',
-      'colour': 'Blue',
-      'buyer_id': buyerId,
-      'order_status': orderStatus,
-      'created_at': createdAt,
-      'description': null,
-    };
-
-// Stub helpers
-
-void _stubSelect(
-  MockSupabaseClient client,
-  MockSupabaseQueryBuilder qb,
-  List<dynamic> rows,
-) {
-  when(() => client.from(any())).thenAnswer((_) => qb);
-  when(() => qb.select(any()))
-      .thenAnswer((_) => FakeSelectFilterBuilder(rows));
+// Uses the admin client to create the user when they don't exist yet,
+// bypassing email confirmation and avoiding rate limits.
+Future<String> _signInOrSignUp(
+  SupabaseClient client,
+  SupabaseClient admin,
+  String email,
+  String password,
+  String username,
+) async {
+  try {
+    // Try signing in first — account already exists on subsequent runs.
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return res.user!.id;
+  } on AuthException {
+    // First run: create the account via the service-role admin client,
+    // then sign in immediately to get a valid session.
+    await admin.auth.admin.createUser(AdminUserAttributes(
+      email: email,
+      password: password,
+      emailConfirm: true,
+      userMetadata: {'username': username},
+    ));
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return res.user!.id;
+  }
 }
 
 void main() {
-  late MockSupabaseClient client;
-  late MockSupabaseQueryBuilder qb;
-  late OrderRepository repo;
+  // Skip the whole suite if no Supabase credentials are available (e.g. CI without secrets).
+  if (!hasTestCredentials) {
+    test('FR6 integration tests', () {},
+        skip: 'No Supabase credentials â€" pass '
+            '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    return;
+  }
 
-  setUp(() {
-    client = MockSupabaseClient();
-    qb = MockSupabaseQueryBuilder();
+  late SupabaseClient client; // regular user client (respects RLS)
+  late SupabaseClient admin;  // service-role client (bypasses RLS for cleanup)
+  late OrderRepository repo;
+  late String sellerId;
+  late String buyerId;
+
+  // Runs once before all tests — signs in both accounts and wires up the repo.
+  setUpAll(() async {
+    client = await getTestClient();
+    admin = getServiceClient();
+
+    sellerId = await _signInOrSignUp(
+        client, admin, _sellerEmail, _sellerPassword, 'fr6_seller');
+    buyerId = await _signInOrSignUp(
+        client, admin, _buyerEmail, _buyerPassword, 'fr6_buyer');
+
+    // Run tests as the seller so RLS allows product reads.
+    await _signInOrSignUp(client, admin, _sellerEmail, _sellerPassword, 'fr6_seller');
+
     repo = OrderRepository(client);
   });
 
-  // FR6 Partition 1 — Valid purchase: item marked as sold with pending status
-  group('FR6 #1 — valid purchase sets order status to pending', () {
-    test('order_status pending is mapped to product.orderStatus', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'pending'),
-      ]);
+  // Clean up everything the seller created so the DB stays tidy between runs.
+  tearDownAll(() async {
+    await admin.from('products').delete().eq('user_id', sellerId);
+    await client.auth.signOut();
+  });
 
-      final orders = await repo.fetchOrders('buyer-1');
+  // ---------------------------------------------------------------------------
+  // FR6 Partition 1 â€" Valid purchase: item marked as sold with pending status
+  // ---------------------------------------------------------------------------
+  group('FR6 #1 â€" valid purchase sets order status to pending', () {
+    late String p1;
 
-      expect(orders, hasLength(1));
-      expect(orders.first.orderStatus, equals('pending'));
-      expect(orders.first.isSold, isTrue);
+    setUp(() async {
+      // Insert a fresh product then simulate a purchase by setting is_sold + buyer_id.
+      p1 = await seedProduct(client, sellerId: sellerId, name: 'FR6 P1 Jacket');
+      await client.from('products').update({
+        'is_sold': true,
+        'buyer_id': buyerId,
+        'order_status': 'pending',
+      }).eq('id', p1);
+    });
+
+    // Delete just this product after each test so other groups aren't affected.
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', p1);
+    });
+
+    test('order_status pending is returned via fetchOrders', () async {
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == p1);
+      expect(product.orderStatus, equals('pending'));
+      expect(product.isSold, isTrue);
     });
 
     test('sold item is linked to buyer via buyerId field', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'pending'),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.first.buyerId, equals('buyer-1'));
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == p1);
+      expect(product.buyerId, equals(buyerId));
     });
   });
 
-  // FR6 Partition 2 — Valid shipping update: status changes to shipped
+  // ---------------------------------------------------------------------------
+  // FR6 Partition 2 â€" Valid shipping update: status changes to shipped
+  // ---------------------------------------------------------------------------
+  group('FR6 #2 â€" valid shipping update', () {
+    late String p2;
 
-  group('FR6 #2 — valid shipping update', () {
-    test('order_status shipped is mapped to product.orderStatus', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'shipped'),
-      ]);
+    setUp(() async {
+      // Seed a product already in the 'shipped' state.
+      p2 = await seedProduct(client, sellerId: sellerId, name: 'FR6 P2 Shirt');
+      await client.from('products').update({
+        'is_sold': true,
+        'buyer_id': buyerId,
+        'order_status': 'shipped',
+      }).eq('id', p2);
+    });
 
-      final orders = await repo.fetchOrders('buyer-1');
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', p2);
+    });
 
-      expect(orders.first.orderStatus, equals('shipped'));
+    test('order_status shipped is returned via fetchOrders', () async {
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == p2);
+      expect(product.orderStatus, equals('shipped'));
     });
 
     test('shipped item is still marked as sold', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'shipped'),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.first.isSold, isTrue);
-      expect(orders.first.orderStatus, equals('shipped'));
+      // isSold should stay true even after the status moves to shipped.
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == p2);
+      expect(product.isSold, isTrue);
+      expect(product.orderStatus, equals('shipped'));
     });
   });
 
-  // FR6 Partition 3 — Valid received update: status changes to delivered
+  // ---------------------------------------------------------------------------
+  // FR6 Partition 3 â€" Valid received update: status changes to delivered
+  // ---------------------------------------------------------------------------
+  group('FR6 #3 â€" valid received update', () {
+    late String p3;
 
-  group('FR6 #3 — valid received update', () {
-    test('order_status delivered is mapped to product.orderStatus', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'delivered'),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.first.orderStatus, equals('delivered'));
+    setUp(() async {
+      // Seed a product in the 'delivered' state — buyer has confirmed receipt.
+      p3 = await seedProduct(client, sellerId: sellerId, name: 'FR6 P3 Trousers');
+      await client.from('products').update({
+        'is_sold': true,
+        'buyer_id': buyerId,
+        'order_status': 'delivered',
+      }).eq('id', p3);
     });
 
-    test('sold items fetch returns delivered status via fetchSoldItems', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', userId: 'seller-1', isSold: true, orderStatus: 'delivered'),
-      ]);
+    tearDown(() async {
+      await admin.from('products').delete().eq('id', p3);
+    });
 
-      final sold = await repo.fetchSoldItems('seller-1');
+    test('order_status delivered is returned via fetchOrders', () async {
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == p3);
+      expect(product.orderStatus, equals('delivered'));
+    });
 
-      expect(sold.first.orderStatus, equals('delivered'));
+    test('delivered status is returned via fetchSoldItems for seller', () async {
+      // Seller-facing fetch also needs to show delivered so they can see completed sales.
+      final sold = await repo.fetchSoldItems(sellerId);
+      final product = sold.firstWhere((p) => p.id == p3);
+      expect(product.orderStatus, equals('delivered'));
     });
   });
 
-  // FR6 Partition 4 — View order status: system returns current tracking status
+  // ---------------------------------------------------------------------------
+  // FR6 Partition 4 â€" View order status: system returns current tracking status
+  // ---------------------------------------------------------------------------
+  group('FR6 #4 â€" view order status returns all statuses correctly', () {
+    // One product per scenario so each test can look up its own row by id.
+    late String pPending;
+    late String pShipped;
+    late String pDelivered;
+    late String pNullStatus;
+    late String pTimestamp;
 
-  group('FR6 #4 — view order status returns all three statuses correctly', () {
-    test('all three order statuses are mapped and returned', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'pending'),
-        _row(id: 'p2', buyerId: 'buyer-1', isSold: true, orderStatus: 'shipped'),
-        _row(id: 'p3', buyerId: 'buyer-1', isSold: true, orderStatus: 'delivered'),
-      ]);
+    setUp(() async {
+      // Seed all five products at once then set their statuses in bulk.
+      pPending = await seedProduct(
+          client, sellerId: sellerId, name: 'FR6 P4 Pending');
+      pShipped = await seedProduct(
+          client, sellerId: sellerId, name: 'FR6 P4 Shipped');
+      pDelivered = await seedProduct(
+          client, sellerId: sellerId, name: 'FR6 P4 Delivered');
+      pNullStatus = await seedProduct(
+          client, sellerId: sellerId, name: 'FR6 P4 NullStatus');
+      pTimestamp = await seedProduct(
+          client, sellerId: sellerId, name: 'FR6 P4 Timestamp');
 
-      final orders = await repo.fetchOrders('buyer-1');
+      // Set the three main statuses in a single loop.
+      for (final entry in {
+        pPending: 'pending',
+        pShipped: 'shipped',
+        pDelivered: 'delivered',
+      }.entries) {
+        await client.from('products').update({
+          'is_sold': true,
+          'buyer_id': buyerId,
+          'order_status': entry.value,
+        }).eq('id', entry.key);
+      }
 
-      expect(orders, hasLength(3));
+      // Null order_status â€" sold but no status set.
+      await client.from('products').update({
+        'is_sold': true,
+        'buyer_id': buyerId,
+        'order_status': null,
+      }).eq('id', pNullStatus);
+
+      // Timestamp test â€" mark sold so it appears in fetchOrders.
+      await client.from('products').update({
+        'is_sold': true,
+        'buyer_id': buyerId,
+        'order_status': 'shipped',
+      }).eq('id', pTimestamp);
+    });
+
+    // Delete all five products in one call to keep tearDown fast.
+    tearDown(() async {
+      await admin
+          .from('products')
+          .delete()
+          .inFilter('id', [pPending, pShipped, pDelivered, pNullStatus, pTimestamp]);
+    });
+
+    test('all three order statuses are returned in fetchOrders', () async {
+      final orders = await repo.fetchOrders(buyerId);
+      final ids = orders.map((p) => p.id).toList();
+      expect(ids, containsAll([pPending, pShipped, pDelivered]));
       expect(
-        orders.map((p) => p.orderStatus),
+        orders
+            .where((p) => [pPending, pShipped, pDelivered].contains(p.id))
+            .map((p) => p.orderStatus),
         containsAll(['pending', 'shipped', 'delivered']),
       );
     });
 
-    test('null order_status maps to null — no throw', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: null),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.first.orderStatus, isNull);
+    test('null order_status maps to null â€" no throw', () async {
+      // Products with no status set (e.g. not yet purchased) shouldn't crash the repo.
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == pNullStatus);
+      expect(product.orderStatus, isNull);
     });
 
     test('timestamps are mapped and returned with the order', () async {
-      const ts = '2026-03-15T10:30:00.000Z';
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'shipped', createdAt: ts),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.first.createdAt, equals(DateTime.parse(ts)));
+      // createdAt is shown on the order card — check it's parsed into a DateTime.
+      final orders = await repo.fetchOrders(buyerId);
+      final product = orders.firstWhere((p) => p.id == pTimestamp);
+      expect(product.createdAt, isNotNull);
+      expect(product.createdAt, isA<DateTime>());
     });
 
-    test('multiple orders are returned in the list', () async {
-      _stubSelect(client, qb, [
-        _row(id: 'p1', buyerId: 'buyer-1', isSold: true, orderStatus: 'pending'),
-        _row(id: 'p2', buyerId: 'buyer-1', isSold: true, orderStatus: 'delivered'),
-      ]);
-
-      final orders = await repo.fetchOrders('buyer-1');
-
-      expect(orders.map((p) => p.id), containsAll(['p1', 'p2']));
+    test('multiple orders are all returned in the list', () async {
+      // Makes sure fetchOrders returns all rows, not just the first match.
+      final orders = await repo.fetchOrders(buyerId);
+      final ids = orders.map((p) => p.id).toList();
+      expect(ids, containsAll([pPending, pShipped, pDelivered, pNullStatus]));
     });
   });
 }

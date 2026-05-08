@@ -1,3 +1,7 @@
+// Full-screen search at /search. Opened from the header search bar.
+// Shows recent searches and category chips when idle; switches to a filterable
+// results grid once the user submits a query. All search state lives in SearchProvider.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +9,7 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/widgets/product_card.dart';
 
+// Categories shown as quick-tap chips in the idle state.
 const _kSearchCategories = [
   'Shirts',
   'Trousers',
@@ -15,6 +20,7 @@ const _kSearchCategories = [
 ];
 
 class SearchScreen extends StatefulWidget {
+  // Pre-populated from the header search bar when the user navigates here with text.
   final String initialQuery;
 
   const SearchScreen({super.key, this.initialQuery = ''});
@@ -60,10 +66,12 @@ class _SearchScreenState extends State<SearchScreen> {
     _focusNode = FocusNode();
 
     if (widget.initialQuery.isNotEmpty) {
+      // Run the query immediately if the screen was opened with pre-filled text.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<SearchProvider>().onQueryChanged(widget.initialQuery);
       });
     } else {
+      // Auto-focus the field so the keyboard appears straight away.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
       });
@@ -74,19 +82,23 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
+    // Clear results so stale data doesn't flash if the screen is reopened.
     context.read<SearchProvider>().clearResults();
     super.dispose();
   }
 
+  // Live-search — fires on every keystroke via SearchProvider's debounce.
   void _onChanged(String value) {
     context.read<SearchProvider>().onQueryChanged(value);
   }
 
+  // Submits the query and collapses the keyboard.
   void _onSubmitted(String value) {
     context.read<SearchProvider>().submitSearch(value);
     _focusNode.unfocus();
   }
 
+  // Restores a past search term and re-runs it.
   void _runRecentSearch(String query) {
     _controller.text = query;
     _controller.selection =
@@ -95,14 +107,15 @@ class _SearchScreenState extends State<SearchScreen> {
     _focusNode.unfocus();
   }
 
+  // Clears the field and returns the screen to the idle state.
   void _clear() {
     _controller.clear();
     context.read<SearchProvider>().onQueryChanged('');
     _focusNode.requestFocus();
   }
 
-  // Filter helpers 
-
+  // Converts a price-range label ("Under £25") to a min/max double pair
+  // so SearchFilters can apply a numeric gte/lte to the query.
   double? _minFromRange(String? range) {
     if (range == null) return null;
     if (range == '£25 – £50') return 25;
@@ -130,6 +143,8 @@ class _SearchScreenState extends State<SearchScreen> {
     return null;
   }
 
+  // Updates a single filter without touching the others. Uses a sentinel value
+  // to distinguish "caller didn't pass this param" from "caller passed null to clear it".
   void _applyFilter({
     Object? size = _kSentinel,
     Object? category = _kSentinel,
@@ -176,6 +191,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: Consumer<SearchProvider>(
                 builder: (context, provider, _) {
+                  // Four exclusive states: idle, loading, empty results, or results grid.
                   if (provider.query.isEmpty) {
                     return _IdleBody(
                       recentSearches: provider.recentSearches,
@@ -225,11 +241,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+// Unique object used as a default parameter value to mean "not provided".
 // ignore: constant_identifier_names
 const _kSentinel = Object();
 
-// ── Search bar ────────────────────────────────────────────────────────────────
-
+// Branded search bar fixed at the top of the screen. The clear (×) button
+// appears only when the field has text, using ValueListenableBuilder to avoid rebuilding the whole bar.
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -294,8 +311,8 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-// ── Idle body (no query yet) ──────────────────────────────────────────────────
-
+// Shown before the user types anything — lists recent searches (if any)
+// and category chips so the user can browse without typing.
 class _IdleBody extends StatelessWidget {
   final List<String> recentSearches;
   final ValueChanged<String> onRunSearch;
@@ -373,8 +390,7 @@ class _IdleBody extends StatelessWidget {
   }
 }
 
-// ── Empty results ─────────────────────────────────────────────────────────────
-
+// Shown when the search returned no matching products.
 class _EmptyResults extends StatelessWidget {
   final String query;
 
@@ -410,8 +426,8 @@ class _EmptyResults extends StatelessWidget {
   }
 }
 
-// ── Results body ──────────────────────────────────────────────────────────────
-
+// Results body — shows a count row, horizontally scrollable filter dropdowns,
+// and a product grid. All filter changes are routed back up through callbacks.
 class _ResultsBody extends StatelessWidget {
   final List<Product> results;
   final String query;
@@ -445,6 +461,8 @@ class _ResultsBody extends StatelessWidget {
     required this.onClearFilters,
   });
 
+  // Reusable labelled dropdown used for Size, Condition, Price, and Sort filters.
+  // Selecting null clears that filter (the "All" item).
   Widget _dropdown<T>({
     required String label,
     required T? value,

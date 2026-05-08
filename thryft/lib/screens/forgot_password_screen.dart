@@ -1,8 +1,11 @@
+// Password reset screen reached from the login page via "Forgot password?".
+// Sends a Supabase reset link to the user's email, then swaps to a confirmation
+// view. The user can also trigger a resend from the success state.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Screen allowing users to request a password reset email via Supabase.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -13,11 +16,11 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  bool _isLoading = false;
-  bool _emailSent = false;
-  String? _errorMessage;
+  bool _isLoading = false; // disables the button while the Supabase call is running
+  bool _emailSent = false; // flips the view from form to success message
+  String? _errorMessage; // set on AuthException or unexpected error
 
-  /// Validates the form and triggers the Supabase password reset process.
+  // Validates the email field then fires the Supabase reset-link request.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -36,6 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         });
       }
     } on AuthException catch (e) {
+      // Supabase returns a typed error for auth failures (e.g. rate limits).
       if (mounted) {
         setState(() {
           _errorMessage = e.message;
@@ -56,7 +60,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  /// Allows the user to re-trigger the reset email if not received.
+  // Re-sends the reset link without changing _emailSent — shown as a text link
+  // on the success screen in case the email ended up in spam.
   Future<void> _resendEmail() async {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(
@@ -79,7 +84,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  /// Disposes of the email controller to free up resources.
   @override
   void dispose() {
     _emailController.dispose();
@@ -97,7 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               Image.asset('assets/images/thyrft_logo.png', height: 48),
               const SizedBox(height: 32),
-              // Main container that switches between the input form and success message.
+              // Card switches between the email form and the sent-confirmation view.
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -122,7 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// Initial UI state where users enter their email address.
+  // Email input form with validation and an inline error message slot.
   Widget _buildFormState() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -154,6 +158,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter your email';
                   }
+                  // Basic regex check — Supabase will catch anything invalid on the server.
                   if (!RegExp(
                     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                   ).hasMatch(value.trim())) {
@@ -163,6 +168,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 },
               ),
               const SizedBox(height: 24),
+              // Only rendered when _submit catches an error.
               if (_errorMessage != null) ...[
                 Text(
                   _errorMessage!,
@@ -171,6 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
+              // Replaces its label with a spinner while the request is in flight.
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF47A4F5),
@@ -215,7 +222,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// UI state displayed after the reset email has been successfully sent.
+  // Shown after the reset email is sent — confirms the address and offers a resend link.
   Widget _buildSuccessState() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -235,6 +242,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
+        // Shows the address from the controller so the user can spot a typo.
         Text(
           'We sent a password reset link to\n${_emailController.text.trim()}',
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
@@ -260,6 +268,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        // Disabled while a resend is already in progress.
         TextButton(
           onPressed: _isLoading ? null : _resendEmail,
           child: Text(

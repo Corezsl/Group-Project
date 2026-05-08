@@ -1,8 +1,11 @@
+// Login and signup screen shown at /auth. The router redirects here from any
+// protected route when no session is active. On success, navigates to /account.
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-/// Screen providing a unified interface for user login and registration.
+// Single screen that handles both login and signup — toggled via the tab at the top.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -16,12 +19,12 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _isLogin = true;
-  bool _isLoading = false;
-  String? _errorMessage;
+  bool _obscurePassword = true;  // toggles password visibility
+  bool _isLogin = true;          // true = login mode, false = signup mode
+  bool _isLoading = false;       // disables the button while the request is in flight
+  String? _errorMessage;         // shown in red below the form if something goes wrong
 
-  /// Validates input and executes either sign-in or sign-up via Supabase.
+  // Validates the form then either signs in or registers the user via Supabase.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -40,7 +43,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         final username = _usernameController.text.trim();
 
-        // Check for username availability before registration.
+        // Make sure the username isn't already taken before creating the account.
         final existingProfile = await Supabase.instance.client
             .from('profiles')
             .select('id')
@@ -87,7 +90,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Cleans up controllers when the widget is removed from the tree.
+  // Always dispose text controllers to avoid memory leaks.
   @override
   void dispose() {
     _usernameController.dispose();
@@ -128,7 +131,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Tabs to toggle between Login and Sign up modes.
+                    // Tab row — the active tab gets a blue underline and bold text.
                     Row(
                       children: [
                         Expanded(
@@ -208,7 +211,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    // Input form for user credentials.
+                    // Username field only appears in signup mode.
                     Form(
                       key: _formKey,
                       child: Column(
@@ -327,7 +330,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             const SizedBox(height: 16),
                           ],
-                          // Final action button to submit the form.
+                          // Shows a spinner while the request is in flight, then the label.
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF47A4F5),

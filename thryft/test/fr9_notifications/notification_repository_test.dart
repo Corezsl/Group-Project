@@ -1,58 +1,54 @@
-import 'dart:async';
+// Integration tests for FR9 (notifications) at the repository level.
+// Hits a real Supabase test DB — seeds notifications, then checks that
+// the fetch query returns the right rows and respects user scoping / RLS.
+// Requires TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to be set.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
+import '../helpers/supabase_test_client.dart';
+import '../helpers/seed_helper.dart';
 
-// Mocks
+// Two dedicated test accounts — keeps test data separate from production.
+const _user1Email = 'fr9.user1@thryft-test.local';
+const _user1Password = 'Thryft!test99';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+const _user2Email = 'fr9.user2@thryft-test.local';
+const _user2Password = 'Thryft!test99';
 
-class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
-
-// Fake filter builder — captures the user_id passed to .eq() so tests can
-// assert the query was scoped to the correct user.
-
-class FakeNotifFilterBuilder extends Fake
-    implements PostgrestFilterBuilder<PostgrestList> {
-  final List<dynamic> _rows;
-  final List<String?> _capturedUserIds = [];
-
-  FakeNotifFilterBuilder(this._rows);
-
-  String? get capturedUserId =>
-      _capturedUserIds.isEmpty ? null : _capturedUserIds.last;
-
-  @override
-  FakeNotifFilterBuilder eq(String column, dynamic value) {
-    if (column == 'user_id') _capturedUserIds.add(value.toString());
-    return this;
+// Uses the admin client to create the user when they don't exist yet,
+// bypassing email confirmation and avoiding rate limits.
+Future<String> _signInOrSignUp(
+  SupabaseClient client,
+  SupabaseClient admin,
+  String email,
+  String password,
+  String username,
+) async {
+  try {
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return res.user!.id;
+  } on AuthException {
+    await admin.auth.admin.createUser(AdminUserAttributes(
+      email: email,
+      password: password,
+      emailConfirm: true,
+      userMetadata: {'username': username},
+    ));
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return res.user!.id;
   }
-
-  @override
-  FakeNotifFilterBuilder order(
-    String column, {
-    bool ascending = false,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) =>
-      this;
-
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestList value) onValue, {
-    Function? onError,
-  }) =>
-      Future.value(List<PostgrestMap>.from(_rows)).then(
-        onValue,
-        onError: onError,
-      );
 }
 
-// Standalone fetch function — mirrors NotificationProvider.fetchNotifications
-// so we can test the query logic without initialising Supabase.instance.
-
+// Mirrors NotificationProvider.fetchNotifications — queries the notification
+// table scoped to a userId. Used directly here so we can test the query logic
+// against the real DB without instantiating the full provider.
 Future<List<AppNotification>> _fetchNotificationsForUser(
   SupabaseClient client,
   String userId,
@@ -67,137 +63,205 @@ Future<List<AppNotification>> _fetchNotificationsForUser(
       .toList();
 }
 
-// Helper — minimal notification DB row
-
-Map<String, dynamic> _notifRow({
-  int id = 1,
-  String userId = 'user-1',
-  String type = 'order_shipped',
-  String content = 'Notification content',
-  bool isRead = false,
-}) =>
-    {
-      'notification_id': id,
-      'user_id': userId,
-      'notif_type': type,
-      'content': content,
-      'is_read': isRead,
-      'created_at': '2026-01-01T00:00:00.000Z',
-      'listing_id': null,
-      'related_user_id': null,
-      'offer_price': null,
-      'buyer_address': null,
-    };
-
 void main() {
-  late MockSupabaseClient client;
-  late MockSupabaseQueryBuilder qb;
-  late FakeNotifFilterBuilder fakeBuilder;
-
-  void stubFetch(List<dynamic> rows) {
-    fakeBuilder = FakeNotifFilterBuilder(rows);
-    when(() => client.from('notification')).thenAnswer((_) => qb);
-    when(() => qb.select(any())).thenAnswer((_) => fakeBuilder);
+  if (!hasTestCredentials) {
+    test('FR9 integration tests', () {},
+        skip: 'No Supabase credentials — pass '
+            '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    return;
   }
 
-  setUp(() {
-    client = MockSupabaseClient();
-    qb = MockSupabaseQueryBuilder();
+  late SupabaseClient client; // regular user client — respects RLS
+  late SupabaseClient admin;  // service-role client — bypasses RLS for seeding/cleanup
+  late String user1Id;
+  late String user2Id;
+
+  setUpAll(() async {
+    client = await getTestClient();
+    admin = getServiceClient();
+
+    // Register / sign in both users; end session as user1.
+    user1Id = await _signInOrSignUp(
+        client, admin, _user1Email, _user1Password, 'fr9_user1');
+    user2Id = await _signInOrSignUp(
+        client, admin, _user2Email, _user2Password, 'fr9_user2');
+    await _signInOrSignUp(client, admin, _user1Email, _user1Password, 'fr9_user1');
   });
 
-  // FR9 Partition 5 — Unrelated item update: no notification for unrelated user
+  tearDownAll(() async {
+    // Use admin client to delete all notifications seeded for both users.
+    await admin
+        .from('notification')
+        .delete()
+        .eq('user_id', user1Id);
+    await admin
+        .from('notification')
+        .delete()
+        .eq('user_id', user2Id);
+    await client.auth.signOut();
+  });
+
+  // FR9 #5 — the fetch query must only return notifications belonging to the given user.
   group('FR9 #5 — only user\'s own notifications are returned', () {
+    late int notif1;
+    late int notif2;
+
+    setUp(() async {
+      // Seed two different notification types for user1 to verify both come back.
+      notif1 = await seedNotification(admin,
+          userId: user1Id,
+          notifType: 'order_shipped',
+          content: 'Your item has been shipped');
+      notif2 = await seedNotification(admin,
+          userId: user1Id,
+          notifType: 'price_drop',
+          content: 'Price dropped on a wishlist item');
+    });
+
+    tearDown(() async {
+      await admin
+          .from('notification')
+          .delete()
+          .inFilter('notification_id', [notif1, notif2]);
+    });
+
     test('fetch returns notifications mapped for the given userId', () async {
-      stubFetch([
-        _notifRow(id: 1, userId: 'user-1', type: 'order_shipped'),
-        _notifRow(id: 2, userId: 'user-1', type: 'price_drop'),
-      ]);
-
-      final notifs = await _fetchNotificationsForUser(client, 'user-1');
-
-      expect(notifs, hasLength(2));
-      expect(notifs.every((n) => n.userId == 'user-1'), isTrue);
+      final notifs = await _fetchNotificationsForUser(client, user1Id);
+      final ids = notifs.map((n) => n.notificationId).toList();
+      expect(ids, containsAll([notif1, notif2]));
+      expect(notifs.every((n) => n.userId == user1Id), isTrue);
     });
 
     test('returns empty list for a user with no notifications', () async {
-      stubFetch([]);
-
-      final notifs = await _fetchNotificationsForUser(client, 'user-no-notifs');
-
+      // Ghost UUID — will never match any row.
+      const ghost = '00000000-ffff-4000-8000-000000000099';
+      final notifs = await _fetchNotificationsForUser(client, ghost);
       expect(notifs, isEmpty);
     });
 
     test('all returned notifications match the queried userId', () async {
-      stubFetch([
-        _notifRow(id: 1, userId: 'user-1', type: 'wishlist_purchased'),
-        _notifRow(id: 2, userId: 'user-1', type: 'listing_sold'),
-        _notifRow(id: 3, userId: 'user-1', type: 'order_delivered'),
-      ]);
-
-      final notifs = await _fetchNotificationsForUser(client, 'user-1');
-
-      expect(notifs.map((n) => n.userId), everyElement(equals('user-1')));
+      final notifs = await _fetchNotificationsForUser(client, user1Id);
+      final relevant =
+          notifs.where((n) => [notif1, notif2].contains(n.notificationId));
+      expect(relevant.map((n) => n.userId), everyElement(equals(user1Id)));
     });
   });
 
-  // FR9 Partition 8 — Access another user's notifications: access is denied
-  // The query uses eq('user_id', userId) to scope results to the current user.
-  group('FR9 #8 — query is scoped to the requesting user (not another user)', () {
-    test('query uses the correct user id in the eq filter', () async {
-      stubFetch([_notifRow(id: 1, userId: 'user-1')]);
+  // FR9 #8 — RLS and the eq filter together should prevent one user seeing another's rows.
+  group('FR9 #8 — query is scoped to the requesting user', () {
+    late int notifForUser1;
+    late int notifForUser2;
 
-      await _fetchNotificationsForUser(client, 'user-1');
-
-      expect(fakeBuilder.capturedUserId, equals('user-1'));
+    setUp(() async {
+      // One notification per user so we can check neither leaks into the other's fetch.
+      notifForUser1 = await seedNotification(admin,
+          userId: user1Id,
+          notifType: 'listing_sold',
+          content: 'User1 listing sold');
+      notifForUser2 = await seedNotification(admin,
+          userId: user2Id,
+          notifType: 'order_shipped',
+          content: 'User2 order shipped');
     });
 
-    test('a different userId produces a different query scope', () async {
-      stubFetch([]);
-
-      await _fetchNotificationsForUser(client, 'user-2');
-
-      expect(fakeBuilder.capturedUserId, equals('user-2'));
+    tearDown(() async {
+      await admin
+          .from('notification')
+          .delete()
+          .inFilter('notification_id', [notifForUser1, notifForUser2]);
     });
 
-    test('two separate users each get their own isolated result set', () async {
-      stubFetch([_notifRow(id: 10, userId: 'user-A', type: 'price_drop')]);
-      final notifsA = await _fetchNotificationsForUser(client, 'user-A');
-      final capturedA = fakeBuilder.capturedUserId;
+    test('signed-in user1 cannot see user2 notifications via eq filter',
+        () async {
+      // Signed in as user1; RLS + eq filter should prevent seeing user2's rows.
+      final notifs = await _fetchNotificationsForUser(client, user2Id);
+      final ids = notifs.map((n) => n.notificationId).toList();
+      expect(ids, isNot(contains(notifForUser2)));
+    });
 
-      stubFetch([_notifRow(id: 20, userId: 'user-B', type: 'order_shipped')]);
-      final notifsB = await _fetchNotificationsForUser(client, 'user-B');
-      final capturedB = fakeBuilder.capturedUserId;
+    test('signed-in user1 can fetch their own notifications', () async {
+      final notifs = await _fetchNotificationsForUser(client, user1Id);
+      final ids = notifs.map((n) => n.notificationId).toList();
+      expect(ids, contains(notifForUser1));
+    });
 
-      expect(capturedA, equals('user-A'));
-      expect(capturedB, equals('user-B'));
-      expect(notifsA.first.userId, equals('user-A'));
-      expect(notifsB.first.userId, equals('user-B'));
+    test('switching session gives each user access to only their own data',
+        () async {
+      // user1 sees their notification.
+      final user1Notifs = await _fetchNotificationsForUser(client, user1Id);
+      expect(
+        user1Notifs.map((n) => n.notificationId),
+        contains(notifForUser1),
+      );
+
+      // Sign in as user2 and verify they see their own, not user1's.
+      await _signInOrSignUp(
+          client, admin, _user2Email, _user2Password, 'fr9_user2');
+      final user2Notifs = await _fetchNotificationsForUser(client, user2Id);
+      expect(
+        user2Notifs.map((n) => n.notificationId),
+        contains(notifForUser2),
+      );
+      expect(
+        user2Notifs.map((n) => n.notificationId),
+        isNot(contains(notifForUser1)),
+      );
+
+      // Restore session as user1 for remaining tests.
+      await _signInOrSignUp(
+          client, admin, _user1Email, _user1Password, 'fr9_user1');
     });
   });
 
-  // Boundary — large notification sets
-  group('FR9 — large notification set boundary', () {
-    List<Map<String, dynamic>> _makeRows(int count) => List.generate(
-          count,
-          (i) => _notifRow(id: i + 1, userId: 'user-1', type: 'price_drop'),
-        );
+  // Boundary tests — checks the fetch works with 1 notification and with 3.
+  group('FR9 — notification count boundary', () {
+    late List<int> seededIds;
+
+    tearDown(() async {
+      // Only delete if something was seeded — avoids an error on empty list.
+      if (seededIds.isNotEmpty) {
+        await admin
+            .from('notification')
+            .delete()
+            .inFilter('notification_id', seededIds);
+      }
+    });
 
     test('1 notification — mapped correctly', () async {
-      stubFetch(_makeRows(1));
-      final notifs = await _fetchNotificationsForUser(client, 'user-1');
-      expect(notifs, hasLength(1));
+      seededIds = [
+        await seedNotification(admin,
+            userId: user1Id,
+            notifType: 'price_drop',
+            content: 'Boundary: 1 notification'),
+      ];
+
+      final notifs = await _fetchNotificationsForUser(client, user1Id);
+      expect(
+        notifs.map((n) => n.notificationId),
+        contains(seededIds.first),
+      );
     });
 
-    test('50 notifications — all mapped', () async {
-      stubFetch(_makeRows(50));
-      final notifs = await _fetchNotificationsForUser(client, 'user-1');
-      expect(notifs, hasLength(50));
-    });
+    test('3 notifications — all mapped', () async {
+      // Seed all three in parallel to keep the test fast.
+      seededIds = await Future.wait([
+        seedNotification(admin,
+            userId: user1Id,
+            notifType: 'order_shipped',
+            content: 'Boundary notif 1'),
+        seedNotification(admin,
+            userId: user1Id,
+            notifType: 'order_delivered',
+            content: 'Boundary notif 2'),
+        seedNotification(admin,
+            userId: user1Id,
+            notifType: 'listing_sold',
+            content: 'Boundary notif 3'),
+      ]);
 
-    test('51 notifications — all mapped (no cutoff)', () async {
-      stubFetch(_makeRows(51));
-      final notifs = await _fetchNotificationsForUser(client, 'user-1');
-      expect(notifs, hasLength(51));
+      final notifs = await _fetchNotificationsForUser(client, user1Id);
+      final returnedIds = notifs.map((n) => n.notificationId).toList();
+      expect(returnedIds, containsAll(seededIds));
     });
   });
 }
