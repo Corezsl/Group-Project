@@ -7,9 +7,8 @@ import 'package:thryft/providers/notification_provider.dart';
 /// Manages the user's wishlist state and synchronizes it with the Supabase `wishlist` table.
 /// It provides functionality to fetch the user's wishlisted items, toggle items on/off the wishlist,
 /// and handles sending notifications to sellers when their items are wishlisted.
-/// 
-/// Used throughout the app wherever products are displayed (like the Home Screen, Search Screen, 
-/// or Product Details Screen) to show the heart icon's status and allow users to save items.
+
+/// Used throughout the app wherever products are displayed to show the heart icon's status and allow users to save items.
 class WishlistProvider extends ChangeNotifier {
   List<Product> _items = [];
 
