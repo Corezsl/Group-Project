@@ -60,16 +60,13 @@ class ListingRepository {
 
   Future<void> markAsSold({
     required String id,
-    required String buyerId,
   }) async {
     if (_client.auth.currentUser == null) {
       throw const NotAuthenticatedException();
     }
-    await _client.from('products').update({
-      'is_sold': true,
-      'buyer_id': buyerId,
-      'order_status': 'pending',
-    }).eq('id', id);
+    await _client.rpc('purchase_listing', params: {
+      'target_product_id': id,
+    });
   }
 
   static Product _rowToProduct(dynamic data) {

@@ -6,8 +6,13 @@ import 'package:thryft/screens/reviews_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
+  final SupabaseClient? supabaseClient;
 
-  const UserProfileScreen({super.key, required this.userId});
+  const UserProfileScreen({
+    super.key,
+    required this.userId,
+    this.supabaseClient,
+  });
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -38,11 +43,11 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   Future<void> _fetchProfileAndProducts() async {
     try {
-      final client = Supabase.instance.client;
+      final client = widget.supabaseClient ?? Supabase.instance.client;
       // 1. Fetch Profile
       final profileData = await client
           .from('profiles')
-          .select()
+          .select('*, created_at')
           .eq('id', widget.userId)
           .maybeSingle();
 
@@ -84,6 +89,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               category: data['category']?.toString() ?? 'Other',
               material: data['material'].toString(),
               colour: data['colour'].toString(),
+              description: data['description']?.toString(),
             ),
           )
           .toList();
@@ -141,9 +147,17 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     }
 
     final username = _profile?['username'] ?? 'Unknown User';
-    final rating = _profile?['rating'] ?? 0.0;
-    final ratingCount = _profile?['rating_count'] ?? 0;
+    final ratingCount = _ratings.length;
+    final rating = ratingCount > 0
+        ? _ratings
+                  .map((r) => (r['rating'] as num).toDouble())
+                  .reduce((a, b) => a + b) /
+              ratingCount
+        : 0.0;
     final avatarUrl = _profile?['avatar_url'];
+    final bio = _profile?['bio']?.toString().trim();
+    final createdAt = _profile?['created_at']?.toString();
+    final accountAge = _calculateAccountAge(createdAt);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -162,20 +176,23 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           // Header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
               child: Column(
                 children: [
+                  // Avatar
                   CircleAvatar(
-                    radius: 40,
+                    radius: 44,
                     backgroundColor: Colors.grey[200],
                     backgroundImage: avatarUrl != null
                         ? NetworkImage(avatarUrl) as ImageProvider
                         : null,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                        ? const Icon(Icons.person, size: 44, color: Colors.grey)
                         : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // Username
                   Text(
                     username,
                     style: const TextStyle(
@@ -183,34 +200,60 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating is double
-                            ? rating.toStringAsFixed(1)
-                            : '$rating',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+
+                  // Bio
+                  if (bio != null && bio.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      bio,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+
+                  // Account Age
+                  if (accountAge != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Member for $accountAge',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Stats row
+                  IntrinsicHeight(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _StatBox(
+                          value: '${_products.length}',
+                          label: 'Listings',
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '($ratingCount)',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('•', style: TextStyle(color: Colors.grey[400])),
-                      const SizedBox(width: 8),
-                      Text(
-                        '$_soldCount sold',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                    ],
+                        VerticalDivider(
+                          width: 32,
+                          thickness: 1,
+                          color: Colors.grey[300],
+                        ),
+                        _StatBox(value: '$_soldCount', label: 'Sold'),
+                        VerticalDivider(
+                          width: 32,
+                          thickness: 1,
+                          color: Colors.grey[300],
+                        ),
+                        _StatBox(
+                          value: ratingCount == 0
+                              ? 'N/A'
+                              : rating.toStringAsFixed(1),
+                          label: ratingCount == 0
+                              ? 'No reviews'
+                              : 'Rating ($ratingCount)',
+                          icon: ratingCount == 0 ? null : Icons.star,
+                          iconColor: Colors.amber,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -251,8 +294,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               ratings: _ratings,
               sellerId: widget.userId,
               sellerName: _profile?['username'] ?? 'Unknown Seller',
-              currentUserId:
-                  Supabase.instance.client.auth.currentUser?.id,
+              currentUserId: (widget.supabaseClient ?? Supabase.instance.client)
+                  .auth
+                  .currentUser
+                  ?.id,
               onReviewChanged: _fetchProfileAndProducts,
             ),
           ],
@@ -260,6 +305,30 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         ],
       ),
     );
+  }
+
+  String? _calculateAccountAge(String? createdAtStr) {
+    if (createdAtStr == null) return null;
+
+    try {
+      final createdAt = DateTime.parse(createdAtStr);
+      final now = DateTime.now();
+      final difference = now.difference(createdAt);
+
+      if (difference.inDays < 1) {
+        return 'Less than a day';
+      } else if (difference.inDays < 30) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months month${months == 1 ? '' : 's'}';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years year${years == 1 ? '' : 's'}';
+      }
+    } catch (e) {
+      return null;
+    }
   }
 }
 
@@ -285,5 +354,43 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
     return false;
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  final String value;
+  final String label;
+  final IconData? icon;
+  final Color? iconColor;
+
+  const _StatBox({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 16, color: iconColor),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+      ],
+    );
   }
 }

@@ -1,3 +1,7 @@
+// Cart screen shown at /cart. Reads items from CartProvider, displays them
+// in a list, and handles the full checkout flow — address check, payment check,
+// marking items as sold, and firing notifications to the seller and wishlisting users.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,9 +20,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  static const Color _brand = Color.fromARGB(255, 71, 164, 245);
-  bool _isProcessingCheckout = false;
+  static const Color _brand = Color.fromARGB(255, 71, 164, 245); // app blue
+  bool _isProcessingCheckout = false; // disables the checkout button while the request runs
 
+  // Runs the full checkout sequence — validates prerequisites then marks items as sold.
   Future<void> _handleCheckout(CartProvider cart) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -28,7 +33,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // Fetch buyer address early — block checkout if missing
+    // Fetch the buyer's saved address — checkout is blocked if none is set.
     String? buyerAddress;
     try {
       final addressData = await Supabase.instance.client
@@ -60,6 +65,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    // Also block checkout if the user hasn't saved a payment method.
     try {
       final paymentData = await Supabase.instance.client
           .from('payment_methods')
@@ -92,18 +98,19 @@ class _CartScreenState extends State<CartScreen> {
     final cartItems = List.from(cart.items);
 
     try {
-      for (var item in cartItems) {
+      for (var product in cartItems) {
+        // Mark the product as sold and link it to this buyer.
         await Supabase.instance.client.from('products').update({
           'is_sold': true,
           'buyer_id': user.id,
           'order_status': 'pending',
-        }).eq('id', item.product.id);
+        }).eq('id', product.id);
 
-        // Remove this product from all users' carts
+        // Remove this product from all users' carts so nobody else can buy it.
         await Supabase.instance.client
             .from('cart_items')
             .delete()
-            .eq('product_id', item.product.id);
+            .eq('product_id', product.id);
       }
     } catch (e) {
       debugPrint('Error marking checkout items as sold: $e');
@@ -112,14 +119,15 @@ class _CartScreenState extends State<CartScreen> {
 
 
     for (var item in cartItems) {
-      debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');
-      if (item.product.sellerId != null) {
+      debugPrint('Checkout item: ${item.name}, sellerId=${item.sellerId}');
+      // Notify the seller that their listing has been purchased.
+      if (item.sellerId != null) {
         try {
           await NotificationProvider.insertNotification(
-            userId: item.product.sellerId!,
+            userId: item.sellerId!,
             type: NotificationType.listingSold,
-            content: 'Your listing "${item.product.name}" has been sold!',
-            listingId: item.product.id,
+            content: 'Your listing "${item.name}" has been sold!',
+            listingId: item.id,
             relatedUserId: user.id,
             buyerAddress: buyerAddress,
           );
@@ -128,19 +136,21 @@ class _CartScreenState extends State<CartScreen> {
         }
       }
 
+      // Notify anyone who wishlisted this item that it's now been sold.
       try {
         final wishlistEntries = await Supabase.instance.client
             .from('wishlist')
             .select('user_id')
-            .eq('listing_id', item.product.id);
+            .eq('listing_id', item.id);
         for (final entry in wishlistEntries as List) {
           final wishlisterId = entry['user_id']?.toString();
+          // Skip the buyer — they already know they bought it.
           if (wishlisterId != null && wishlisterId != user.id) {
             await NotificationProvider.insertNotification(
               userId: wishlisterId,
               type: NotificationType.wishlistPurchased,
-              content: 'An item on your wishlist "${item.product.name}" has been sold.',
-              listingId: item.product.id,
+              content: 'An item on your wishlist "${item.name}" has been sold.',
+              listingId: item.id,
             );
           }
         }
@@ -220,6 +230,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 32),
+                                // Empty state or responsive layout depending on cart and screen width.
                                 if (cart.items.isEmpty)
                                   _buildEmptyCart(context)
                                 else
@@ -243,6 +254,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  // Shown when the cart has no items — icon, message, and a link back to listings.
   Widget _buildEmptyCart(BuildContext context) {
     return SizedBox(
       height: 360,
@@ -316,6 +328,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  // Scrolling is handled by the parent SingleChildScrollView, so physics is disabled here.
   Widget _buildItemList(CartProvider cart) {
     return ListView.separated(
       shrinkWrap: true,
@@ -324,7 +337,7 @@ class _CartScreenState extends State<CartScreen> {
       separatorBuilder: (_, __) =>
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
       itemBuilder: (context, index) {
-        final product = cart.items[index].product;
+        final product = cart.items[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Row(
@@ -393,6 +406,8 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  // Order total card — shows item count, price, and the checkout button.
+  // Displays a spinner in place of the button while checkout is processing.
   Widget _buildSummaryPanel(BuildContext context, CartProvider cart) {
     return Container(
       padding: const EdgeInsets.all(24),

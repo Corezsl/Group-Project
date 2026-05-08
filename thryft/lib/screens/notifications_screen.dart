@@ -1,3 +1,7 @@
+// Notification inbox at /notifications. Reached from the bell icon in the header.
+// Marks all notifications as read as soon as the screen opens. Reads from
+// NotificationProvider which keeps the list in sync via a Supabase realtime subscription.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +22,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
+    // Deferred so the provider is available in the widget tree before calling it.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationProvider>().markAllAsRead();
     });
@@ -65,6 +70,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 24),
+                                // Three states: loading, empty inbox, or notification list.
                                 if (provider.isLoading)
                                   const Center(
                                     child: CircularProgressIndicator(),
@@ -127,6 +133,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Each notification tile — tappable if it has a listing and isn't an offerReceived
+  // (offer notifications have inline accept/decline buttons instead of navigation).
   Widget _buildNotificationTile(
     BuildContext context,
     NotificationProvider provider,
@@ -138,6 +146,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return InkWell(
       onTap: isTappable ? () => _navigateToListing(context, notif) : null,
       child: Container(
+        // Unread notifications get a light blue background to stand out.
         color: notif.isRead ? Colors.white : const Color(0xFFF0F7FF),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
@@ -193,6 +202,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Coloured circle icon — each notification type gets a distinct colour.
   Widget _buildIcon(NotificationType type) {
     final (IconData icon, Color color) = switch (type) {
       NotificationType.listingSold => (Icons.sell_outlined, Colors.green),
@@ -223,6 +233,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Shows the buyer's delivery address inline on listingSold notifications
+  // so the seller knows where to ship without leaving the screen.
   Widget _buildShippingAddress(String address) {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -249,6 +261,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Shown on offerAccepted and offerDeclined notifications — links back to the listing.
   Widget _buildViewOfferLink(BuildContext context, AppNotification notif) {
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -266,6 +279,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Inline accept/decline buttons rendered on offerReceived notifications.
   Widget _buildOfferActions(
     BuildContext context,
     NotificationProvider provider,
@@ -304,6 +318,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Delegates to the provider which marks the item sold and notifies the buyer.
+  // Shows a specific message if the item was already sold by someone else.
   Future<void> _handleAccept(
     BuildContext context,
     NotificationProvider provider,
@@ -353,6 +369,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  // Fetches the full product row before pushing so the detail screen has all fields.
   Future<void> _navigateToListing(
       BuildContext context, AppNotification notif) async {
     if (notif.listingId == null) return;
@@ -380,7 +397,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         'department': data['department']?.toString() ?? 'All',
         'material': data['material']?.toString() ?? '',
         'colour': data['colour']?.toString() ?? '',
-        'isSold': (data['is_sold'] == true).toString(),
+        'is_sold': (data['is_sold'] == true).toString(),
         if (data['description'] != null) 'description': data['description'].toString(),
         if (data['image_url_2'] != null) 'image_url_2': data['image_url_2'].toString(),
         if (data['image_url_3'] != null) 'image_url_3': data['image_url_3'].toString(),
@@ -400,6 +417,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  // Relative timestamp shown beneath each notification — falls back to a date after a week.
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 1) return 'Just now';

@@ -1,3 +1,7 @@
+// Shows all buyer reviews left on the logged-in user's sold listings.
+// Reached from the account hub. Accepts an optional supabaseClient so the
+// screen can be driven by a mock in tests without hitting the real DB.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,7 +9,10 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 
 class MyReviewsScreen extends StatefulWidget {
-  const MyReviewsScreen({super.key});
+  // Injected in tests; falls back to the real Supabase singleton in production.
+  final SupabaseClient? supabaseClient;
+
+  const MyReviewsScreen({super.key, this.supabaseClient});
 
   @override
   State<MyReviewsScreen> createState() => _MyReviewsScreenState();
@@ -14,8 +21,12 @@ class MyReviewsScreen extends StatefulWidget {
 class _MyReviewsScreenState extends State<MyReviewsScreen> {
   List<Map<String, dynamic>> _ratings = [];
   bool _isLoading = true;
-  String? _sellerId;
-  String? _sellerName;
+  String? _sellerId;   // current user's id — used when building product navigation extras
+  String? _sellerName; // current user's username — displayed on product detail
+
+  // Uses the injected client in tests, the global singleton otherwise.
+  SupabaseClient get _supabase =>
+      widget.supabaseClient ?? Supabase.instance.client;
 
   @override
   void initState() {
@@ -23,8 +34,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     _fetchReviews();
   }
 
+  // Fetches the seller's username then all ratings on their listings, newest first.
   Future<void> _fetchReviews() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = _supabase.auth.currentUser;
     if (user == null) {
       setState(() => _isLoading = false);
       return;
@@ -33,7 +45,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     _sellerId = user.id;
 
     try {
-      final profileData = await Supabase.instance.client
+      final profileData = await _supabase
           .from('profiles')
           .select('username')
           .eq('id', user.id)
@@ -41,9 +53,12 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
       _sellerName = profileData?['username']?.toString();
 
-      final ratingsData = await Supabase.instance.client
+      // The foreign-key hint on profiles selects the buyer's username, not the seller's.
+      final ratingsData = await _supabase
           .from('ratings')
-          .select('*, products(*), profiles!ratings_buyer_profile_fkey(username)')
+          .select(
+            '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
+          )
           .eq('seller_id', user.id)
           .order('created_at', ascending: false);
 
@@ -57,6 +72,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     }
   }
 
+  // Asks for confirmation before removing the review row from the ratings table.
   Future<void> _deleteReview(Map<String, dynamic> review) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -83,10 +99,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (confirmed != true) return;
 
     try {
-      await Supabase.instance.client
-          .from('ratings')
-          .delete()
-          .eq('id', review['id']);
+      await _supabase.from('ratings').delete().eq('id', review['id']);
       setState(() => _ratings.removeWhere((r) => r['id'] == review['id']));
     } catch (e) {
       if (mounted) {
@@ -97,6 +110,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     }
   }
 
+  // Opens a star-picker pre-filled with the existing rating and saves the update.
   Future<void> _editReview(Map<String, dynamic> review) async {
     int localRating = review['rating'] as int;
     final commentController = TextEditingController(
@@ -157,11 +171,15 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     if (submitted != true) return;
 
     try {
-      await Supabase.instance.client.from('ratings').update({
-        'rating': localRating,
-        'comment': commentController.text,
-      }).eq('id', review['id']);
+      await _supabase
+          .from('ratings')
+          .update({
+            'rating': localRating,
+            'comment': commentController.text.trim(),
+          })
+          .eq('id', review['id']);
 
+      // Patch the local list in place so the card reflects the new values immediately.
       setState(() {
         final index = _ratings.indexWhere((r) => r['id'] == review['id']);
         if (index != -1) {
@@ -183,7 +201,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = _supabase.auth.currentUser?.id;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -209,6 +227,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
+                  // Three states: loading spinner, empty message, or the review list.
                   if (_isLoading)
                     const SizedBox(
                       height: 300,
@@ -256,8 +275,10 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                         final review = _ratings[index];
                         final buyerUsername =
                             review['profiles']?['username']?.toString() ??
-                                'Anonymous';
-                        final isOwnReview = currentUserId != null &&
+                            'Anonymous';
+                        // Only the buyer who left the review can edit or delete it.
+                        final isOwnReview =
+                            currentUserId != null &&
                             review['buyer_id'] == currentUserId;
 
                         return _buildReviewCard(
@@ -277,6 +298,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     );
   }
 
+  // Review card: buyer avatar and name at top, star row, optional comment,
+  // and a tappable product thumbnail that navigates to the listing detail.
   Widget _buildReviewCard({
     required Map<String, dynamic> review,
     required String buyerUsername,
@@ -312,7 +335,11 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 const Spacer(),
                 if (isOwnReview)
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, size: 18, color: Colors.grey[500]),
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 18,
+                      color: Colors.grey[500],
+                    ),
                     onSelected: (value) {
                       if (value == 'edit') _editReview(review);
                       if (value == 'delete') _deleteReview(review);
@@ -321,7 +348,10 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                       const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Text('Delete', style: TextStyle(color: Colors.red)),
+                        child: Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -331,7 +361,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             Row(
               children: List.generate(5, (i) {
                 return Icon(
-                  i < (review['rating'] as int) ? Icons.star : Icons.star_border,
+                  i < (review['rating'] as int)
+                      ? Icons.star
+                      : Icons.star_border,
                   color: Colors.amber,
                   size: 16,
                 );

@@ -1,3 +1,7 @@
+// Profile settings at /profile-settings. Reached from the account hub.
+// Lets the user update their avatar, bio, username, email, password,
+// delivery address, and saved payment method — all via Supabase upserts.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,16 +20,17 @@ class ProfileSettingsScreen extends StatefulWidget {
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final _supabase = Supabase.instance.client;
-  bool _isLoading = false;
+  bool _isLoading = false; // true while any async operation is running — shows a full-screen overlay
 
-  Map<String, dynamic>? _userAddress;
-  Map<String, dynamic>? _userPaymentMethod;
+  Map<String, dynamic>? _userAddress;       // null until the address row is fetched
+  Map<String, dynamic>? _userPaymentMethod; // null if no card has been saved yet
   String? _currentAvatarUrl;
   final _bioController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    // Three independent fetches — kick them all off on load.
     _fetchAddress();
     _fetchPaymentMethod();
     _fetchProfile();
@@ -97,6 +102,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     } catch (_) {}
   }
 
+  // Picks an image from the gallery (max 512×512), uploads it to Supabase storage,
+  // then updates the profiles.avatar_url column with the new public URL.
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -113,6 +120,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
       final bytes = await image.readAsBytes();
       final ext = image.name.split('.').last;
+      // UUID suffix prevents browser caching of the old avatar after an update.
       final fileName = 'avatars/${user.id}.${const Uuid().v4()}.$ext';
 
       await _supabase.storage
@@ -158,6 +166,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Green on success, red on error — used by all save operations.
   void _showSnackBar(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +177,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Handles username, email, and password updates via Supabase auth.
+  // Email shows a separate snackbar reminding the user to verify their inbox.
   Future<void> _updateField(String field, String value) async {
     setState(() => _isLoading = true);
     try {
@@ -194,6 +205,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Upserts the address row — merges with any existing row so the DB id is preserved.
   Future<void> _updateFullAddress(
     String street,
     String city,
@@ -213,6 +225,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         'country': country,
       };
 
+      // Spread the existing row first so the primary key is included in the upsert.
       if (_userAddress != null) {
         data.addAll(_userAddress!);
         data['street'] = street;
@@ -233,6 +246,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Upserts the payment method — includes the existing row id if one already exists.
   Future<void> _updatePaymentMethod(
     String cardholderName,
     String cardNumber,
@@ -268,6 +282,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  // Pre-fills the address form with the current values so the user only edits what changed.
   void _showAddressDialog() {
     final streetCtrl = TextEditingController(
       text: _userAddress?['street'] ?? '',
@@ -360,6 +375,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Pre-fills the payment form with the saved card details and validates format on save.
   void _showPaymentDialog() {
     final nameCtrl = TextEditingController(
       text: _userPaymentMethod?['cardholder_name'] ?? '',
@@ -403,8 +419,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 16,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(r'^\d{16}$').hasMatch(val.trim())) {
+                        return 'Must be 16 digits';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -413,8 +435,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       labelText: 'Expiry Date (MM/YY)',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 5,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(
+                        r'^(0[1-9]|1[0-2])\/\d{2}$',
+                      ).hasMatch(val.trim())) {
+                        return 'Format must be MM/YY';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -424,8 +454,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 4,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(r'^\d{3,4}$').hasMatch(val.trim())) {
+                        return 'Must be 3 or 4 digits';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -456,6 +492,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  // Generic single-field edit dialog used for username, email, and password.
+  // Password field starts empty and is obscured; others pre-fill with the current value.
   void _showEditDialog(String title, String field, String? currentValue) {
     final controller = TextEditingController(
       text: field == 'password' ? '' : currentValue,
@@ -526,7 +564,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final email = user.email ?? 'No Email Provided';
 
     return Scaffold(
-      drawer: const AppDrawer(), // Added AppDrawer in case of mobile view
+      drawer: const AppDrawer(),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -573,7 +611,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                       ? NetworkImage(_currentAvatarUrl!)
                                       : null,
                                   child: _currentAvatarUrl == null
-                                      ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 48,
+                                          color: Colors.grey,
+                                        )
                                       : null,
                                 ),
                                 Positioned(
@@ -583,12 +625,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     onTap: _pickAndUploadAvatar,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color.fromARGB(255, 71, 164, 245),
+                                        color: const Color.fromARGB(
+                                          255,
+                                          71,
+                                          164,
+                                          245,
+                                        ),
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
                                       ),
                                       padding: const EdgeInsets.all(6),
-                                      child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                      child: const Icon(
+                                        Icons.camera_alt,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -672,7 +726,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 children: [
                                   const Text(
                                     'Bio',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   TextField(
@@ -680,7 +736,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     maxLines: 3,
                                     maxLength: 200,
                                     decoration: const InputDecoration(
-                                      hintText: 'Tell buyers a little about yourself...',
+                                      hintText:
+                                          'Tell buyers a little about yourself...',
                                       border: OutlineInputBorder(),
                                       contentPadding: EdgeInsets.all(12),
                                     ),
@@ -799,8 +856,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             child: ListTile(
                               leading: const Icon(Icons.credit_card, size: 32),
                               title: Text(
-                                _userPaymentMethod?['cardholder_name'] ?? 'Not set',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                _userPaymentMethod?['cardholder_name'] ??
+                                    'Not set',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               subtitle: Text(
                                 _userPaymentMethod?['card_number'] != null
@@ -819,6 +879,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               ],
             ),
           ),
+          // Full-screen overlay that blocks interaction while any save is in flight.
           if (_isLoading)
             Container(
               color: Colors.black54,

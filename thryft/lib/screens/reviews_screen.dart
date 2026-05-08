@@ -1,3 +1,7 @@
+// Sliver widget that renders the review list on a seller's public profile page.
+// Embedded inside a CustomScrollView — not a standalone route. Receives the
+// ratings list from the parent and manages local edits without re-fetching.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,8 +10,8 @@ class ReviewsScreen extends StatefulWidget {
   final List<dynamic> ratings;
   final String sellerId;
   final String sellerName;
-  final String? currentUserId;
-  final VoidCallback? onReviewChanged;
+  final String? currentUserId; // passed in so the widget knows whose review to show edit controls for
+  final VoidCallback? onReviewChanged; // called after edit or delete so the parent can refresh its average
 
   const ReviewsScreen({
     super.key,
@@ -28,9 +32,12 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   @override
   void initState() {
     super.initState();
+    // Copy so local edits don't mutate the parent's list directly.
     _ratings = List.from(widget.ratings);
   }
 
+  // Confirms then deletes the row — also calls onReviewChanged so the
+  // parent profile page can recalculate the average rating display.
   Future<void> _deleteReview(dynamic review) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -72,6 +79,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     }
   }
 
+  // Opens a star-picker pre-filled with the existing values and saves the update.
   Future<void> _editReview(dynamic review) async {
     int localRating = review['rating'] as int;
     final commentController = TextEditingController(
@@ -137,6 +145,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         'comment': commentController.text,
       }).eq('id', review['id']);
 
+      // Patch the local copy in place so the card updates without a re-fetch.
       setState(() {
         final index = _ratings.indexWhere((r) => r['id'] == review['id']);
         if (index != -1) {
@@ -181,6 +190,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             final review = _ratings[index];
             final buyerUsername =
                 review['profiles']?['username']?.toString() ?? 'Anonymous';
+            // Only the buyer who wrote the review sees the edit/delete menu.
             final isOwnReview =
                 widget.currentUserId != null &&
                 review['buyer_id'] == widget.currentUserId;
@@ -268,6 +278,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                         ),
                       ),
                     const SizedBox(height: 8),
+                    // Linked product thumbnail — only shown when the product data was joined.
                     if (review['products'] != null) ...[
                       const Divider(height: 24),
                       InkWell(

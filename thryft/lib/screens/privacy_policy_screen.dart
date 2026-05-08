@@ -1,3 +1,7 @@
+// Static privacy policy page at /privacy-policy. Linked from the site footer.
+// Content is hardcoded — no network call required. Uses IntrinsicHeight so the
+// footer always sits at the bottom even when the content is shorter than the viewport.
+
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
@@ -9,6 +13,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive padding and title size — tighter on mobile.
     final isMobile = Responsive.isMobile(context);
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
@@ -20,6 +25,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height,
           ),
+          // IntrinsicHeight lets the Expanded child push the footer to the bottom.
           child: IntrinsicHeight(
             child: Column(
               children: [
@@ -45,6 +51,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: isMobile ? 24 : 40),
+                        // Policy body — all four paragraphs in a single styled Text widget.
                         const Text(
                           'We collect basic account and transaction information to provide and improve Thryft services.\n\n'
                           'Information is used for account management, order processing, customer support, and security monitoring.\n\n'

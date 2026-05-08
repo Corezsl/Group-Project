@@ -1,3 +1,7 @@
+// Contact form screen shown at /contact. Linked from the About page CTA and
+// the site footer. Validates the fields and shows a success snackbar on submit.
+// Note: the form doesn't actually send anything yet — submission is a no-op.
+
 import 'package:flutter/material.dart';
 import 'package:thryft/utils/responsive.dart';
 import '../widgets/footer.dart';
@@ -13,11 +17,13 @@ class ContactScreen extends StatefulWidget {
 
 class _ContactPageState extends State<ContactScreen> {
   final _formKey = GlobalKey<FormState>();
+  // One controller per field — used to clear inputs after a successful submit.
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
 
+  // Always dispose text controllers to avoid memory leaks.
   @override
   void dispose() {
     _nameController.dispose();
@@ -27,6 +33,7 @@ class _ContactPageState extends State<ContactScreen> {
     super.dispose();
   }
 
+  // Validates all fields and shows a success snackbar, then clears the form.
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,6 +54,7 @@ class _ContactPageState extends State<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    // Responsive sizing — smaller padding and fonts on mobile.
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
     final subtitleSize = isMobile ? 15.0 : 18.0;
@@ -66,7 +74,7 @@ class _ContactPageState extends State<ContactScreen> {
               ),
               child: Column(
                 children: [
-                  // Page Title
+                  // Page Title and descriptive header.
                   Text(
                     'Contact Us',
                     style: TextStyle(
@@ -89,7 +97,7 @@ class _ContactPageState extends State<ContactScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Contact Form
+                      // Form container with shadow and padding.
                       Expanded(
                         child: Card(
                           elevation: 3,
@@ -110,6 +118,7 @@ class _ContactPageState extends State<ContactScreen> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Each field has a validator that blocks submission if empty.
                                   TextFormField(
                                     controller: _nameController,
                                     decoration: const InputDecoration(
@@ -178,6 +187,7 @@ class _ContactPageState extends State<ContactScreen> {
                                   ),
                                   SizedBox(height: isMobile ? 20 : 30),
 
+                                  // Triggers validation — only submits if all fields pass.
                                   ElevatedButton(
                                     onPressed: _submitForm,
                                     style: ElevatedButton.styleFrom(
