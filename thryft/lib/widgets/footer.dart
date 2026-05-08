@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thryft/utils/responsive.dart';
 
+// Footer shown at the bottom of most screens (home, wishlist, account etc).
+// Has 4 columns of links: about, quick links, support, contact info.
+// Switches between row and stacked layouts depending on screen width.
 class Footer extends StatelessWidget {
   const Footer({super.key});
 
@@ -18,6 +21,7 @@ class Footer extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // pick row vs stacked based on width, then divider + copyright underneath
           isMobile ? _buildMobileLayout(context) : _buildDesktopLayout(context),
           SizedBox(height: isMobile ? 24 : 40),
           const Divider(color: Colors.white),
@@ -68,6 +72,7 @@ class Footer extends StatelessWidget {
 
   // ─── Column builders ──────────────────────────────────────────────────────
 
+  // short blurb about the marketplace — purely text, no links
   Widget _aboutColumn() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,6 +94,7 @@ class Footer extends StatelessWidget {
     );
   }
 
+  // top-level info pages
   Widget _quickLinksColumn(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,6 +114,7 @@ class Footer extends StatelessWidget {
     );
   }
 
+  // help/legal links — these are the ones users hit when something goes wrong
   Widget _supportColumn(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,6 +136,7 @@ class Footer extends StatelessWidget {
     );
   }
 
+  // static contact info — email/phone/hours, not real links
   Widget _contactColumn() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,6 +168,7 @@ class Footer extends StatelessWidget {
     );
   }
 
+  // shared row builder so all the link rows look identical
   Widget _buildFooterLink(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -177,6 +186,8 @@ class Footer extends StatelessWidget {
     );
   }
 
+  // maps the visible link label to its route — kept in one place so the
+  // builders above stay declarative
   void _handleFooterLinkTap(BuildContext context, String linkText) {
     switch (linkText) {
       case 'About Us':
