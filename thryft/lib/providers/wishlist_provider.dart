@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/models/product.dart';
-import 'package:thryft/models/wishlist_item.dart';
 import 'package:thryft/providers/notification_provider.dart';
 
 class WishlistProvider extends ChangeNotifier {
-  List<WishlistItem> _items = [];
+  List<Product> _items = [];
 
   WishlistProvider() {
     _init();
@@ -45,7 +44,7 @@ class WishlistProvider extends ChangeNotifier {
       _items = (response as List).where((data) => data['products'] != null).map(
         (data) {
           final pData = data['products'];
-          final p = Product(
+          return Product(
             id: pData['id'].toString(),
             name: pData['name'].toString(),
             price: (pData['price'] as num).toDouble(),
@@ -67,10 +66,6 @@ class WishlistProvider extends ChangeNotifier {
             colour: pData['colour'].toString(),
             description: pData['description']?.toString(),
           );
-          return WishlistItem(
-            product: p,
-            savedAt: DateTime.parse(data['created_at'].toString()),
-          );
         },
       ).toList();
 
@@ -80,13 +75,13 @@ class WishlistProvider extends ChangeNotifier {
     }
   }
 
-  List<WishlistItem> get wishlistItems => List.unmodifiable(_items);
+  List<Product> get wishlistItems => List.unmodifiable(_items);
 
   /// Flat product list — used by ProductCard to check isWishlisted.
-  List<Product> get items => _items.map((i) => i.product).toList();
+  List<Product> get items => List.unmodifiable(_items);
 
   bool isWishlisted(String productId) =>
-      _items.any((i) => i.product.id == productId);
+      _items.any((p) => p.id == productId);
 
   Future<void> toggleWishlist(Product product) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -99,7 +94,7 @@ class WishlistProvider extends ChangeNotifier {
     if (product.sellerId != null && product.sellerId.toString() == userId) {
       final wasWishlisted = isWishlisted(product.id);
       if (wasWishlisted) {
-        _items.removeWhere((i) => i.product.id == product.id);
+        _items.removeWhere((p) => p.id == product.id);
         notifyListeners();
 
         // Remove the item from DB on wishlist table
@@ -125,10 +120,9 @@ class WishlistProvider extends ChangeNotifier {
 
     // Optimistic UI update for immediate feedback
     if (isCurrentlyWishlisted) {
-      _items.removeWhere((i) => i.product.id == product.id);
+      _items.removeWhere((p) => p.id == product.id);
     } else {
-      _items.insert(0, WishlistItem(product: product, savedAt: DateTime.now()));
-
+      _items.insert(0, product);
     }
     notifyListeners();
 
