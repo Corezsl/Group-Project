@@ -2,16 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 
-/// Manages shopping cart state and synchronizes data with Supabase.
+/// Manages shopping cart state and syncs it with the `cart_items` table in Supabase.
+/// Uses a local-first approach: the UI list is updated immediately,
+/// then the database write happens in the background.
+///
+/// Consumed via Provider by cart screens, the cart badge, and checkout.
 class CartProvider extends ChangeNotifier {
-  String? _currentUserId;
-  final List<Product> _items = [];
+  String? _currentUserId;       // Tracks the logged-in user; null when signed out.
+  final List<Product> _items = []; // In-memory cart contents.
 
+  /// On creation, starts listening for auth changes so the cart
+  /// is automatically loaded/cleared on login/logout.
   CartProvider() {
     _initAuthListener();
   }
 
-  /// Listens for authentication state changes to sync the cart accordingly.
+  /// Subscribes to Supabase auth state changes.
+  /// Also fires once immediately for the current session (if any).
   void _initAuthListener() {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final user = data.session?.user;
@@ -20,7 +27,8 @@ class CartProvider extends ChangeNotifier {
     _handleUserChange(Supabase.instance.client.auth.currentUser?.id);
   }
 
-  /// Updates the local cart when a user logs in or out.
+  /// Called whenever the authenticated user changes.
+  /// Clears the old cart, then fetches the new user's cart from Supabase.
   Future<void> _handleUserChange(String? userId) async {
     if (_currentUserId == userId) return;
     
@@ -29,7 +37,7 @@ class CartProvider extends ChangeNotifier {
     
     if (userId != null) {
       try {
-        // Fetch cart items from Supabase for the current user.
+        // 1. Get the product IDs that are in this user's cart.
         final data = await Supabase.instance.client
             .from('cart_items')
             .select('product_id')
@@ -38,7 +46,8 @@ class CartProvider extends ChangeNotifier {
         if (data.isNotEmpty) {
           final productIds = data.map((row) => row['product_id'] as String).toList();
           
-          // Fetch full product details for items in the cart.
+          // 2. Fetch full product details (+ seller name via join) for those IDs.
+          //    Only unsold items are included — sold products are silently dropped.
           final productsData = await Supabase.instance.client
               .from('products')
               .select('*, profiles(username)')
@@ -79,6 +88,10 @@ class CartProvider extends ChangeNotifier {
 
   int get itemCount => _items.length;
 
+  /// Total number of items (respects quantity) — drives the badge count.
+  int get itemCount => _items.length;
+
+  /// Sum of (price × quantity) for every item — shown at checkout.
   double get totalPrice =>
       _items.fold(0, (sum, item) => sum + item.price);
 
@@ -87,7 +100,10 @@ class CartProvider extends ChangeNotifier {
     return _items.any((item) => item.id == productId);
   }
 
-  /// Adds a product to the cart and persists it to the database.
+  
+
+  /// Adds a product to the cart (if not already present) and
+  /// inserts a row into `cart_items` in Supabase.
   Future<void> addItem(Product product) async {
     if (!isInCart(product.id)) {
       _items.add(product);
@@ -106,7 +122,8 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Removes a product from the cart and the database.
+  /// Removes a single product from the cart and deletes the
+  /// matching row in `cart_items` tablr
   Future<void> removeItem(String productId) async {
     _items.removeWhere((p) => p.id == productId);
     notifyListeners();
@@ -123,7 +140,8 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Clears all items from the local cart and database.
+  /// Empties the entire cart locally and deletes all of
+  /// this user's rows from `cart_items`. Called after checkout.
   Future<void> clear() async {
     _items.clear();
     notifyListeners();
