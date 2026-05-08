@@ -1,10 +1,17 @@
+// Represents an offer a buyer has made on a listing.
+// Loaded by OfferProvider from the supabase 'offers' table and shown on
+// the my_offers screen + the offer notifications.
 class Offer {
   final int offerId;
   final String buyerId;
   final String sellerId;
+  // id of the product the offer is on
   final String listingId;
+  // title + image are denormalised onto the offer row so we don't have to
+  // re-fetch the product just to render the my_offers list
   final String? listingTitle;
   final String? listingImageUrl;
+  // how much the buyer offered, in £
   final double offerAmount;
   final String status; // 'pending' | 'accepted' | 'declined'
   final DateTime createdAt;
@@ -21,6 +28,8 @@ class Offer {
     required this.createdAt,
   });
 
+  // builds an Offer from a supabase row, with safe fallbacks since some rows
+  // come back missing fields when joined from notifications
   factory Offer.fromMap(Map<String, dynamic> map) {
     return Offer(
       offerId: map['offer_id'] != null ? (map['offer_id'] as num).toInt() : 0,
@@ -39,6 +48,7 @@ class Offer {
     );
   }
 
+  // little status helpers so screens dont have to compare strings everywhere
   bool get isPending => status == 'pending';
   bool get isAccepted => status == 'accepted';
   bool get isDeclined => status == 'declined';
