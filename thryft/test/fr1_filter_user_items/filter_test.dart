@@ -7,26 +7,16 @@ import 'package:thryft/router.dart';
 // Mocks
 // ---------------------------------------------------------------------------
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockGoTrueClient extends Mock implements GoTrueClient {}
 
 // FR2: Partition 1 - Filter by single size
 // Tests that the correct value is selected and follows the validation rules in place
 
+
+
 void main() {
-  late MockSupabaseClient client;
-  late MockGoTrueClient auth;
-
-  setUp(() {
-    client = MockSupabaseClient();
-    auth = MockGoTrueClient();
-    when(() => client.auth).thenReturn(auth);
-  });
-
   group('FR2 #1 - Filter By Single Size', () {
     test('returns values that match the size type given', () {
-      when(() => null); //NTS: returns values matched, and add an expect, replace null with the expected result.
+      expect(); //NTS: returns values matched, and add an expect, replace null with the expected result.
     });
 
 
@@ -92,3 +82,21 @@ void main() {
 //Material filtering only allows selections from a predefined list and may accept multiple values. 
 //Colour list filters through primary and secondary user-provided colours. 
 //Optional category dropdown for item purpose/type. 
+
+//FIR TESTING:
+
+
+//step 1:create filtervalidationfrom()
+//step2:incorporate into filter system in filter_system.dart
+//step 3: create test for filter validation function, and then test that the filter system is correctly validating the inputs and returning the expected results from database.
+//step 4:TESRING PART:(format similar can be found for fr3):
+//const _sellerEmail = 'fr4.seller@thryft-test.local';
+//const _sellerPassword = 'Thryft!test99';
+
+//const _buyerEmail = 'fr4.buyer@thryft-test.local';
+//const _buyerPassword = 'Thryft!test99'; CREATE SELLER AND BUYER IN SUPABASE WITH THESE CREDENTIALS TO TEST FILTERING.
+//make test with all possible values for filter(valid and invalid values),
+//test when a user is signed in and signed out with filter validation, and then test that the correct values are returned from the database, and that incorrect values are rejected by the filter validation function.
+//follow test plan for patritions outlined in the test plan document, 
+//and ensure that all edge cases are covered, such as invalid input formats, 
+//empty values, and combinations of filters that may not return any results.
