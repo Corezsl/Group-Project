@@ -98,19 +98,19 @@ class _CartScreenState extends State<CartScreen> {
     final cartItems = List.from(cart.items);
 
     try {
-      for (var item in cartItems) {
+      for (var product in cartItems) {
         // Mark the product as sold and link it to this buyer.
         await Supabase.instance.client.from('products').update({
           'is_sold': true,
           'buyer_id': user.id,
           'order_status': 'pending',
-        }).eq('id', item.product.id);
+        }).eq('id', product.id);
 
         // Remove this product from all users' carts so nobody else can buy it.
         await Supabase.instance.client
             .from('cart_items')
             .delete()
-            .eq('product_id', item.product.id);
+            .eq('product_id', product.id);
       }
     } catch (e) {
       debugPrint('Error marking checkout items as sold: $e');
@@ -119,15 +119,15 @@ class _CartScreenState extends State<CartScreen> {
 
 
     for (var item in cartItems) {
-      debugPrint('Checkout item: ${item.product.name}, sellerId=${item.product.sellerId}');
+      debugPrint('Checkout item: ${item.name}, sellerId=${item.sellerId}');
       // Notify the seller that their listing has been purchased.
-      if (item.product.sellerId != null) {
+      if (item.sellerId != null) {
         try {
           await NotificationProvider.insertNotification(
-            userId: item.product.sellerId!,
+            userId: item.sellerId!,
             type: NotificationType.listingSold,
-            content: 'Your listing "${item.product.name}" has been sold!',
-            listingId: item.product.id,
+            content: 'Your listing "${item.name}" has been sold!',
+            listingId: item.id,
             relatedUserId: user.id,
             buyerAddress: buyerAddress,
           );
@@ -141,7 +141,7 @@ class _CartScreenState extends State<CartScreen> {
         final wishlistEntries = await Supabase.instance.client
             .from('wishlist')
             .select('user_id')
-            .eq('listing_id', item.product.id);
+            .eq('listing_id', item.id);
         for (final entry in wishlistEntries as List) {
           final wishlisterId = entry['user_id']?.toString();
           // Skip the buyer — they already know they bought it.
@@ -149,8 +149,8 @@ class _CartScreenState extends State<CartScreen> {
             await NotificationProvider.insertNotification(
               userId: wishlisterId,
               type: NotificationType.wishlistPurchased,
-              content: 'An item on your wishlist "${item.product.name}" has been sold.',
-              listingId: item.product.id,
+              content: 'An item on your wishlist "${item.name}" has been sold.',
+              listingId: item.id,
             );
           }
         }
@@ -337,7 +337,7 @@ class _CartScreenState extends State<CartScreen> {
       separatorBuilder: (_, __) =>
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
       itemBuilder: (context, index) {
-        final product = cart.items[index].product;
+        final product = cart.items[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Row(

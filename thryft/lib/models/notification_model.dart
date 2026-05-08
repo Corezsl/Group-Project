@@ -1,3 +1,8 @@
+// Notification model used across the app for the bell icon, notifications screen,
+// and anywhere we need to react to an event (sold listing, accepted offer, etc).
+// Loaded from the supabase 'notifications' table via NotificationProvider.
+
+// every kind of notification we currently send — keep in sync with the db enum
 enum NotificationType {
   listingSold,
   priceDrop,
@@ -10,6 +15,7 @@ enum NotificationType {
   orderShipped,
   orderDelivered;
 
+  // maps the snake_case string from the db row into our enum
   static NotificationType fromString(String value) {
     switch (value) {
       case 'listing_sold':
@@ -35,6 +41,7 @@ enum NotificationType {
     }
   }
 
+  // reverse of fromString, used when inserting new rows
   String toDbString() {
     switch (this) {
       case NotificationType.listingSold:
@@ -61,15 +68,21 @@ enum NotificationType {
   }
 }
 
+// A notification belonging to a single user. Named AppNotification so it doesnt
+// clash with flutter's own Notification class.
 class AppNotification {
   final int notificationId;
+  // user this notification is for (the recipient)
   final String userId;
   final NotificationType notifType;
+  // the message text shown in the notifications list
   final String content;
+  // false until the user opens the notifications screen
   final bool isRead;
   final DateTime createdAt;
 
-  // Extended fields (nullable)
+  // optional extras depending on the notif type — e.g. an offer notif has offerPrice,
+  // a shipped order notif has buyerAddress. Most types only use a couple of these.
   final String? listingId;
   final String? relatedUserId;
   final double? offerPrice;
@@ -88,6 +101,7 @@ class AppNotification {
     this.buyerAddress,
   });
 
+  // builds a notification from a supabase row
   factory AppNotification.fromMap(Map<String, dynamic> map) {
     return AppNotification(
       notificationId: map['notification_id'] as int,
@@ -105,6 +119,7 @@ class AppNotification {
     );
   }
 
+  // only isRead ever changes after creation, so thats all copyWith handles
   AppNotification copyWith({bool? isRead}) {
     return AppNotification(
       notificationId: notificationId,
