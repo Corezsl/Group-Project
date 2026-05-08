@@ -3,11 +3,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 export 'package:thryft/repositories/listing_repository.dart' show NotAuthenticatedException;
 
+/// This repository manages data fetching related to a user's order history and sales in the database.
+/// It provides methods to retrieve items the user has purchased (orders) and items the user has sold.
+/// Used by state management providers or directly by screens ( OrdersScreen,SoldItemsScreen) 
+/// to display the user's transaction history.
 class OrderRepository {
   final SupabaseClient _client;
 
   const OrderRepository(this._client);
 
+  /// Fetches all products that  specified user has purchased.
+  /// It filters the `products` table where the `buyer_id` matches the user's ID,
+  /// and joins with the `profiles` table to include  seller's username.
+  /// Returns a list of [Product] objects ordered by the date(newest first).
   Future<List<Product>> fetchOrders(String userId) async {
     final response = await _client
         .from('products')
@@ -18,6 +26,10 @@ class OrderRepository {
     return (response as List).map(rowToProduct).toList();
   }
 
+  /// Fetches  products that the specified user has successfully sold.
+  /// It filters the `products` table where the `user_id` (seller) matches the user's ID
+  /// and `is_sold` is true. Also joins with the `profiles` table to include  seller's username.
+  /// Returns a list of [Product] objects ordered by creation date (newest first).
   Future<List<Product>> fetchSoldItems(String userId) async {
     final response = await _client
         .from('products')
@@ -29,6 +41,10 @@ class OrderRepository {
     return (response as List).map(rowToProduct).toList();
   }
 
+  /// Helper method to safely convert a raw JSON map from Supabase into  strongly typed [Product] object.
+  /// Handles null safety, type casting, and mapping fields like `buyerId` and `orderStatus` 
+  /// which are specific to order history contexts.
+  /// Visible for testing to allow unit tests to verify the parsing logic.
   @visibleForTesting
   static Product rowToProduct(dynamic data) {
     return Product(
