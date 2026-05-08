@@ -192,15 +192,13 @@ class Fr7OfferTestContext {
     required String sellerId,
   }) async {
     final offerPrice = _parseOfferInput(offerInput);
-    if (offerPrice == null || offerPrice < 0.01) {
-      return 'Offer amount required';
-    }
-    if (offerPrice >= listingPrice) {
-      return 'Offer cannot exceed listing price';
-    }
-    if (buyerId == sellerId) {
-      return 'Buyer cannot offer on own listing';
-    }
+    OfferProvider.validateOfferOrThrow(
+      offerAmount: offerPrice,
+      listingPrice: listingPrice,
+      buyerId: buyerId,
+      sellerId: sellerId,
+    );
+    final validOfferPrice = offerPrice!;
 
     final alreadyPending = await OfferProvider.hasPendingOffer(
       buyerId: buyerId,
@@ -212,7 +210,7 @@ class Fr7OfferTestContext {
       buyerId: buyerId,
       sellerId: sellerId,
       listingId: listingId,
-      offerAmount: offerPrice,
+      offerAmount: validOfferPrice,
       listingTitle: listingTitle,
     );
     if (offerId == null) return 'Offer could not be saved';
@@ -221,10 +219,10 @@ class Fr7OfferTestContext {
       userId: sellerId,
       type: NotificationType.offerReceived,
       content:
-          'Buyer offered GBP ${offerPrice.toStringAsFixed(2)} for "$listingTitle"',
+          'Buyer offered GBP ${validOfferPrice.toStringAsFixed(2)} for "$listingTitle"',
       listingId: listingId,
       relatedUserId: buyerId,
-      offerPrice: offerPrice,
+      offerPrice: validOfferPrice,
     );
 
     return null;
