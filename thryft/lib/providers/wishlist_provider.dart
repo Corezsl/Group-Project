@@ -4,6 +4,12 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/notification_provider.dart';
 
+/// Manages the user's wishlist state and synchronizes it with the Supabase `wishlist` table.
+/// It provides functionality to fetch the user's wishlisted items, toggle items on/off the wishlist,
+/// and handles sending notifications to sellers when their items are wishlisted.
+/// 
+/// Used throughout the app wherever products are displayed (like the Home Screen, Search Screen, 
+/// or Product Details Screen) to show the heart icon's status and allow users to save items.
 class WishlistProvider extends ChangeNotifier {
   List<Product> _items = [];
 
@@ -13,6 +19,8 @@ class WishlistProvider extends ChangeNotifier {
 
   WishlistProvider.test();
 
+  /// Initializes the provider by setting up an auth state listener.
+  /// Automatically fetches the wishlist when a user logs in and clears it when they log out.
   Future<void> _init() async {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final session = data.session;
@@ -30,6 +38,9 @@ class WishlistProvider extends ChangeNotifier {
     }
   }
 
+  /// Fetches the current user's wishlisted items from the Supabase database.
+  /// It joins the `wishlist` table with the `products` and `profiles` tables
+  /// to get complete product details (like price, image) and seller usernames.
   Future<void> fetchWishlist() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -80,9 +91,13 @@ class WishlistProvider extends ChangeNotifier {
   /// Flat product list — used by ProductCard to check isWishlisted.
   List<Product> get items => List.unmodifiable(_items);
 
+  /// Checks if a specific product ID exists in the user's local wishlist.
   bool isWishlisted(String productId) =>
       _items.any((p) => p.id == productId);
 
+  /// Adds or removes a product from the wishlist.
+  /// Uses an optimistic UI approach: it updates the local state immediately so the UI feels fast,
+  /// and then performs the database operations in the background. Reverts if the DB operation fails.
   Future<void> toggleWishlist(Product product) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
