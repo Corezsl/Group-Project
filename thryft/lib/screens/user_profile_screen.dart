@@ -4,8 +4,12 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/screens/reviews_screen.dart';
 
+// Public profile page for any seller — avatar, bio, stats and two tabs
+// (active listings / reviews). Routed at /profile/:userId.
 class UserProfileScreen extends StatefulWidget {
+  // id of the user whose profile we're viewing (not necessarily the logged-in user)
   final String userId;
+  // optional injected client so tests can pass in a fake/different supabase client
   final SupabaseClient? supabaseClient;
 
   const UserProfileScreen({
@@ -24,8 +28,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   String? _error;
   Map<String, dynamic>? _profile;
   List<Product> _products = [];
+  // raw rating rows joined with product + reviewer profile — passed straight to ReviewsScreen
   List<Map<String, dynamic>> _ratings = [];
   int _soldCount = 0;
+  // controller for the Listings/Reviews tab bar
   late TabController _tabController;
 
   @override
@@ -41,6 +47,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     super.dispose();
   }
 
+  // does 4 supabase queries: profile, active listings, ratings, sold count.
+  // also called from ReviewsScreen via onReviewChanged when a review is added/edited
+  // so the stats stay up to date.
   Future<void> _fetchProfileAndProducts() async {
     try {
       final client = widget.supabaseClient ?? Supabase.instance.client;
@@ -94,7 +103,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           )
           .toList();
 
-      // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles)
+      // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles).
+      // The !ratings_buyer_profile_fkey hint tells supabase which FK to follow since
+      // ratings.buyer_id has more than one possible relationship to profiles.
       final ratingsData = await client
           .from('ratings')
           .select(
@@ -148,6 +159,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
     final username = _profile?['username'] ?? 'Unknown User';
     final ratingCount = _ratings.length;
+    // average rating, computed client-side from the loaded rows
     final rating = ratingCount > 0
         ? _ratings
                   .map((r) => (r['rating'] as num).toDouble())
@@ -260,7 +272,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             ),
           ),
 
-          // Tabs
+          // Tabs — pinned so they stick to the top while scrolling
           SliverPersistentHeader(
             pinned: true,
             delegate: _SliverAppBarDelegate(
@@ -273,12 +285,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   Tab(text: 'Listings (${_products.length})'),
                   Tab(text: 'Reviews (${_ratings.length})'),
                 ],
+                // setState on tap so the conditional sliver below picks the new index
                 onTap: (index) => setState(() {}),
               ),
             ),
           ),
 
-          // Conditional Sliver Content
+          // Conditional Sliver Content — swap between the two tab bodies
           if (_tabController.index == 0) ...[
             SliverToBoxAdapter(
               child: StandardProductGrid(
@@ -307,6 +320,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
+  // converts the profile's created_at into a friendly "Member for ..." string
   String? _calculateAccountAge(String? createdAtStr) {
     if (createdAtStr == null) return null;
 
@@ -332,6 +346,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 }
 
+// Delegate that lets the TabBar live inside a SliverPersistentHeader.
+// Needed because TabBar isnt a sliver on its own.
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverAppBarDelegate(this._tabBar);
 
@@ -357,6 +373,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
+// Single stat cell used in the listings/sold/rating row at the top of the profile.
+// icon is optional — we only use it for the rating star.
 class _StatBox extends StatelessWidget {
   final String value;
   final String label;
