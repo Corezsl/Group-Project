@@ -120,6 +120,37 @@ Future<int> seedOffer(
   return response['offer_id'] as int;
 }
 
+/// Inserts a row into [notification] and returns the notification_id.
+///
+/// Pass the service-role client to bypass RLS insert policies.
+Future<int> seedNotification(
+  SupabaseClient client, {
+  required String userId,
+  String notifType = 'order_shipped',
+  String content = 'Test notification',
+  bool isRead = false,
+  String? listingId,
+  String? relatedUserId,
+  double? offerPrice,
+  String? buyerAddress,
+}) async {
+  final response = await client
+      .from('notification')
+      .insert({
+        'user_id': userId,
+        'notif_type': notifType,
+        'content': content,
+        'is_read': isRead,
+        if (listingId != null) 'listing_id': listingId,
+        if (relatedUserId != null) 'related_user_id': relatedUserId,
+        if (offerPrice != null) 'offer_price': offerPrice,
+        if (buyerAddress != null) 'buyer_address': buyerAddress,
+      })
+      .select('notification_id')
+      .single();
+  return response['notification_id'] as int;
+}
+
 /// Inserts a row into [ratings] and returns the rating id.
 Future<String> seedRating(
   SupabaseClient client, {

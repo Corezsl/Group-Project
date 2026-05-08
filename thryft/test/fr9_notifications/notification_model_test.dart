@@ -1,8 +1,13 @@
+// Tests for FR9 (notifications) at the model level.
+// Checks that AppNotification.fromMap correctly parses DB rows, that
+// NotificationType converts cleanly to/from its DB string, and that
+// copyWith behaves correctly. Used by NotificationProvider when it
+// processes rows coming back from Supabase.
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thryft/models/notification_model.dart';
 
-// Helper — build a minimal raw DB row map for a notification
-
+// Builds a fake DB row — override only the fields each test cares about.
 Map<String, dynamic> _notifRow({
   int id = 1,
   String? userId = 'user-1',
@@ -28,7 +33,7 @@ Map<String, dynamic> _notifRow({
     };
 
 void main() {
-  // FR9 Partition 1 — Price change on wishlist item
+  // FR9 #1 — wishlist items can drop in price; model must parse price_drop rows.
   group('FR9 #1 — price change notification', () {
     test('fromMap parses price_drop type correctly', () {
       final notif = AppNotification.fromMap(
@@ -51,7 +56,7 @@ void main() {
     });
   });
 
-  // FR9 Partition 2 — Wishlist item sold
+  // FR9 #2 — notify the buyer when a wishlisted item is purchased by someone else.
   group('FR9 #2 — wishlist item sold notification', () {
     test('fromMap parses wishlist_purchased type correctly', () {
       final notif = AppNotification.fromMap(
@@ -81,7 +86,7 @@ void main() {
     });
   });
 
-  // FR9 Partition 3 — Item shipped notification (buyer receives it)
+  // FR9 #3 — buyer gets notified when the seller marks an item as shipped.
   group('FR9 #3 — item shipped notification', () {
     test('fromMap parses order_shipped type correctly', () {
       final notif = AppNotification.fromMap(
@@ -94,6 +99,7 @@ void main() {
 
       expect(notif.notifType, equals(NotificationType.orderShipped));
       expect(notif.content, contains('shipped'));
+      // listingId links the notification back to the actual listing.
       expect(notif.listingId, equals('listing-42'));
     });
 
@@ -108,7 +114,7 @@ void main() {
     });
   });
 
-  // FR9 Partition 4 — Item received notification (seller receives it)
+  // FR9 #4 — seller gets notified when the buyer confirms delivery.
   group('FR9 #4 — item received (delivered) notification', () {
     test('fromMap parses order_delivered type correctly', () {
       final notif = AppNotification.fromMap(
@@ -130,7 +136,7 @@ void main() {
     });
   });
 
-  // FR9 Partition 6 — Missing user causes a parse error
+  // FR9 #6 — malformed rows with missing required fields should throw, not silently fail.
   group('FR9 #6 — missing user causes parse error', () {
     test('fromMap throws when user_id is null', () {
       final badRow = _notifRow(userId: null);
@@ -151,8 +157,9 @@ void main() {
     });
   });
 
-  // All NotificationType round-trips (fromString ↔ toDbString)
+  // Every NotificationType value must survive a fromString → toDbString round-trip.
   group('NotificationType round-trip — fromString and toDbString', () {
+    // Map of every DB string to its expected enum value.
     const cases = {
       'listing_sold': NotificationType.listingSold,
       'price_drop': NotificationType.priceDrop,
@@ -174,6 +181,7 @@ void main() {
     }
 
     test('unknown type string maps to other', () {
+      // Unrecognised types shouldn't crash — fall back to 'other'.
       expect(
         NotificationType.fromString('completely_unknown_type'),
         equals(NotificationType.other),
@@ -181,9 +189,10 @@ void main() {
     });
   });
 
-  // AppNotification — optional fields and copyWith
+  // Checks optional fields and the copyWith helper on AppNotification.
   group('AppNotification — optional fields and copyWith', () {
     test('optional fields are null when absent from map', () {
+      // A basic notification has no listing, offer, or address attached.
       final notif = AppNotification.fromMap(_notifRow());
 
       expect(notif.listingId, isNull);
@@ -210,10 +219,12 @@ void main() {
     });
 
     test('copyWith isRead true creates updated notification', () {
+      // copyWith is used by the provider when the user taps "mark as read".
       final notif = AppNotification.fromMap(_notifRow(isRead: false));
       final updated = notif.copyWith(isRead: true);
 
       expect(updated.isRead, isTrue);
+      // Other fields should be unchanged.
       expect(updated.notificationId, equals(notif.notificationId));
       expect(updated.content, equals(notif.content));
     });

@@ -1,3 +1,7 @@
+// Used for both creating a new listing and editing an existing one.
+// Reached via /create-listing (new) or pushed with initialData (edit).
+// Handles image picking, form validation, Supabase upload, and price-drop notifications.
+
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -15,6 +19,7 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/utils/listing_form_validator.dart';
 
 class CreateListingScreen extends StatefulWidget {
+  // Null when creating a new listing; populated with the existing product data when editing.
   final Map<String, dynamic>? initialData;
   const CreateListingScreen({super.key, this.initialData});
 
@@ -23,8 +28,8 @@ class CreateListingScreen extends StatefulWidget {
 }
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
-  bool _isLoading = false;
-  int _selectedIndex = 0;
+  bool _isLoading = false;   // disables the submit button while upload is in progress
+  int _selectedIndex = 0;    // which thumbnail slot is currently shown in the main preview
   late final TextEditingController _titleController;
   String? _selectedCategory;
   String? _selectedSize;
@@ -40,12 +45,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   @override
   void initState() {
     super.initState();
+    // Pre-populate all fields when editing an existing listing.
     // Normalize incoming initialData to avoid type mismatches (int vs String)
     Map<String, dynamic>? data;
     if (widget.initialData != null) {
       data = Map<String, dynamic>.from(widget.initialData!);
 
-      // map common snake_case DB names to camelCase if needed
+      // Map common snake_case DB column names to camelCase keys if needed.
       if (data['image_url'] != null && data['imageUrl'] == null) {
         data['imageUrl'] = data['image_url'];
       }
@@ -77,7 +83,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         _existingImageUrls[0] = existingMain.trim();
       }
 
-      // Load secondary images for edit mode
+      // Load any additional images (slots 2–5) from the existing listing.
       for (int i = 2; i <= 5; i++) {
         final existing = data['image_url_$i']?.toString();
         if (existing != null && existing.trim().isNotEmpty) {
@@ -87,7 +93,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
-  // Helper to map incoming department variants to the dropdown values
+  // Maps raw department strings from the DB (e.g. "Womenswear", "all") to dropdown values.
   String? _normalizeDepartment(String? input) {
     if (input == null) return null;
     final lower = input.trim().toLowerCase();
@@ -99,9 +105,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     return input[0].toUpperCase() + input.substring(1);
   }
 
-  final List<XFile?> _images = List.filled(5, null);
-  // Used when editing: display existing listing photos until user replaces them.
-  final List<String?> _existingImageUrls = List.filled(5, null);
+  final List<XFile?> _images = List.filled(5, null);                   // newly picked files, one per slot
+  final List<String?> _existingImageUrls = List.filled(5, null);       // old URLs shown in edit mode until replaced
   final ImagePicker _picker = ImagePicker();
 
 
@@ -154,7 +159,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         throw Exception('You must be logged in to modify a listing.');
       }
 
-      // Verify user has a payment method before allowing them to list
+      // Block listing creation if the seller hasn't added a payment method yet.
       final paymentData = await supabase
           .from('payment_methods')
           .select()
@@ -175,7 +180,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
       String? publicImageUrl = widget.initialData?['imageUrl'];
 
-      // Upload main image if changed
+      // Only upload a new main image if the user picked one; otherwise keep the existing URL.
       if (_images[0] != null) {
         final mainImage = _images[0]!;
         final fileExt = mainImage.name.split('.').last;
@@ -195,7 +200,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .getPublicUrl(fileName);
       }
 
-      // Upload secondary images if changed
+      // Upload each additional slot only if a new file was picked; keep the old URL otherwise.
       final List<String?> secondaryImageUrls = List.filled(4, null);
       for (int i = 1; i <= 4; i++) {
         if (_images[i] != null) {
@@ -218,7 +223,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         }
       }
 
-      // Handle Database Operation
+      // Build the product map used for both insert and update.
       final double newPrice = double.parse(_priceController.text);
       final Map<String, dynamic> productData = {
         'name': _titleController.text,
@@ -242,7 +247,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       };
 
       if (widget.initialData != null) {
-        // Handle Price History Logic
+        // If price went down, store the old price so the UI can show a strikethrough.
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
@@ -259,7 +264,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             .update(productData)
             .eq('id', widget.initialData!['id']);
 
-        // Notify all users who wishlisted this item about the price drop
+        // Send a price drop notification to everyone who wishlisted this item.
         if (isPriceDrop) {
           try {
             final listingId = widget.initialData!['id']?.toString();
@@ -289,7 +294,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Listing updated successfully!')),
         );
-        context.pop(); // Go back after edit
+        context.pop(); // return to the previous screen after a successful edit
       } else {
         productData['user_id'] = user.id;
         await supabase.from('products').insert(productData);
@@ -313,6 +318,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
+  // Resets all fields and images after a new listing is successfully created.
   void _clearForm() {
     _titleController.clear();
     _priceController.clear();
@@ -332,6 +338,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     });
   }
 
+  // Web uses Image.network with the file path; mobile uses Image.file directly.
   Widget _buildImagePreview(XFile file) {
     if (kIsWeb) {
       return Image.network(
@@ -350,6 +357,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
+  // Loads an existing image from Supabase storage; shows a broken-image icon on error.
   Widget _buildNetworkPreview(String url) {
     return Image.network(
       url,
@@ -372,6 +380,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  // Large image area — tapping opens the gallery picker for the selected slot.
   Widget _buildMainPreview() {
     final XFile? currentImage = _images[_selectedIndex];
     final String? existingUrl = _existingImageUrls[_selectedIndex];
@@ -426,6 +435,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  // Small slot selector — highlighted in blue when active, shows star icon for slot 0 (main).
   Widget _buildThumbnail(int index) {
     final bool isSelected = index == _selectedIndex;
     final XFile? currentImage = _images[index];
@@ -482,6 +492,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  // Combines the main preview and the row of 5 thumbnail selectors.
   Widget _buildPhotoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,6 +517,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  // All the listing detail dropdowns and text inputs.
+  // Size is hidden for Accessories since it doesn't apply.
   Widget _buildFormSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -788,7 +801,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Mobile: stacked, Desktop: side-by-side
+                      // Photos on the left, form on the right for desktop; stacked on mobile.
                       if (isMobile) ...[
                         _buildPhotoSection(),
                         const SizedBox(height: 24),

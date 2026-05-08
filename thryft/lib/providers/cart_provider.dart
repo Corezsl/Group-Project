@@ -84,10 +84,9 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --------------- Public getters ---------------
-
-  /// Unmodifiable snapshot of the cart — used by the cart screen's ListView.
   List<Product> get items => List.unmodifiable(_items);
+
+  int get itemCount => _items.length;
 
   /// Total number of items (respects quantity) — drives the badge count.
   int get itemCount => _items.length;
