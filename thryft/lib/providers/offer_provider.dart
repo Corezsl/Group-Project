@@ -122,12 +122,43 @@ class OfferProvider extends ChangeNotifier {
     try {
       await Supabase.instance.client
           .from('offers')
-          .update({'status': status, 'updated_at': DateTime.now().toIso8601String()})
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('listing_id', listingId)
           .eq('buyer_id', buyerId)
           .eq('status', 'pending');
     } catch (e) {
       debugPrint('Error updating offer status: $e');
+    }
+  }
+
+  /// Updates offer status by offer id. Returns false when the id is invalid,
+  /// does not exist, or does not point to a pending offer.
+  static Future<bool> updateOfferStatusById({
+    required String offerId,
+    required String status,
+  }) async {
+    final parsedOfferId = int.tryParse(offerId);
+    if (parsedOfferId == null) return false;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('offers')
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('offer_id', parsedOfferId)
+          .eq('status', 'pending')
+          .select('offer_id')
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      debugPrint('Error updating offer status by id: $e');
+      return false;
     }
   }
 }
