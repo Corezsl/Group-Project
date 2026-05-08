@@ -10,6 +10,7 @@ String? validateListingForm({
   required String? size,
   required bool isNewListing,
   required bool hasImage,
+  String? description,
 }) {
   if (title.isEmpty ||
       condition == null ||
@@ -27,6 +28,10 @@ String? validateListingForm({
   final double? parsedPrice = double.tryParse(price);
   if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
     return 'Please enter a valid price greater than 0 or less than 10000.';
+  }
+
+  if (description != null && description.length > 200) {
+    return 'Description must be 200 characters or less.';
   }
 
   return null;

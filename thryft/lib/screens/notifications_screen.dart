@@ -376,7 +376,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         'department': data['department']?.toString() ?? 'All',
         'material': data['material']?.toString() ?? '',
         'colour': data['colour']?.toString() ?? '',
-        'isSold': (data['is_sold'] == true).toString(),
+        'is_sold': (data['is_sold'] == true).toString(),
         if (data['description'] != null) 'description': data['description'].toString(),
         if (data['image_url_2'] != null) 'image_url_2': data['image_url_2'].toString(),
         if (data['image_url_3'] != null) 'image_url_3': data['image_url_3'].toString(),
