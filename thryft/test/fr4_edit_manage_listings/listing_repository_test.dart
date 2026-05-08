@@ -294,7 +294,7 @@ void main() {
   // verify the row is unchanged after the call, not that an exception is thrown.
   // -------------------------------------------------------------------------
   group("FR4 #5 — edit another user's listing", () {
-    test("update on a non-owned product does nothing (RLS silently filters)",
+    test("update on a non-owned product is rejected and price is unchanged",
         () async {
       // Get original price while signed in as seller.
       final originalRow = await client
@@ -303,20 +303,24 @@ void main() {
           .eq('id', productId)
           .single();
 
-      // Sign in as the buyer — they don't own productId, so RLS should
-      // silently filter the update (0 rows affected, no exception thrown).
+      // Sign in as the buyer — they don't own productId, so the
+      // enforce_buyer_update_columns trigger should raise when we try to
+      // change a non-sale column like price.
       await client.auth.signInWithPassword(
         email: _buyerEmail,
         password: _buyerPassword,
       );
 
-      await repo.updateListing(
-        id: productId,
-        userId: buyerId,
-        fields: {'price': 9999.0},
+      await expectLater(
+        repo.updateListing(
+          id: productId,
+          userId: buyerId,
+          fields: {'price': 9999.0},
+        ),
+        throwsA(isA<PostgrestException>()),
       );
 
-      // Sign back in as seller to verify the row.
+      // Sign back in as seller to verify the row is unchanged.
       await _ensureSignedIn(client);
 
       final afterRow = await client
