@@ -24,6 +24,7 @@ class Product {
   // only set once the item has been bought
   final String? buyerId;
   final String? orderStatus; // 'pending', 'shipped', 'delivered'
+  final String? buyerAddress;
   final String? description;
   // extra images for the product detail gallery (up to 5 total)
   final String? imageUrl2;
@@ -50,6 +51,7 @@ class Product {
     required this.colour,
     this.buyerId,
     this.orderStatus,
+    this.buyerAddress,
     this.description,
     this.imageUrl2,
     this.imageUrl3,
@@ -82,5 +84,6 @@ class Product {
     if (imageUrl3 != null) 'image_url_3': imageUrl3!,
     if (imageUrl4 != null) 'image_url_4': imageUrl4!,
     if (imageUrl5 != null) 'image_url_5': imageUrl5!,
+    if (buyerAddress != null) 'buyerAddress': buyerAddress!,
   };
 }

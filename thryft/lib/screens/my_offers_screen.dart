@@ -4,7 +4,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:thryft/models/offer_model.dart';
+import 'package:thryft/providers/offer_provider.dart';
+import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/footer.dart';
 
 class MyOffersScreen extends StatefulWidget {
   const MyOffersScreen({super.key});
@@ -25,16 +30,16 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     });
   }
 
-  Future<List<_OfferHistoryItem>> _fetchOffers() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return [];
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<OfferProvider>();
+    final user = Supabase.instance.client.auth.currentUser;
 
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
-              // minHeight ensures the footer stays pinned to the bottom on short lists.
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +74,6 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                                 ),
                                 const SizedBox(height: 24),
-                                // Four mutually exclusive states — guest, loading, error, or offer list.
                                 if (user == null)
                                   _buildLoginPrompt(context)
                                 else if (provider.isLoading)
@@ -150,8 +154,11 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                   style: TextStyle(color: Colors.grey[400], fontSize: 12),
                 ),
               ),
-            );
-          }
+          ],
+        ),
+      ),
+    );
+  }
 
   // Shown when the fetch succeeded but returned no offers.
   Widget _buildEmptyState() {
@@ -239,41 +246,13 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                         _timeAgo(offer.createdAt),
                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                       ),
-                      child: Text(
-                        item.status.toUpperCase(),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    onTap: item.listingId.isEmpty
-                        ? null
-                        : () {
-                            context.push(
-                              '/product/${item.listingId}',
-                              extra: {
-                                'id': item.listingId,
-                                'name': item.productName,
-                                'price': (item.productPrice ?? item.offeredPrice)
-                                    .toStringAsFixed(2),
-                                'size': item.productSize,
-                                'brand': item.productBrand,
-                                'condition': item.productCondition,
-                                if (item.imageUrl != null)
-                                  'imageUrl': item.imageUrl!,
-                                if (item.sellerId != null)
-                                  'sellerId': item.sellerId!,
-                              },
-                            );
-                          },
+                    ],
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
@@ -295,13 +274,19 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
       _ => (Colors.orange.shade50, Colors.orange.shade700, 'Pending'),
     };
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        imageUrl,
-        width: 56,
-        height: 56,
-        fit: BoxFit.cover,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
       ),
     );
   }
@@ -349,7 +334,6 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
       }
     }
   }
-}
 
   // Returns a human-readable relative timestamp — falls back to a date once older than a week.
   String _timeAgo(DateTime dt) {

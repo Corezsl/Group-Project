@@ -207,24 +207,24 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
-                        _StatBox(value: '$_soldCount', label: 'Sold'),
-                        VerticalDivider(
-                          width: 32,
-                          thickness: 1,
-                          color: Colors.grey[300],
-                        ),
-                        _StatBox(
-                          value: ratingCount == 0
-                              ? 'N/A'
-                              : rating.toStringAsFixed(1),
-                          label: ratingCount == 0
-                              ? 'No reviews'
-                              : 'Rating ($ratingCount)',
-                          icon: ratingCount == 0 ? null : Icons.star,
-                          iconColor: Colors.amber,
-                        ),
-                      ],
-                    ),
+                      ),
+                      _StatBox(value: '$_soldCount', label: 'Sold'),
+                      VerticalDivider(
+                        width: 32,
+                        thickness: 1,
+                        color: Colors.grey[300],
+                      ),
+                      _StatBox(
+                        value: ratingCount == 0
+                            ? 'N/A'
+                            : rating.toStringAsFixed(1),
+                        label: ratingCount == 0
+                            ? 'No reviews'
+                            : 'Rating ($ratingCount)',
+                        icon: ratingCount == 0 ? null : Icons.star,
+                        iconColor: Colors.amber,
+                      ),
+                    ],
                   ),
                 ],
               ),
