@@ -3,11 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/utils/responsive.dart';
 
+// Big banner shown at the top of the home screen with a "Sell now" call to action.
+// Has separate desktop and mobile layouts since the white card sits in different
+// places, but they share the same content/button via _HeroBannerContent.
 class HeroBanner extends StatelessWidget {
   const HeroBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // pick the layout based on screen width via the Responsive helper
     return Responsive.isMobile(context)
         ? _MobileHeroBanner()
         : _DesktopHeroBanner();
@@ -16,6 +20,8 @@ class HeroBanner extends StatelessWidget {
 
 // ─── Desktop ─────────────────────────────────────────────────────────────────
 
+// Desktop layout: two side-by-side images in the background with a fixed-width
+// white content card floating on the left.
 class _DesktopHeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -25,6 +31,7 @@ class _DesktopHeroBanner extends StatelessWidget {
       color: Colors.grey[200],
       child: Stack(
         children: [
+          // background — two images side-by-side filling the banner
           Positioned.fill(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -44,6 +51,7 @@ class _DesktopHeroBanner extends StatelessWidget {
               ],
             ),
           ),
+          // foreground white card pinned to the left
           Positioned(
             left: 50,
             top: 50,
@@ -73,6 +81,8 @@ class _DesktopHeroBanner extends StatelessWidget {
 
 // ─── Mobile ──────────────────────────────────────────────────────────────────
 
+// Mobile layout: same two background images, but the white card stretches full
+// width with simple padding instead of being absolutely positioned.
 class _MobileHeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -126,6 +136,8 @@ class _MobileHeroBanner extends StatelessWidget {
 
 // ─── Shared content ──────────────────────────────────────────────────────────
 
+// Headline + Sell now button + Learn how it works link.
+// Used by both layouts so the copy stays in one place.
 class _HeroBannerContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -137,6 +149,7 @@ class _HeroBannerContent extends StatelessWidget {
         Text(
           'Ready to declutter your wardrobe?',
           style: TextStyle(
+            // smaller font on mobile so it fits
             fontSize: Responsive.isMobile(context) ? 24 : 32,
             fontWeight: FontWeight.w800,
             color: Colors.black87,
@@ -148,6 +161,8 @@ class _HeroBannerContent extends StatelessWidget {
           width: double.infinity,
           height: 48,
           child: FilledButton(
+            // logged in -> go straight to create listing.
+            // logged out -> show a snackbar and bounce to the auth screen.
             onPressed: () {
               final session = Supabase.instance.client.auth.currentSession;
               if (session != null) {

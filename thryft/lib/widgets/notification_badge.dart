@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+// Bell icon with a small red unread-count bubble in the top right.
+// Used in the Header — the count comes from NotificationProvider.unreadCount.
 class NotificationBadge extends StatelessWidget {
+  // unread notification count — when 0 the bubble is hidden entirely
   final int count;
+  // tapped to open the notifications screen
   final VoidCallback onPressed;
 
   const NotificationBadge({
@@ -12,6 +16,8 @@ class NotificationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Stack so the red bubble can sit on top of the bell icon.
+    // Clip.none lets the bubble overhang the icon's bounds slightly.
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -23,6 +29,7 @@ class NotificationBadge extends StatelessWidget {
           Positioned(
             right: 6,
             top: 6,
+            // IgnorePointer so taps on the bubble fall through to the bell underneath
             child: IgnorePointer(
               child: Container(
                 padding: const EdgeInsets.all(2),
@@ -31,6 +38,7 @@ class NotificationBadge extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                // cap the display at 99+ so big numbers dont blow out the bubble
                 child: Text(
                   count > 99 ? '99+' : count.toString(),
                   style: const TextStyle(
