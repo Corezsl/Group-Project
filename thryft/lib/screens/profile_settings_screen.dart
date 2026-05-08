@@ -403,8 +403,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 16,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(r'^\d{16}$').hasMatch(val.trim())) {
+                        return 'Must be 16 digits';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -413,8 +419,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       labelText: 'Expiry Date (MM/YY)',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 5,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(
+                        r'^(0[1-9]|1[0-2])\/\d{2}$',
+                      ).hasMatch(val.trim())) {
+                        return 'Format must be MM/YY';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -424,8 +438,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (val) =>
-                        val == null || val.trim().isEmpty ? 'Required' : null,
+                    maxLength: 4,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Required';
+                      if (!RegExp(r'^\d{3,4}$').hasMatch(val.trim())) {
+                        return 'Must be 3 or 4 digits';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -573,7 +593,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                       ? NetworkImage(_currentAvatarUrl!)
                                       : null,
                                   child: _currentAvatarUrl == null
-                                      ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 48,
+                                          color: Colors.grey,
+                                        )
                                       : null,
                                 ),
                                 Positioned(
@@ -583,12 +607,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     onTap: _pickAndUploadAvatar,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color.fromARGB(255, 71, 164, 245),
+                                        color: const Color.fromARGB(
+                                          255,
+                                          71,
+                                          164,
+                                          245,
+                                        ),
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
                                       ),
                                       padding: const EdgeInsets.all(6),
-                                      child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                      child: const Icon(
+                                        Icons.camera_alt,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -672,7 +708,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 children: [
                                   const Text(
                                     'Bio',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   TextField(
@@ -680,7 +718,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     maxLines: 3,
                                     maxLength: 200,
                                     decoration: const InputDecoration(
-                                      hintText: 'Tell buyers a little about yourself...',
+                                      hintText:
+                                          'Tell buyers a little about yourself...',
                                       border: OutlineInputBorder(),
                                       contentPadding: EdgeInsets.all(12),
                                     ),
@@ -799,8 +838,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             child: ListTile(
                               leading: const Icon(Icons.credit_card, size: 32),
                               title: Text(
-                                _userPaymentMethod?['cardholder_name'] ?? 'Not set',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                _userPaymentMethod?['cardholder_name'] ??
+                                    'Not set',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               subtitle: Text(
                                 _userPaymentMethod?['card_number'] != null

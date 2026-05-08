@@ -50,3 +50,20 @@ Future<SupabaseClient> getTestClient() async {
 
   return Supabase.instance.client;
 }
+
+// ---------------------------------------------------------------------------
+// Service-role client — bypasses RLS for teardown / cleanup operations.
+// ---------------------------------------------------------------------------
+const _serviceKey = String.fromEnvironment('TEST_SUPABASE_SERVICE_KEY');
+
+/// Returns a [SupabaseClient] that uses the service-role key (bypasses RLS).
+/// Use this only for test cleanup where RLS policies block DELETE.
+SupabaseClient getServiceClient() {
+  if (_url.isEmpty || _serviceKey.isEmpty) {
+    throw StateError(
+      'Missing service key. '
+      'Pass --dart-define=TEST_SUPABASE_SERVICE_KEY=<key>',
+    );
+  }
+  return SupabaseClient(_url, _serviceKey);
+}
