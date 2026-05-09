@@ -36,5 +36,28 @@ String? _filterValidation({
 
 
 void main() {
+  group('FR1 #1 - Filter Validation on Sizes', () {
+    test('Valid inputs pass validation', () {
+      expect(_filterValidation(size: 'M', minPrice: 10.0, maxPrice: 50.0), isNull);
+    });
 
+    test('Invalid size fails validation', () {
+      expect(
+        _filterValidation(size: '30R', department: 'Womenswear'), 
+      equals('Invalid size'));
+    });
+
+  group('FR1 #2 - Filter Validation on Price Range', () {
+    test('Negative min price fails validation', () {
+      expect(_filterValidation(minPrice: -5.0), equals('Min price cannot be negative'));
+    });
+
+    test('Negative max price fails validation', () {
+      expect(_filterValidation(maxPrice: -10.0), equals('Max price cannot be negative'));
+    });
+    test('Min price greater than max price fails validation', () {
+      expect(_filterValidation(minPrice: 100.0, maxPrice: 50.0), equals('Min price cannot be greater than max price'));
+    });
+  });
+});
 }

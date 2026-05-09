@@ -1,76 +1,10 @@
-
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:thryft/widgets/filter_system.dart';
-import 'package:thryft/providers/search_provider.dart';
-
-void main() {
-  testWidgets('FilterPanel Apply maps UI inputs to SearchFilters', (tester) async {
-    SearchFilters? applied;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: FilterPanel(
-          onApply: (f) => applied = f,
-        ),
-      ),
-    ));
-
-    // initially 'Department' dropdown shows 'All' (text exists)
-    expect(find.text('Department:'), findsOneWidget);
-
-    // open Department menu and select 'Womens'
-    await tester.tap(find.text('All').first); // opens first 'All' encountered
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Womens').last); // chooses 'Womens'
-    await tester.pumpAndSettle();
-
-    // open Size menu and choose a size (size options depend on department)
-    await tester.tap(find.text('Size:').first); // this just finds label; to open use the size Dropdown finder
-    // safer: find the DropdownButton by looking for the specific value widget:
-    await tester.tap(find.widgetWithText(DropdownButton<String>, 'All').at(1));
-    await tester.pumpAndSettle();
-    // choose a size value — adjust according to available size strings:
-    await tester.tap(find.text('S').last); // if 'S' exists in getSizeOptions
-    await tester.pumpAndSettle();
-
-    // enter a max price (numeric)
-    final priceField = find.byType(TextField);
-    expect(priceField, findsWidgets);
-    await tester.enterText(priceField.first, '49.99');
-    await tester.pumpAndSettle();
-
-    // tap Apply button
-    await tester.tap(find.text('Apply'));
-    await tester.pumpAndSettle();
-
-    // Assert onApply was called and mapping is correct
-    expect(applied, isNotNull);
-    expect(applied!.department, equals('Womens'));
-    // size assertion depends on the exact menu options; adjust to chosen size
-    expect(applied!.maxPrice, equals(49.99));
-    // 'All' selections should become null; if brand remained 'All' then:
-    expect(applied!.brand, isNull);
-  });
-}
 // ----------------------------------------------------
 // Creating the base test logic
 // ----------------------------------------------------
 
 
-  //NTS: create filter validation function, which will be used to validate the inputs for the filter system, and then test that it is correctly validating the inputs and returning the expected results from database.
-
-
-// FR2: Partition 1 - Filter by single size
-// Tests that the correct value is selected and follows the validation rules in place
-
-
-//what to test for this section (size)
-//#1 Any user can select a val
-//#2 Does the value selected match the department value?
-
 //Files to test:
 // Responsive Sizing
-// Returns Screen
 // Filter
 //  - By size
 //  - By price range
@@ -78,8 +12,7 @@ void main() {
 //  - By specific text on items matched into the DB
 //  - Resetting filter
 //  - By price range (where value given exceeds amount -- just have it return everything as long as items closest to it)
-
-// Mini Filter
+// Mini Filter:
 // -Re-ordering results
 // - Filtering on items which have already been filtered (2x over)
 
@@ -101,9 +34,9 @@ void main() {
 
 
 //FROM CW1 ----------
-//Functional Requirement 2: Users Should Be Able to Filter Items 
-//Description: 
-//Users should be able to narrow down and refine item listings using multiple filter options to quickly find products that match their preferences. The filtering functionality should be intuitive, responsive and reliable, allowing users to combine different criteria to reduce irrelevant results and improve browsing experience. 
+//Users Should Be Able to Filter Items 
+//- narrow down and refine item listings using multiple filter options to find products that match 
+//- The filtering functionality should be intuitive, responsive and reliable, allowing users to combine different criteria to reduce irrelevant results 
 //System Requirements: 
 //Size filtering using valid ranges (XS–XXL, 6–22, 30Reg–50Reg). 
 //Brand filtering based on a catalogue of predefined brands, with an option to request new additions. 
