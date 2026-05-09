@@ -7,11 +7,15 @@ import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
+// Screen showing the products the user has saved to their wishlist.
+// Routed at /wishlist. Just renders Header + StandardProductGrid + Footer
+// with the data coming from WishlistProvider.
 class WishlistScreen extends StatelessWidget {
   const WishlistScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // watch so the grid rebuilds when items are added/removed elsewhere
     final products = context.watch<WishlistProvider>().wishlistItems;
 
     return Scaffold(
@@ -38,6 +42,8 @@ class WishlistScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 32),
+                  // shared grid handles filters/paging — we just feed it the products
+                  // and customise the empty-state copy + a "Start Shopping" CTA
                   SizedBox(
                     width: double.infinity,
                     child: StandardProductGrid(
@@ -47,6 +53,7 @@ class WishlistScreen extends StatelessWidget {
                       emptySubtitle:
                           'Save your favorite items to keep track of them.',
                       dateFilterLabel: 'DATE SAVED',
+                      // shown under the empty state — sends the user back to home
                       extraButton: ElevatedButton(
                         onPressed: () => context.go('/'),
                         style: ElevatedButton.styleFrom(

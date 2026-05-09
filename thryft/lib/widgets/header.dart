@@ -10,11 +10,15 @@ import 'package:thryft/widgets/filter_system.dart';
 import 'package:thryft/widgets/notification_badge.dart';
 import 'package:thryft/widgets/search_dropdown.dart';
 
+// Top bar shown on almost every screen — logo, search, filter toggle, and
+// account/cart/wishlist/notification icons. Has separate desktop and mobile
+// layouts since the desktop one also has a category shortcut row underneath.
 class Header extends StatelessWidget {
   const Header({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // pick the layout based on screen width via the Responsive helper
     return Responsive.isMobile(context)
         ? const _MobileHeader()
         : const _DesktopHeader();
@@ -31,11 +35,14 @@ class _DesktopHeader extends StatefulWidget {
 }
 
 class _DesktopHeaderState extends State<_DesktopHeader> {
+  // toggles the filter panel under the search bar
   bool _filterActive = false;
 
+  // LayerLink anchors the search dropdown overlay directly under the search bar
   final _layerLink = LayerLink();
   final _searchController = TextEditingController();
   late final FocusNode _searchFocusNode;
+  // currently shown search dropdown overlay (null when not focused)
   OverlayEntry? _overlayEntry;
 
   @override
@@ -54,6 +61,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
     super.dispose();
   }
 
+  // shows/hides the dropdown when the search field gains or loses focus.
+  // small delay on remove so a tap inside the dropdown can register before it disappears.
   void _onFocusChange() {
     if (_searchFocusNode.hasFocus) {
       _showOverlay();
@@ -64,6 +73,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
     }
   }
 
+  // inserts the SearchDropdown into the overlay layer linked to the search bar
   void _showOverlay() {
     _removeOverlay();
     _overlayEntry = OverlayEntry(
@@ -94,6 +104,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
           children: [
             Row(
               children: [
+                // logo on the left — tap to go home
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -111,21 +122,25 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     ),
                   ),
                 ),
+                // centre block: search field + filter toggle button
                 Flexible(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 500),
                     child: Row(
                       children: [
                         Expanded(
+                          // CompositedTransformTarget gives the dropdown overlay something to anchor to
                           child: CompositedTransformTarget(
                             link: _layerLink,
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               textInputAction: TextInputAction.search,
+                              // typing live-updates the dropdown results
                               onChanged: (v) => context
                                   .read<SearchProvider>()
                                   .onQueryChanged(v),
+                              // pressing enter records the search and pushes to the search results screen
                               onSubmitted: (v) {
                                 final q = v.trim();
                                 if (q.isNotEmpty) {
@@ -182,10 +197,12 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                     ),
                   ),
                 ),
+                // right block: notification bell + wishlist + cart + account icons
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // bell only shows when logged in (no notifications for guests)
                       Consumer<NotificationProvider>(
                         builder: (context, notifProvider, _) {
                           final session =
@@ -211,6 +228,7 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                         ),
                         onPressed: () => context.push('/cart'),
                       ),
+                      // person icon goes to account if logged in, otherwise to the auth screen
                       IconButton(
                         icon: const Icon(
                           Icons.person_outline,
@@ -232,7 +250,8 @@ class _DesktopHeaderState extends State<_DesktopHeader> {
                 ),
               ],
             ),
-            // reserved area: either shortcuts or filter panel
+            // reserved area: either shortcuts or filter panel.
+            // AnimatedSwitcher fades between the two when the filter button is toggled.
             SizedBox(
               height: 48,
               child: AnimatedSwitcher(
@@ -330,6 +349,8 @@ class _MobileHeader extends StatefulWidget {
   State<_MobileHeader> createState() => _MobileHeaderState();
 }
 
+// Mobile state mirrors the desktop one — same overlay/focus dance, just a
+// tighter layout and a hamburger menu instead of a category shortcut row.
 class _MobileHeaderState extends State<_MobileHeader> {
   bool _filterActive = false;
 
@@ -364,6 +385,7 @@ class _MobileHeaderState extends State<_MobileHeader> {
     }
   }
 
+  // mobile dropdown stretches almost full width (minus a 16px gutter)
   void _showOverlay() {
     _removeOverlay();
     final screenWidth = MediaQuery.of(context).size.width;
@@ -501,7 +523,10 @@ class _MobileHeaderState extends State<_MobileHeader> {
                     }
                   },
                 ),
-                // Hamburger
+                // Hamburger — opens the AppDrawer.
+                // If the parent Scaffold has a drawer registered, use that; otherwise
+                // slide one in manually via showGeneralDialog so the menu still works
+                // on screens that dont set up a Scaffold.drawer.
                 Builder(
                   builder: (ctx) => IconButton(
                     icon: const Icon(Icons.menu, color: Colors.white),

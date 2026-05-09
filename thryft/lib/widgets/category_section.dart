@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+// Horizontal row of category icons, intended for the home screen header.
+// Currently a no-op placeholder — the categories list is empty so it renders
+// nothing. Kept around because main.dart still mounts it.
 class CategorySection extends StatelessWidget {
   const CategorySection({super.key});
 
+  // populate this with {icon, label} maps to make the row appear
   final List<Map<String, dynamic>> categories = const [];
 
   @override
