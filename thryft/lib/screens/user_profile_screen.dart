@@ -4,8 +4,12 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/screens/reviews_screen.dart';
 
+// Public profile page for any seller — avatar, bio, stats and two tabs
+// (active listings / reviews). Routed at /profile/:userId.
 class UserProfileScreen extends StatefulWidget {
+  // id of the user whose profile we're viewing (not necessarily the logged-in user)
   final String userId;
+  // optional injected client so tests can pass in a fake/different supabase client
   final SupabaseClient? supabaseClient;
 
   const UserProfileScreen({
@@ -24,8 +28,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   String? _error;
   Map<String, dynamic>? _profile;
   List<Product> _products = [];
+  // raw rating rows joined with product + reviewer profile — passed straight to ReviewsScreen
   List<Map<String, dynamic>> _ratings = [];
   int _soldCount = 0;
+  // controller for the Listings/Reviews tab bar
   late TabController _tabController;
 
   @override
@@ -41,13 +47,16 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     super.dispose();
   }
 
+  // does 4 supabase queries: profile, active listings, ratings, sold count.
+  // also called from ReviewsScreen via onReviewChanged when a review is added/edited
+  // so the stats stay up to date.
   Future<void> _fetchProfileAndProducts() async {
     try {
       final client = widget.supabaseClient ?? Supabase.instance.client;
       // 1. Fetch Profile
       final profileData = await client
           .from('profiles')
-          .select()
+          .select('*, created_at')
           .eq('id', widget.userId)
           .maybeSingle();
 
@@ -89,11 +98,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               category: data['category']?.toString() ?? 'Other',
               material: data['material'].toString(),
               colour: data['colour'].toString(),
+              description: data['description']?.toString(),
             ),
           )
           .toList();
 
-      // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles)
+      // 3. Fetch Ratings with product info and buyer profile (via new FK to profiles).
+      // The !ratings_buyer_profile_fkey hint tells supabase which FK to follow since
+      // ratings.buyer_id has more than one possible relationship to profiles.
       final ratingsData = await client
           .from('ratings')
           .select(
@@ -147,6 +159,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
     final username = _profile?['username'] ?? 'Unknown User';
     final ratingCount = _ratings.length;
+    // average rating, computed client-side from the loaded rows
     final rating = ratingCount > 0
         ? _ratings
                   .map((r) => (r['rating'] as num).toDouble())
@@ -154,6 +167,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               ratingCount
         : 0.0;
     final avatarUrl = _profile?['avatar_url'];
+    final bio = _profile?['bio']?.toString().trim();
+    final createdAt = _profile?['created_at']?.toString();
+    final accountAge = _calculateAccountAge(createdAt);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -172,20 +188,23 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           // Header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
               child: Column(
                 children: [
+                  // Avatar
                   CircleAvatar(
-                    radius: 40,
+                    radius: 44,
                     backgroundColor: Colors.grey[200],
                     backgroundImage: avatarUrl != null
                         ? NetworkImage(avatarUrl) as ImageProvider
                         : null,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                        ? const Icon(Icons.person, size: 44, color: Colors.grey)
                         : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // Username
                   Text(
                     username,
                     style: const TextStyle(
@@ -193,45 +212,67 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating is double
-                            ? rating.toStringAsFixed(1)
-                            : '$rating',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+
+                  // Bio
+                  if (bio != null && bio.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      bio,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+
+                  // Account Age
+                  if (accountAge != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Member for $accountAge',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Stats row
+                  IntrinsicHeight(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _StatBox(
+                          value: '${_products.length}',
+                          label: 'Listings',
                         ),
-                      ),
-                      _StatBox(value: '$_soldCount', label: 'Sold'),
-                      VerticalDivider(
-                        width: 32,
-                        thickness: 1,
-                        color: Colors.grey[300],
-                      ),
-                      _StatBox(
-                        value: ratingCount == 0
-                            ? 'N/A'
-                            : rating.toStringAsFixed(1),
-                        label: ratingCount == 0
-                            ? 'No reviews'
-                            : 'Rating ($ratingCount)',
-                        icon: ratingCount == 0 ? null : Icons.star,
-                        iconColor: Colors.amber,
-                      ),
-                    ],
+                        VerticalDivider(
+                          width: 32,
+                          thickness: 1,
+                          color: Colors.grey[300],
+                        ),
+                        _StatBox(value: '$_soldCount', label: 'Sold'),
+                        VerticalDivider(
+                          width: 32,
+                          thickness: 1,
+                          color: Colors.grey[300],
+                        ),
+                        _StatBox(
+                          value: ratingCount == 0
+                              ? 'N/A'
+                              : rating.toStringAsFixed(1),
+                          label: ratingCount == 0
+                              ? 'No reviews'
+                              : 'Rating ($ratingCount)',
+                          icon: ratingCount == 0 ? null : Icons.star,
+                          iconColor: Colors.amber,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Tabs
+          // Tabs — pinned so they stick to the top while scrolling
           SliverPersistentHeader(
             pinned: true,
             delegate: _SliverAppBarDelegate(
@@ -244,12 +285,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   Tab(text: 'Listings (${_products.length})'),
                   Tab(text: 'Reviews (${_ratings.length})'),
                 ],
+                // setState on tap so the conditional sliver below picks the new index
                 onTap: (index) => setState(() {}),
               ),
             ),
           ),
 
-          // Conditional Sliver Content
+          // Conditional Sliver Content — swap between the two tab bodies
           if (_tabController.index == 0) ...[
             SliverToBoxAdapter(
               child: StandardProductGrid(
@@ -277,8 +319,35 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
+
+  // converts the profile's created_at into a friendly "Member for ..." string
+  String? _calculateAccountAge(String? createdAtStr) {
+    if (createdAtStr == null) return null;
+
+    try {
+      final createdAt = DateTime.parse(createdAtStr);
+      final now = DateTime.now();
+      final difference = now.difference(createdAt);
+
+      if (difference.inDays < 1) {
+        return 'Less than a day';
+      } else if (difference.inDays < 30) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months month${months == 1 ? '' : 's'}';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years year${years == 1 ? '' : 's'}';
+      }
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
+// Delegate that lets the TabBar live inside a SliverPersistentHeader.
+// Needed because TabBar isnt a sliver on its own.
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverAppBarDelegate(this._tabBar);
 
@@ -304,6 +373,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
+// Single stat cell used in the listings/sold/rating row at the top of the profile.
+// icon is optional — we only use it for the rating star.
 class _StatBox extends StatelessWidget {
   final String value;
   final String label;

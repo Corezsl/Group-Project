@@ -1,3 +1,10 @@
+/// Central source of dropdown / filter option lists used across the app.
+/// Imported by `create_listing_screen.dart`, `filter_system.dart`,
+/// and `standard_product_grid.dart` to populate dropdowns and filters.
+
+/// Returns clothing size options based on [department].
+/// Mens gets waist sizes (28R–50R), Womens gets UK dress sizes (6–20)
+/// but both include the shared base sizes (XS–XXXL).
 List<String> sizeOptionsForDepartment(String? department) {
   final base = const ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
   final womens = const ['6', '8', '10', '12', '14', '16', '18', '20'];
@@ -13,7 +20,7 @@ List<String> sizeOptionsForDepartment(String? department) {
   }
 }
 
-// public canonical lists for reuse across the app
+/// Supported brand names shown in the Create Listing brand dropdown.
 const List<String> brands = [
   'Nike',
   'Adidas',
@@ -39,6 +46,7 @@ const List<String> brands = [
   'Other',
 ];
 
+/// Item condition choices for the Create Listing form, ordered best to worst.
 const List<String> conditions = [
   'New with tags',
   'New without tags',
@@ -48,6 +56,7 @@ const List<String> conditions = [
   'Worn',
 ];
 
+/// Fabric / material options for the Create Listing form.
 const List<String> materials = [
   'Cotton',
   'Polyester',
@@ -62,6 +71,7 @@ const List<String> materials = [
   'Other',
 ];
 
+/// Colour options for the Create Listing form and filter system.
 const List<String> colours = [
   'Black',
   'White',
@@ -77,8 +87,11 @@ const List<String> colours = [
   'Other',
 ];
 
+/// Fit/silhouette options for the Create Listing form.
 const List<String> fittings = ['Slim', 'Regular', 'Loose'];
 
+/// Top-level clothing categories. 'Accessories' is special — it skips
+/// the size dropdown (see [validateListingForm] and [getSizeOptions]).
 const List<String> categories = [
   'Shirt',
   'Trousers',
@@ -88,20 +101,20 @@ const List<String> categories = [
   'Accessories',
 ];
 
-const List<String> priceRanges = [
-  'Under £25',
-  '£25 - £50',
-  '£50 - £100',
-  '£100 - £250',
-  'Over £250',
+/// Sort options for the price filter in the product grid.
+const List<String> priceSortOptions = [
+  'Lowest Price First',
+  'Highest Price First',
 ];
 
+/// Sort options for the date filter in the product grid.
 const List<String> dateSortOptions = [
   'Newest First',
   'Oldest First',
 ];
 
-// helper that mirrors previous _currentSizes logic but is stateless and reusable
+/// Returns the correct size list depending on [category] and [department].
+/// Shoes get numeric EU sizes (30–48), Accessories get one-size options,
 List<String> getSizeOptions({String? department, String? category}) {
   if (category == 'Shoes') {
     return List.generate(19, (i) => (i + 30).toString());

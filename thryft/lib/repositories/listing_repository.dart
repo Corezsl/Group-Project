@@ -1,12 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 
+/// This repository manages data operations related to a user's listings in the Supabase database.
+/// It provides methods to fetch a user's active listings, update their details, delete them, 
+/// and mark them as sold. 
+/// 
+/// Used primarily by state management providers or directly by screens 
+/// (like MyListingsScreen or EditListingScreen) to interact with the backend `products` table.
 class NotAuthenticatedException implements Exception {
   const NotAuthenticatedException();
   @override
   String toString() => 'NotAuthenticatedException: user is not logged in';
 }
 
+/// Thrown when attempting to delete a listing that has already been marked as sold.
+/// Sold listings must be preserved for order history and buyer/seller records.
 class ListingIsSoldException implements Exception {
   const ListingIsSoldException();
   @override
@@ -18,6 +26,9 @@ class ListingRepository {
 
   const ListingRepository(this._client);
 
+  /// Fetches all active (unsold) listings created by a specific user.
+  /// Joins the `products` table with the `profiles` table to include the seller's username.
+  /// Returns a list of [Product] objects ordered by creation date (newest first).
   Future<List<Product>> fetchActiveListings(String userId) async {
     final response = await _client
         .from('products')
@@ -29,6 +40,8 @@ class ListingRepository {
     return (response as List).map(_rowToProduct).toList();
   }
 
+  /// Updates specific fields of an existing listing in the database.
+  /// Requires the user to be logged in. Throws [NotAuthenticatedException] if not.
   Future<void> updateListing({
     required String id,
     required String userId,
@@ -40,6 +53,9 @@ class ListingRepository {
     await _client.from('products').update(fields).eq('id', id);
   }
 
+  /// Deletes a listing from the database permanently.
+  /// Prevents deletion if the item is already sold ([ListingIsSoldException]).
+  /// Requires the user to be logged in ([NotAuthenticatedException]).
   Future<void> deleteListing({
     required String id,
     required String userId,
@@ -58,6 +74,9 @@ class ListingRepository {
         .eq('user_id', userId);
   }
 
+  /// Marks a specific listing as sold by invoking a Supabase RPC (Remote Procedure Call) 
+  /// named `purchase_listing`.
+  /// Requires the user to be logged in. Throws [NotAuthenticatedException] if not.
   Future<void> markAsSold({
     required String id,
   }) async {
@@ -69,6 +88,8 @@ class ListingRepository {
     });
   }
 
+  /// Helper method to safely convert a raw JSON map from Supabase into a strongly typed [Product] object.
+  /// Handles null safety, type casting, and providing default values for missing fields.
   static Product _rowToProduct(dynamic data) {
     return Product(
       id: data['id'].toString(),
