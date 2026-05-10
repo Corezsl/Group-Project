@@ -3,7 +3,7 @@ import 'package:thryft/utils/filter_form_validator.dart';
 
 String? _filterValidation({
   String size = 'Any', //set to default value
-  double minPrice = null, //set as 0.01 in validation (need to double check)
+  double minPrice = 0.1, //set as 0.01 in validation (need to double check)
   double? maxPrice, //set as 10000 in validation rules (need to check aswell)
   String department = 'Any',
   String brand = 'Any',
@@ -16,7 +16,7 @@ String? _filterValidation({
     validateFilterForm(
       department: department,
       size: size,
-      maxPrice: maxPrice,
+      maxPrice: 10000, //set as 10000 as in validation rules
       brand: brand,
       condition: condition,
       fitting: fitting,
