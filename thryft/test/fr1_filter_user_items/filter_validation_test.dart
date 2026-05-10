@@ -1,38 +1,60 @@
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:thryft/utils/filter_form_validator.dart';
 
 String? _filterValidation({
-  String? size,
-  double? minPrice, //set as 0.1 in validation (need to double check)
+  String size = 'Any', //set to default value
+  double minPrice = null, //set as 0.01 in validation (need to double check)
   double? maxPrice, //set as 10000 in validation rules (need to check aswell)
-  String? department,
-}) {
-  // This is base logic for all cases or where department is null
-  if (size != null && !['XS', 'S', 'M', 'L', 'XL', 'XXL'].contains(size)) {
-    return 'Invalid size';
-  }
-  if (minPrice != null && minPrice < 0) {
-    return 'Min price cannot be negative';
-  }
-  if (maxPrice != null && maxPrice < 0) {
-    return 'Max price cannot be negative';
-  }
-  if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-    return 'Min price cannot be greater than max price'; //dont think i need this?
-  }
-  if (department != null && !['Menswear', 'Womenswear'].contains(department)) {
-    return 'Invalid department';
-  }
-  if (department == 'Womenswear' && size != null && !['6', '8', '10', '12', '14', '16', '18', '20', '22'].contains(size)) {
-    return 'Invalid size for womenswear';
-  }
-  if (department == 'Menswear' && size != null && !['30R', '32R', '34R', '36R', '38R', '40R', '42R', '44R', '46R', '48R', '50R'].contains(size)) {
-    return 'Invalid size for menswear';
-  }
+  String department = 'Any',
+  String brand = 'Any',
+  String condition = 'Any',
+  String fitting = 'Any',
+  String material = 'Any',
+  String colour = 'Any',
+  String? ownedBy,
+}) =>
+    validateFilterForm(
+      department: department,
+      size: size,
+      maxPrice: maxPrice,
+      brand: brand,
+      condition: condition,
+      fitting: fitting,
+      material: material,
+      colour: colour,
+      ownedBy: ownedBy,
+    );
+
+  
+  // This is base logic for default sizing
+  //if (size != 'Any' || !['XS', 'S', 'M', 'L', 'XL', 'XXL'].contains(size)) {
+  //  return 'Invalid size';
+  //}
+  //if (minPrice != null && minPrice < 0) {
+  //  return 'Min price cannot be negative';
+  //}
+  //if (maxPrice != null && maxPrice < 0) {
+  //  return 'Max price cannot be negative';
+  //}
+  //if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+  //  return 'Min price cannot be greater than max price'; 
+  //}
+  //if (department != null && !['Menswear', 'Womenswear'].contains(department)) {
+  //  return 'Invalid department';
+  //}
+  //if (department == 'Womenswear' && size != null && !['6', '8', '10', '12', '14', '16', '18', '20', '22'].contains(size)) {
+  //  return 'Invalid size for womenswear';
+  //}
+  //if (department == 'Menswear' && size != null && !['30R', '32R', '34R', '36R', '38R', '40R', '42R', '44R', '46R', '48R', '50R'].contains(size)) {
+  //  return 'Invalid size for menswear';
+  //}
+  //if (brand != null && !['Nike', 'Adidas', 'Zara', 'H&M'].contains(brand)) {
+  //  return 'Invalid brand';
+  //}
   // Add more validation rules as needed.
   
-  return null; // null means valid
-}
+  //return null; // null means valid
+
 
 
 void main() {
@@ -59,5 +81,12 @@ void main() {
       expect(_filterValidation(minPrice: 100.0, maxPrice: 50.0), equals('Min price cannot be greater than max price'));
     });
   });
+  
+  group('FR1 #3 - Filter Validation on Brand', () {
+    // Assuming brand validation logic is added to _filterValidation
+    test('Invalid brand fails validation', () {
+      expect(_filterValidation(brand: 'UnknownBrand'), equals('Invalid brand'));
+    });
+  );
 });
 }
