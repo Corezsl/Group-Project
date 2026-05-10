@@ -1,3 +1,4 @@
+import 'package:thryft/utils/size_options.dart';
 //Validation utility for Filter Form (FR1).
 
 // This is a pure function that checks all user inputs 
@@ -12,12 +13,11 @@ String? validateFilterForm({
   required String material,
   required String colour,
   required String? ownedBy,
-  required String price, 
+  required double? price, 
 }) {
 
 //checks price is within the valid range of 0.01 - 10000
-final double? parsedPrice = double.tryParse(price);
-if (parsedPrice == null || parsedPrice <= 0 || parsedPrice > 10000) {
+if (price != null && price <= 0 && price > 10000) {
   return 'Please enter a valid price greater than 0 or less than 10000.';}
 
 //checks if size is valid (if not 'Any', or the default sizes)
@@ -25,30 +25,45 @@ if (size != 'Any' || !['XS', 'S', 'M', 'L', 'XL', 'XXL'].contains(size)) {
   return 'Invalid size';}
 
 //validates department is either menswear, womenswear or any (default)
-if (department != null && !['Menswear', 'Womenswear'].contains(department)) {
+if (department != null && !['Mens', 'Womens'].contains(department)) {
   return 'Invalid department';
 }
 
-//validates womenswear sizes
-if (department == 'Womenswear' && size !=['6', '8', '10', '12', '14', '16', '18', '20', '22'].contains(size)) {
-  return 'Invalid size for womenswear';
-}
-//validates menswear sizes
-if (department == 'Menswear' && size !=['30R', '32R', '34R', '36R', '38R', '40R', '42R', '44R', '46R', '48R', '50R'].contains(size)) {
-  return 'Invalid size for menswear';
-}
-//checks if brand is one of the predefined values
-if (brand !=['Nike', 'Adidas', 'Zara', 'H&M'].contains(brand)) {
-  return 'Invalid brand';
-}
-  //Add more validation rules as needed.
-  
+  // validate size against canonical lists from size_options.dart
+  final allowedSizes = getSizeOptions(department: department);
+  // allow 'All' or 'Any' as tokens meaning "no size filter"
+  if (size != 'All' && size != 'Any' && !allowedSizes.contains(size)) {
+    return 'Invalid size';
+  }
+
+  // validate condition, fitting, material and colour against canonical lists
+  if (!conditions.contains(condition)) {
+    return 'Invalid condition';
+  }
+  if (!fittings.contains(fitting)) {
+    return 'Invalid fitting';
+  }
+  if (!materials.contains(material)) {
+    return 'Invalid material';
+  }
+  if (!colours.contains(colour)) {
+    return 'Invalid colour';
+  }
+
+  // validate brand against canonical brands list
+  final brandTrimmed = brand.trim();
+  if (brandTrimmed.isEmpty || !brands.contains(brandTrimmed)) {
+    return 'Invalid brand';
+  }
+
+  // Add more validation rules as needed.
+
   return null; // null means valid
 }
 
 //FOR TESTING:
 
-//step 1:create filtervalidationfrom()
+//step 1:create filtervalidationfrom() DONE
 //step2:incorporate into filter system in filter_system.dart
 //step 3: create test for filter validation function, and then test that the filter system is correctly validating the inputs and returning the expected results from database.
 //step 4:TESRING PART:(format similar can be found for fr3):
