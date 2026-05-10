@@ -5,10 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 
+/// Represents criteria for filtering and sorting product search results.
 class SearchFilters {
   final String? size;
   final String? category;
   final String? condition;
+  final String? department;
+  final String? brand;
+  final String? fitting;
+  final String? material;
+  final String? colour;
   final double? minPrice;
   final double? maxPrice;
   final String sortBy; // 'newest', 'price_asc', 'price_desc'
@@ -17,15 +23,26 @@ class SearchFilters {
     this.size,
     this.category,
     this.condition,
+    this.department,
+    this.brand,
+    this.fitting,
+    this.material,
+    this.colour,
     this.minPrice,
     this.maxPrice,
     this.sortBy = 'newest',
   });
 
+  /// Creates a new filters instance while allowing specific properties to be updated.
   SearchFilters copyWith({
     Object? size = _sentinel,
     Object? category = _sentinel,
     Object? condition = _sentinel,
+    Object? department = _sentinel,
+    Object? brand = _sentinel,
+    Object? fitting = _sentinel,
+    Object? material = _sentinel,
+    Object? colour = _sentinel,
     Object? minPrice = _sentinel,
     Object? maxPrice = _sentinel,
     String? sortBy,
@@ -34,16 +51,27 @@ class SearchFilters {
       size: size == _sentinel ? this.size : size as String?,
       category: category == _sentinel ? this.category : category as String?,
       condition: condition == _sentinel ? this.condition : condition as String?,
+      department: department == _sentinel ? this.department : department as String?,
+      brand: brand == _sentinel ? this.brand : brand as String?,
+      fitting: fitting == _sentinel ? this.fitting : fitting as String?,
+      material: material == _sentinel ? this.material : material as String?,
+      colour: colour == _sentinel ? this.colour : colour as String?,
       minPrice: minPrice == _sentinel ? this.minPrice : minPrice as double?,
       maxPrice: maxPrice == _sentinel ? this.maxPrice : maxPrice as double?,
       sortBy: sortBy ?? this.sortBy,
     );
   }
 
+  /// Checks if any filter or non-default sort option is currently applied.
   bool get hasActiveFilters =>
       size != null ||
       category != null ||
       condition != null ||
+      department != null ||
+      brand != null ||
+      fitting != null ||
+      material != null ||
+      colour != null ||
       minPrice != null ||
       maxPrice != null ||
       sortBy != 'newest';
@@ -52,6 +80,7 @@ class SearchFilters {
 // Sentinel for copyWith null distinction
 const _sentinel = Object();
 
+/// Manages product searches with debouncing, filtering, and recent search history.
 class SearchProvider extends ChangeNotifier {
   List<Product> _results = [];
   bool _isLoading = false;
@@ -73,7 +102,7 @@ class SearchProvider extends ChangeNotifier {
   List<String> get recentSearches => List.unmodifiable(_recentSearches);
   SearchFilters get filters => _filters;
 
-  // on every keystroke — debounced internally
+  /// Updates the search query and triggers a debounced search execution. 
   void onQueryChanged(String value) {
     _query = value;
     notifyListeners();
@@ -94,7 +123,7 @@ class SearchProvider extends ChangeNotifier {
     });
   }
 
-  // when the user explicitly submits (saves to recent searches)
+  /// Executes a search and persists the query to the user's recent search history.
   Future<void> submitSearch(String value) async {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return;
@@ -102,6 +131,7 @@ class SearchProvider extends ChangeNotifier {
     await _executeSearch(trimmed, saveToRecent: true);
   }
 
+  /// Applies new search filters and refreshes the current search results.
   Future<void> updateFilters(SearchFilters newFilters) async {
     _filters = newFilters;
     notifyListeners();
@@ -110,6 +140,7 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Resets all filters to their default values and refreshes the search results.
   void clearFilters() {
     _filters = const SearchFilters();
     notifyListeners();
@@ -118,6 +149,7 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Queries Supabase for products matching the query and currently active filters.
   Future<void> _executeSearch(String q, {bool saveToRecent = false}) async {
     _isLoading = true;
     notifyListeners();
@@ -137,6 +169,21 @@ class SearchProvider extends ChangeNotifier {
       }
       if (_filters.condition != null) {
         queryBuilder = queryBuilder.eq('condition', _filters.condition!);
+      }
+      if (_filters.department != null) {
+        queryBuilder = queryBuilder.eq('department', _filters.department!);
+      }
+      if (_filters.brand != null) {
+        queryBuilder = queryBuilder.eq('brand', _filters.brand!);
+      }
+      if (_filters.fitting != null) {
+        queryBuilder = queryBuilder.eq('fitting', _filters.fitting!);
+      }
+      if (_filters.material != null) {
+        queryBuilder = queryBuilder.eq('material', _filters.material!);
+      }
+      if (_filters.colour != null) {
+        queryBuilder = queryBuilder.eq('colour', _filters.colour!);
       }
       if (_filters.minPrice != null) {
         queryBuilder = queryBuilder.gte('price', _filters.minPrice!);
@@ -200,12 +247,14 @@ class SearchProvider extends ChangeNotifier {
     }
   }
 
+  /// Loads the list of recent search queries from local storage.
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
     _recentSearches = prefs.getStringList(_recentSearchesKey) ?? [];
     notifyListeners();
   }
 
+  /// Adds a query to the top of the recent searches list and persists it.
   Future<void> _saveRecentSearch(String q) async {
     _recentSearches.remove(q);
     _recentSearches.insert(0, q);
@@ -217,6 +266,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Deletes a specific query from the recent searches history.
   Future<void> removeRecentSearch(String q) async {
     _recentSearches.remove(q);
     final prefs = await SharedPreferences.getInstance();
@@ -224,6 +274,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Wipes all recent search history from local storage.
   Future<void> clearRecentSearches() async {
     _recentSearches = [];
     final prefs = await SharedPreferences.getInstance();
@@ -231,6 +282,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resets the search state, query, and results to their initial values.
   void clearResults() {
     _debounce?.cancel();
     _query = '';
@@ -240,6 +292,7 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cancels any active debouncing timer to prevent memory leaks.
   @override
   void dispose() {
     _debounce?.cancel();
