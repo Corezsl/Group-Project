@@ -34,22 +34,24 @@ String? validateFilterForm({
   }
 
   // validate condition, fitting, material and colour against canonical lists
-  if (!conditions.contains(condition)) {
+  // allow 'All'/'Any' as tokens meaning "no filter" for these dropdowns
+  if (condition != 'All' && condition != 'Any' && !conditions.contains(condition)) {
     return 'Invalid condition';
   }
-  if (!fittings.contains(fitting)) {
+  if (fitting != 'All' && fitting != 'Any' && !fittings.contains(fitting)) {
     return 'Invalid fitting';
   }
-  if (!materials.contains(material)) {
+  if (material != 'All' && material != 'Any' && !materials.contains(material)) {
     return 'Invalid material';
   }
-  if (!colours.contains(colour)) {
+  if (colour != 'All' && colour != 'Any' && !colours.contains(colour)) {
     return 'Invalid colour';
   }
 
   // validate brand against canonical brands list
   final brandTrimmed = brand.trim();
-  if (brandTrimmed.isEmpty || !brands.contains(brandTrimmed)) {
+  // allow 'All'/'Any' to mean "no brand filter"
+  if (brandTrimmed != 'All' && brandTrimmed != 'Any' && !brands.contains(brandTrimmed)) {
     return 'Invalid brand';
   }
 

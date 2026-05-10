@@ -67,7 +67,16 @@ void main() {
     });
   });
 
-  group('FR1 #2 - Filter Validation on Price Range', () {
+  //FR1 Partition 3 - Filter Validation on only one condition (Valid Inputs)
+  group('FR1 #3 - Filter Validation on only one criteria', () {
+    test('Valid inputs pass validation', () {
+      expect(_filterValidation(condition: 'Good', department: 'All', size: 'All', brand: 'All', fitting: 'All', material: 'All', colour: 'All'), isNull);
+      expect(_filterValidation(fitting: 'Regular', department: 'All', size: 'All', brand: 'All', condition: 'All', material: 'All', colour: 'All'), isNull);
+      expect(_filterValidation(material: 'Cotton', department: 'All', size: 'All', brand: 'All', fitting: 'All', condition: 'All', colour: 'All'), isNull);
+      expect(_filterValidation(colour: 'Black', department: 'All', size: 'All', brand: 'All', fitting: 'All', material: 'All', condition: 'All'), isNull);
+    });
+  });
+  group('FR1 #4 - Filter Validation on Price Range', () {
     test('Negative min price fails validation', () {
   expect(_filterValidation(price: -5.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
     });
