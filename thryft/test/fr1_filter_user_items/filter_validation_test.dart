@@ -42,13 +42,27 @@ void main() {
 
   //FR1 Partition 2 - Filter Validation on Sizes
   group('FR1 #2 - Filter Validation on Sizes', () {
-    test('Valid inputs pass validation', () {
-  expect(_filterValidation(size: 'M', price: 25.0), isNull);
+    test('Valid inputs pass validation on any', () {
+      expect(_filterValidation(department: 'All', size: 'M', price: 25.0), isNull);
+    });
+
+    test('Valid inputs pass validation for menswear', () {
+      expect(_filterValidation(department: 'Mens', size: '32R', price: 25.0), isNull);
+    });
+
+    test('Valid inputs pass validation for womenswear', () {
+      expect(_filterValidation(department: 'Womens', size: '10', price: 25.0), isNull);
     });
 
     test('Invalid size fails validation', () {
       expect(
         _filterValidation(size: '30R', department: 'Womens'),
+      equals('Invalid size'));
+    });
+
+    test('Invalid size fails validation for menswear', () {
+      expect(
+        _filterValidation(size: '10', department: 'Mens'),
       equals('Invalid size'));
     });
   });
