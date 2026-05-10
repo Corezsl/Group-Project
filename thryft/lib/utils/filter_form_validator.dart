@@ -16,18 +16,15 @@ String? validateFilterForm({
   required double? price, 
 }) {
 
-//checks price is within the valid range of 0.01 - 10000
-if (price != null && price <= 0 && price > 10000) {
-  return 'Please enter a valid price greater than 0 or less than 10000.';}
+  // checks price is within the valid range of 0.01 - 10000
+  if (price == null || price <= 0 || price > 10000) {
+    return 'Please enter a valid price greater than 0 or less than 10000.';
+  }
 
-//checks if size is valid (if not 'Any', or the default sizes)
-if (size != 'Any' || !['XS', 'S', 'M', 'L', 'XL', 'XXL'].contains(size)) {
-  return 'Invalid size';}
-
-//validates department is either menswear, womenswear or any (default)
-if (department != null && !['Mens', 'Womens'].contains(department)) {
-  return 'Invalid department';
-}
+  // validate department if provided. Accept 'Mens'/'Womens' or 'All'/'Any'
+  if (department != null && department != 'All' && department != 'Any' && !['Mens', 'Womens'].contains(department)) {
+    return 'Invalid department';
+  }
 
   // validate size against canonical lists from size_options.dart
   final allowedSizes = getSizeOptions(department: department);
