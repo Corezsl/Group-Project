@@ -3,8 +3,12 @@ import 'package:thryft/utils/size_options.dart';
 import 'package:thryft/providers/search_provider.dart'; // new import
 import 'package:thryft/screens/filter_results_screen.dart'; // added import
 
+// Horizontally scrolling row of filter dropdowns shown under the search bar
+// in the Header when the filter button is toggled. Pressing Apply navigates
+// to the FilterResultsScreen with the assembled SearchFilters.
 class FilterPanel extends StatefulWidget {
   const FilterPanel({super.key, this.onApply});
+  // optional callback fired with the assembled filters when Apply is pressed
   final ValueChanged<SearchFilters>? onApply; // changed type
 
   @override
@@ -12,6 +16,7 @@ class FilterPanel extends StatefulWidget {
 }
 
 class _FilterPanelState extends State<FilterPanel> {
+  // currently selected value for each dropdown — 'All' means no filter
   String _department = 'All';
   String _size = 'All';
   String _brands = 'All';
@@ -20,7 +25,9 @@ class _FilterPanelState extends State<FilterPanel> {
   String _material = 'All';
   String _colour = 'All';
 
+  // user-typed max price (numeric, parsed on Apply)
   final TextEditingController _priceController = TextEditingController();
+  // controls the horizontal scroll so the always-visible scrollbar lines up
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -72,6 +79,8 @@ class _FilterPanelState extends State<FilterPanel> {
                         DropdownMenuItem(value: 'Womens', child: Text('Womens')),
                         DropdownMenuItem(value: 'Mens', child: Text('Mens')),
                       ],
+                      // changing department resets size if the previous size isn't
+                      // valid for the new department (e.g. UK 8 makes no sense for Mens)
                       onChanged: (v) => setState(() {
                         _department = v ?? 'All';
                         if (!sizeOptionsForDepartment(_department).contains(_size)) {
@@ -116,6 +125,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       onChanged: (x) => setState(() => _fitting = x ?? 'All'),
                     ),
 
+                    // numeric "max price" field — parsed on Apply, blank means no cap
                     const Text('Price:', style: TextStyle(color: Colors.white)),
                     SizedBox(
                       width: 120,
@@ -152,12 +162,15 @@ class _FilterPanelState extends State<FilterPanel> {
                       onChanged: (color) => setState(() => _colour = color ?? 'All'),
                     ),
 
+                    // builds the SearchFilters object, fires the optional callback,
+                    // then pushes the FilterResultsScreen
                     TextButton(
                       onPressed: () {
                         final maxPrice = _priceController.text.trim().isEmpty
                             ? null
                             : double.tryParse(_priceController.text.trim());
                         final filters = SearchFilters(
+                          // 'All' is just our UI sentinel — the model expects null for "no filter"
                           department: _department == 'All' ? null : _department,
                           size: _size == 'All' ? null : _size,
                           brand: _brands == 'All' ? null : _brands,
@@ -181,6 +194,7 @@ class _FilterPanelState extends State<FilterPanel> {
                       child: const Text('Apply'),
                     ),
 
+                    // resets every dropdown back to 'All' and dismisses the keyboard
                     TextButton(
                       onPressed: () {
                         setState(() {

@@ -13,4 +13,4 @@ class MockPostgrestFilterBuilder<T> extends Mock
     implements PostgrestFilterBuilder<T> {}
 
 class MockPostgrestTransformBuilder<T> extends Mock
-    implements PostgrestTransformBuilder<T> {}
+    implements PostgrestTransformBuilder<T> {}  

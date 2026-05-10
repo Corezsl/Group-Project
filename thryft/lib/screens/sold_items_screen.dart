@@ -7,6 +7,7 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Shows items the user has sold and lets them mark them as shipped. Routed at /sold.
 class SoldItemsScreen extends StatefulWidget {
   const SoldItemsScreen({super.key});
 
@@ -27,6 +28,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
 
   Future<void> _fetchSoldItems() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
+    // no auth, no sold items to show
     if (userId == null) {
       setState(() => _isLoading = false);
       return;
@@ -72,6 +74,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           )
           .toList();
 
+      // extract unique buyer IDs so we can bulk fetch addresses
       final buyerIds = items
           .map((p) => p.buyerId)
           .whereType<String>()
@@ -141,6 +144,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
+      // hit supabase directly here to update the order status
       await Supabase.instance.client
           .from('products')
           .update({'order_status': 'shipped'})
@@ -260,6 +264,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                       ),
                     )
                   else
+                    // shrinkWrap true since it's inside a SingleChildScrollView
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -306,6 +311,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
             ),
             const SizedBox(height: 10),
             // Product row
+            // push instead of go so they can easily back out to the sold items list
             InkWell(
               borderRadius: BorderRadius.circular(6),
               onTap: () => context.push(

@@ -3,7 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/product_card.dart';
 
+// Horizontally scrolling row of product cards used on the home screen.
+// Each carousel fetches its own products from supabase, optionally
+// filtered by category, and excludes the current user's own listings.
 class ProductCarousel extends StatefulWidget {
+  // optional category filter — when null the carousel shows products from all categories
   final String? category;
 
   const ProductCarousel({super.key, this.category});
@@ -18,6 +22,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
   // how far we scroll when pressing the arrows (roughly 2 cards)
   static const double _scrollAmount = 344;
 
+  // cached future so the FutureBuilder doesnt re-fetch on every rebuild
   late Future<List<Product>> _productsFuture;
 
   @override
@@ -26,6 +31,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
     _productsFuture = _fetchProducts();
   }
 
+  // pulls available products from supabase with the seller's username joined in
   Future<List<Product>> _fetchProducts() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
 
@@ -76,6 +82,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
         .toList();
   }
 
+  // animates the list back by ~2 cards, clamped so it doesnt overshoot the start
   void _scrollLeft() {
     _scrollController.animateTo(
       (_scrollController.offset - _scrollAmount).clamp(
@@ -87,6 +94,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
     );
   }
 
+  // mirror of _scrollLeft for the right arrow
   void _scrollRight() {
     _scrollController.animateTo(
       (_scrollController.offset + _scrollAmount).clamp(
@@ -129,6 +137,7 @@ class _ProductCarouselState extends State<ProductCarousel> {
             );
           }
 
+          // arrow + horizontal list + arrow
           return Row(
             children: [
               IconButton(

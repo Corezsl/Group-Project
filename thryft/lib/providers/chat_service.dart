@@ -12,9 +12,9 @@ class ChatService {
         body: {'query': message},
       );
       
-      return response.data['reply'] ?? "I'm sorry, I couldn't find an answer to that.";
+      return response.data['reply'] ?? "Sorry, I'm having trouble processing your request, please try slightly different phrasing";
     } catch (e) {
-      return "I'm having trouble connecting to the assistant right now.";
+      return "Sorry, I'm having trouble processing your request, please try slightly different phrasing";
     }
   }
 }

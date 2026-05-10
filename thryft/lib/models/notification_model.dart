@@ -103,9 +103,13 @@ class AppNotification {
 
   // builds a notification from a supabase row
   factory AppNotification.fromMap(Map<String, dynamic> map) {
+    final userId = map['user_id'];
+    if (userId == null) {
+      throw ArgumentError('notification row is missing user_id');
+    }
     return AppNotification(
       notificationId: map['notification_id'] as int,
-      userId: map['user_id'].toString(),
+      userId: userId.toString(),
       notifType: NotificationType.fromString(map['notif_type'].toString()),
       content: map['content'].toString(),
       isRead: map['is_read'] as bool? ?? false,

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Slide-in side menu opened from the mobile Header's hamburger button.
+// Lists category shortcuts, account links, and a Sell now button.
+// Every tile pops the drawer first so the user can see the destination.
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -11,6 +14,7 @@ class AppDrawer extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          // logo header — also acts as a "go home" button
           DrawerHeader(
             decoration: const BoxDecoration(
               color: Color.fromARGB(255, 71, 164, 245),
@@ -28,6 +32,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
+          // category shortcuts — go(...) replaces the stack so back doesnt loop through them
           ListTile(
             leading: const Icon(Icons.home_outlined),
             title: const Text('Home'),
@@ -94,6 +99,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           const Divider(),
+          // user-specific links — push(...) keeps them in the back stack
           ListTile(
             leading: const Icon(Icons.favorite_outline),
             title: const Text('Wishlist'),
@@ -102,6 +108,7 @@ class AppDrawer extends StatelessWidget {
               context.push('/wishlist');
             },
           ),
+          // Account routes to /account if logged in, otherwise to the auth screen
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('Account'),
@@ -116,6 +123,8 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           const Divider(),
+          // Sell now: same auth-aware pattern, but also shows a snackbar explaining
+          // why guests get bounced to the auth screen
           ListTile(
             leading: const Icon(Icons.sell_outlined),
             title: const Text('Sell now'),

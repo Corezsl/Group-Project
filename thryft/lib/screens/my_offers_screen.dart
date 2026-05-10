@@ -8,8 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/offer_model.dart';
 import 'package:thryft/providers/offer_provider.dart';
-import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
+import 'package:thryft/widgets/footer.dart';
 
 class MyOffersScreen extends StatefulWidget {
   const MyOffersScreen({super.key});
@@ -253,8 +253,6 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
                 ],
               ),
             ),
-            if (offer.isPending || offer.isAccepted)
-              Icon(Icons.chevron_right, color: Colors.grey[400]),
           ],
         ),
       ),
@@ -279,13 +277,19 @@ class _MyOffersScreenState extends State<MyOffersScreen> {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: fg.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(label, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 

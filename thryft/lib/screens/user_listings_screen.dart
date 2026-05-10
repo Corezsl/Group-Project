@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/header.dart';
@@ -6,6 +7,8 @@ import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:go_router/go_router.dart';
 
+// Shows the logged-in user's active listings. Routed at /my-listings.
+// Only fetches is_sold=false so sold items don't clutter the view.
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
 
@@ -14,6 +17,7 @@ class MyListingsScreen extends StatefulWidget {
 }
 
 class _MyListingsScreenState extends State<MyListingsScreen> {
+  // cached so a hot-reload or tab switch doesn't re-fire the query
   late Future<List<Product>> _listingsFuture;
 
   @override
@@ -22,8 +26,10 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     _listingsFuture = _fetchMyListings();
   }
 
+  // fetches only active listings for the current user, joined with seller name
   Future<List<Product>> _fetchMyListings() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
+    // unauthenticated — nothing to show
     if (userId == null) return [];
 
     final response = await Supabase.instance.client
@@ -82,6 +88,17 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     'Manage the items you currently have up for sale.',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/create-listing'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create Listing'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
                   const SizedBox(height: 32),
                   FutureBuilder<List<Product>>(
                     future: _listingsFuture,
@@ -92,7 +109,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         );
                       }
-                      
+
                       final items = snapshot.data ?? [];
 
                       return SizedBox(
@@ -102,6 +119,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           emptyIcon: Icons.list_alt,
                           emptyTitle: 'No active listings',
                           emptySubtitle: 'Items you list for sale will appear here.',
+                          // injected as the first card in the grid — quick shortcut to create a listing
                           extraGridCard: GestureDetector(
                             onTap: () => context.go('/create-listing'),
                             behavior: HitTestBehavior.opaque,

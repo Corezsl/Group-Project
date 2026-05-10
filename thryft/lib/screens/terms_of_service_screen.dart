@@ -4,11 +4,13 @@ import '../widgets/footer.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/header.dart';
 
+// Terms of service static page. Routed at /tos.
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // grab screen type so we don't look cramped on desktop
     final isMobile = Responsive.isMobile(context);
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
@@ -39,6 +41,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: isMobile ? 24 : 40),
+                  // using RichText instead of a bunch of columns so the text flows naturally
                   RichText(
                     text: TextSpan(
                       style: TextStyle(

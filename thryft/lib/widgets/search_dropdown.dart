@@ -3,10 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:thryft/providers/search_provider.dart';
 
+// Dropdown panel that hangs off the search bar in the Header.
+// Shows recent searches when idle, a spinner while loading, and product
+// matches once the user types. Tapping outside closes it.
 class SearchDropdown extends StatelessWidget {
+  // links the dropdown's position to the search bar above it (CompositedTransformFollower)
   final LayerLink layerLink;
+  // the search bar's controller so tapping a recent search can refill it
   final TextEditingController controller;
+  // matches the search bar's width so the dropdown lines up nicely
   final double dropdownWidth;
+  // closes the overlay (used by the outside-tap barrier and after navigating)
   final VoidCallback onDismiss;
   final VoidCallback onNavigate;
 
@@ -30,6 +37,7 @@ class SearchDropdown extends StatelessWidget {
             onTap: onDismiss,
           ),
         ),
+        // anchors the dropdown directly below the search bar
         CompositedTransformFollower(
           link: layerLink,
           targetAnchor: Alignment.bottomLeft,
@@ -48,6 +56,7 @@ class SearchDropdown extends StatelessWidget {
                   constraints: const BoxConstraints(maxHeight: 380),
                   child: Consumer<SearchProvider>(
                     builder: (context, provider, _) {
+                      // pick which view to show based on the provider state
                       if (provider.query.isEmpty) {
                         return _buildIdle(context, provider);
                       }
@@ -87,6 +96,7 @@ class SearchDropdown extends StatelessWidget {
     );
   }
 
+  // shown when the search bar is empty — either a hint or the recent searches list
   Widget _buildIdle(BuildContext context, SearchProvider provider) {
     if (provider.recentSearches.isEmpty) {
       return Padding(
@@ -122,6 +132,7 @@ class SearchDropdown extends StatelessWidget {
             ],
           ),
         ),
+        // cap at 5 so the dropdown doesnt get too long
         ...provider.recentSearches
             .take(5)
             .map(
@@ -137,6 +148,7 @@ class SearchDropdown extends StatelessWidget {
                   icon: const Icon(Icons.close, size: 16, color: Colors.grey),
                   onPressed: () => provider.removeRecentSearch(q),
                 ),
+                // tapping a recent search refills the search bar and re-runs the query
                 onTap: () {
                   controller.text = q;
                   provider.onQueryChanged(q);
@@ -147,7 +159,9 @@ class SearchDropdown extends StatelessWidget {
     );
   }
 
+  // shown when the user has typed something and matching products came back
   Widget _buildResults(BuildContext context, SearchProvider provider) {
+    // only show top 5 hits so the dropdown stays compact — full results live on the search screen
     final shown = provider.results.take(5).toList();
     return ListView(
       shrinkWrap: true,
@@ -188,6 +202,7 @@ class SearchDropdown extends StatelessWidget {
               '£${product.price.toStringAsFixed(2)} · ${product.brand}',
               style: const TextStyle(fontSize: 12),
             ),
+            // close the dropdown then push to the product detail page
             onTap: () {
               onDismiss();
               context.push(

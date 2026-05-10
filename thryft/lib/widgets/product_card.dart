@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:thryft/models/product.dart';
 import 'package:thryft/providers/wishlist_provider.dart';
 
+// Single product tile shown across home carousels, search results, listings,
+// orders, wishlist etc. Renders the image, seller, brand/size/price, a SOLD
+// overlay if applicable, and a wishlist heart button.
 class ProductCard extends StatelessWidget {
   final Product product;
 
@@ -23,6 +26,8 @@ class ProductCard extends StatelessWidget {
         color: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: InkWell(
+          // tapping the card opens the product detail page, passing the heroTag
+          // through so the image transition lines up with the same Hero on the next screen
           onTap: () {
             context.push(
               '/product/${product.id}',
@@ -64,6 +69,7 @@ class ProductCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
+                    // product image — darkened with a black blend if sold
                     Hero(
                       tag: heroTag,
                       child: Container(
@@ -83,6 +89,7 @@ class ProductCard extends StatelessWidget {
                                     ? BlendMode.darken
                                     : null,
                               )
+                            // fallback when there's no image url
                             : const Center(
                                 child: Icon(
                                   Icons.image,
@@ -112,7 +119,8 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    // Wishlist button (hidden for sold items in orders)
+                    // Wishlist button (hidden for sold items in orders).
+                    // Consumer rebuilds just the heart icon when the wishlist state changes.
                     if (!product.isSold)
                       Positioned(
                         bottom: 8,
@@ -171,11 +179,12 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     // ── Price row ──────────────────────────────────────
+                    // shows current price, the crossed-out original if reduced, and a "Sold" label if sold
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        // Current price (always shown)
+                        // Current price (always shown) — red if there's a price drop, grey if sold
                         Text(
                           '£${product.price.toStringAsFixed(2)}',
                           style: TextStyle(
@@ -214,6 +223,31 @@ class ProductCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    // Buyer address summary (sold items only)
+                    if (product.isSold && product.buyerAddress != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.local_shipping_outlined,
+                            size: 12,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              product.buyerAddress!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

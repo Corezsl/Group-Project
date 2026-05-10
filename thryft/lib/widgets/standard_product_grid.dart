@@ -4,15 +4,23 @@ import 'package:thryft/widgets/product_card.dart';
 import 'package:thryft/utils/size_options.dart';
 import 'dart:math';
 
+// Reusable grid widget for showing a list of products with filters and paging.
+// Used by category, wishlist, user listings, user profile and filter results
+// screens so they all look and behave the same.
 class StandardProductGrid extends StatefulWidget {
+  // products to render — the screen does the fetching, this just displays
   final List<Product> items;
   final String title;
   final String subtitle;
+  // shown in the middle of the grid when items is empty
   final IconData emptyIcon;
   final String emptyTitle;
   final String emptySubtitle;
+  // optional CTA button under the empty state (e.g. "Start Shopping")
   final Widget? extraButton;
+  // optional card to show alongside the products (e.g. the "+ Create Listing" card on user_listings)
   final Widget? extraGridCard;
+  // filter labels are configurable so screens can rename them (e.g. "DATE SAVED" on wishlist)
   final String dateFilterLabel;
   final String priceFilterLabel;
 
@@ -35,6 +43,7 @@ class StandardProductGrid extends StatefulWidget {
 }
 
 class _StandardProductGridState extends State<StandardProductGrid> {
+  // currently picked filter/sort values — null means "All"
   String? _selectedSize;
   String? _selectedDateSort;
   String? _selectedPriceSort;
@@ -44,6 +53,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
   int _itemsPerPage = 50;
   int _currentPage = 1;
 
+  // sort sizes in clothing order rather than alphabetically (S before XL etc)
   int _compareSizes(String a, String b) {
     const sizeOrder = {
       'XXS': 0, 'XS': 1, 'S': 2, 'M': 3, 'L': 4, 'XL': 5, 'XXL': 6,
@@ -52,6 +62,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
     return (sizeOrder[a] ?? 100).compareTo(sizeOrder[b] ?? 100);
   }
 
+  // applies size filter + date/price sorts to the incoming list and returns a new list
   List<Product> _applyFilters(List<Product> items) {
     var filtered = List<Product>.from(items);
 
@@ -59,6 +70,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
       filtered = filtered.where((p) => p.size == _selectedSize).toList();
     }
 
+    // sort by id since uuids arent monotonic but its close enough for "newest first" ordering
     if (_selectedDateSort == dateSortOptions[0]) {
       filtered.sort((a, b) => b.id.compareTo(a.id));
     } else if (_selectedDateSort == dateSortOptions[1]) {
@@ -73,6 +85,8 @@ class _StandardProductGridState extends State<StandardProductGrid> {
     return filtered;
   }
 
+  // shared dropdown builder so all the filter chips look identical
+  // (display lets the caller convert non-string values like ints into a label)
   Widget _buildFilterDropdown<T>({
     required String label,
     required T? value,
@@ -130,20 +144,21 @@ class _StandardProductGridState extends State<StandardProductGrid> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    // build the size dropdown options dynamically from whatever sizes are in the list
     final uniqueSizes = widget.items.map((p) => p.size).toSet().toList()
       ..sort(_compareSizes);
 
     // Apply filters first
     final filtered = _applyFilters(widget.items);
 
-    // Ensure current page is valid after filters/items-per-page change
+    // clamp the current page if the list shrank (e.g. user changed page size or filter)
     final totalItems = filtered.length;
     final totalPages = max(1, (totalItems / _itemsPerPage).ceil());
     if (_currentPage > totalPages) {
       _currentPage = totalPages;
     }
 
-    // Slice for pagination
+    // grab just the slice of items for the current page
     final startIndex = (_currentPage - 1) * _itemsPerPage;
     final endIndex = min(startIndex + _itemsPerPage, totalItems);
     final paginated = (totalItems == 0) ? <Product>[] : filtered.sublist(startIndex, endIndex);
@@ -152,6 +167,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
+          // top filter row — horizontally scrollable so it doesnt overflow on narrow screens
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -278,6 +294,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                         ),
                       ),
                     )
+                  // there are products in total but none match the current filters
                   : paginated.isEmpty
                       ? SizedBox(
                           height: 200,
@@ -294,6 +311,7 @@ class _StandardProductGridState extends State<StandardProductGrid> {
                             ),
                           ),
                         )
+                      // normal grid render — Wrap reflows the cards based on width
                       : Wrap(
                           spacing: 16,
                           runSpacing: 16,

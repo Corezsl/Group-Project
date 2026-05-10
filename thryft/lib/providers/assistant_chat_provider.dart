@@ -7,11 +7,23 @@ import 'package:thryft/models/chat_message.dart';
 import 'package:thryft/providers/chat_service.dart';
 import 'package:thryft/providers/navigation_assistant.dart';
 
+/// State management for the in-app AI chat assistant.
+/// Consumed by the assistant chat UI via Provider / ChangeNotifier.
+///
+/// Messages flow through a three-step pipeline in [send]:
+///   1. Quick-help — instant keyword-matched answers (no backend call).
+///   2. Navigation — recognised route intents are resolved by [NavAssistantService].
+///   3. AI fallback — anything else is forwarded to [ChatService] (remote API).
 class AssistantChatProvider extends ChangeNotifier {
+  // Service that calls the AI backend for free-form responses.
   final ChatService _chatService;
+  // Service that maps user phrases like "take me to cart" to app routes.
   final NavAssistantService _navService;
+  // Used to check auth state before navigating to protected routes.
   final SupabaseClient _supabase;
 
+  /// All three dependencies are injectable for testing; production
+  /// code relies on the defaults (singleton instances).
   AssistantChatProvider({
     ChatService? chatService,
     NavAssistantService? navService,
@@ -20,6 +32,7 @@ class AssistantChatProvider extends ChangeNotifier {
         _navService = navService ?? NavAssistantService(),
         _supabase = supabase ?? Supabase.instance.client;
 
+  // Chat history shown in the UI. Seeded with a welcome message.
   final List<ChatMessage> _messages = [
     ChatMessage.assistant(
       'Hi! I can help you navigate, search for items, or answer questions. '
@@ -27,16 +40,17 @@ class AssistantChatProvider extends ChangeNotifier {
     ),
   ];
 
-  bool _isSending = false;
-  String? _error;
-  DateTime? _lastSendAt;
+  bool _isSending = false;   // True while waiting for a response (shows spinner).
+  String? _error;             // Holds the last error message, if any.
+  DateTime? _lastSendAt;      // Timestamp of the last send — used for debouncing.
 
+  // Public read-only getters used by the UI.
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get isSending => _isSending;
   String? get error => _error;
 
-  /// Quick-help responses for common questions — handled locally without
-  /// calling the AI backend, so they're instant and always available.
+  /// Quick-help responses for common questions — handled locally without 
+  /// calling the AI backend
   static const Map<String, String> _quickHelp = {
     'how do i sell':
         'To sell an item, go to the Create Listing page. You can say "take me to sell" '
@@ -68,9 +82,9 @@ class AssistantChatProvider extends ChangeNotifier {
         'pre-loved clothing. Say "about us" to learn more!',
   };
 
+  /// Returns true if [route] requires the user to be logged in.
+  /// Keep this list aligned with the route guards in `router.dart`.
   bool _isAccountProtectedRoute(String route) {
-    // Anything that exposes user/account data should require auth.
-    // Keep this list aligned with `router.dart`.
     const protected = <String>{
       '/account',
       '/profile-settings',
@@ -101,10 +115,14 @@ class AssistantChatProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Main entry point called when the user taps Send.
+  /// Runs through the three-step pipeline: quick-help → navigation → AI.
+  /// [router] is needed to actually push a route when a nav intent is found.
   Future<void> send(String text, {GoRouter? router}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isSending) return;
 
+    // Debounce: ignore messages sent within 600 ms of the last one.
     final now = DateTime.now();
     if (_lastSendAt != null && now.difference(_lastSendAt!) < const Duration(milliseconds: 600)) {
       return;
@@ -117,16 +135,17 @@ class AssistantChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Check quick-help first (instant, no backend call).
+      // Step 1 — Quick-help: instant keyword-matched answers.
       final quickReply = _matchQuickHelp(trimmed);
       if (quickReply != null) {
         _messages.add(ChatMessage.assistant(quickReply));
         return;
       }
 
-      // 2. Check navigation intent.
+      // Step 2 — Navigation: check if the user wants to go somewhere.
       final match = _navService.matchTarget(trimmed);
       if (match != null) {
+        // Block navigation to auth-protected pages if user isn't signed in.
         final isAuthed = _supabase.auth.currentUser != null;
         if (_isAccountProtectedRoute(match.route) && !isAuthed) {
           _messages.add(
@@ -141,7 +160,7 @@ class AssistantChatProvider extends ChangeNotifier {
         _messages.add(ChatMessage.assistant(_navService.getConfirmationMessage(match.route)));
         notifyListeners();
 
-        // Let the user read the confirmation, then navigate.
+        // Short delay so the user sees the confirmation before the page changes.
         if (router != null) {
           unawaited(
             Future<void>.delayed(const Duration(milliseconds: 700), () {
@@ -152,7 +171,7 @@ class AssistantChatProvider extends ChangeNotifier {
         return;
       }
 
-      // 3. Fall back to AI backend.
+      // Step 3 — AI fallback: send the message to the remote backend.
       final reply = await _chatService.getAssistantResponse(trimmed);
       _messages.add(ChatMessage.assistant(reply));
     } catch (e) {
@@ -164,6 +183,7 @@ class AssistantChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Resets the chat to its initial state (welcome message only).
   void clear() {
     _messages
       ..clear()
@@ -176,4 +196,5 @@ class AssistantChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
 
