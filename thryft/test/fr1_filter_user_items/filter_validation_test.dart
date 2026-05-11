@@ -88,7 +88,7 @@ void main() {
 
   group('FR1 #5 - Filter Validation on Price Range (Lower Bound)', () {
     test('Negative price fails validation', () {
-  expect(_filterValidation(price: -5.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
+      expect(_filterValidation(price: -5.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
     });
 
     test('Zero price fails validation', () {
@@ -98,11 +98,10 @@ void main() {
 
   group('FR1 #6 - Filter Validation on Price Range (Upper Bound)', () {
     test('Price above maximum fails validation', () {
-      expect(_filterValidation(price: 100000.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
-
+      expect(_filterValidation(price: 100000.0), equals('Please enter a valid price greater than 0 or less than 10000.'),);
+    });
     test('Price just over 10000 fails validation', () {
-      expect(_filterValidation(price: 10000.01), equals('Please enter a valid price greater than 0 or less than 10000.'));
-      });
+      expect(_filterValidation(price: 10000.01), equals('Please enter a valid price greater than 0 or less than 10000.'),);
     });
   });
   
@@ -110,10 +109,9 @@ void main() {
     // Assuming brand validation logic is added to _filterValidation
     test('Invalid brand fails validation', () {
       expect(_filterValidation(brand: 'UnknownBrand'), equals('Invalid brand'));
-
+      });
     test('Valid brand passes validation', () {
       expect(_filterValidation(brand: 'Nike'), isNull);
-      });
     });
   });
 }
