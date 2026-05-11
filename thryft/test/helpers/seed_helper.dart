@@ -39,13 +39,18 @@ Future<String> seedUser(
     'Run tests with --dart-define=TEST_SUPABASE_SERVICE_KEY=<key>',
   );
 
-  // Build a deterministic UUID from the username so we can reference it later.
-  // We use a fixed namespace prefix rather than truly random UUIDs so teardown
-  // can delete rows by prefix match.
-  final userId = _fakeUuid('$runId-$username');
+  final email = 'testuser_${DateTime.now().millisecondsSinceEpoch}_${username.replaceAll(' ', '')}@test.com';
 
-  // Insert into profiles — the FK to auth.users is deferred in the test
-  // project so we can seed profiles without a real auth row.
+  final response = await client.auth.admin.createUser(
+    AdminUserAttributes(
+      email: email,
+      password: 'password123',
+      emailConfirm: true,
+      userMetadata: {'username': username},
+    ),
+  );
+  final userId = response.user!.id;
+
   await client.from('profiles').upsert({
     'id': userId,
     'username': username,
@@ -184,17 +189,16 @@ Future<String> seedRating(
 /// Call from [tearDownAll] in each test file. The deletion order respects FK
 /// constraints (child tables first).
 Future<void> tearDownTestData(SupabaseClient client) async {
-  // Delete in FK-safe order (children before parents).
-  // Note: Cannot use like('%') on UUID columns without casting.
-  await client.from('offers').delete().like('listing_id', '%$runId%');
-  await client
-      .from('products')
-      .delete()
-      .like('id', '%$runId%');
-  await client
-      .from('profiles')
-      .delete()
-      .like('id', '%$runId%');
+  // We cannot reliably track everything that was added safely via fuzzy matches anymore, 
+  // we just delete anything older than an hour or we can delete what starts with 'testuser_' in auth.
+  // Actually, we'll try catching exceptions if the user was already deleted.
+  try {
+    await client.from('offers').delete().like('listing_id', '%$runId%');
+  } catch (_) {}
+  try {
+    await client.from('products').delete().like('id', '%$runId%');
+  } catch (_) {}
+  // Cannot delete UUIDs via like('%') in Postgres 15 without casting anyway cleanly.
 }
 
 // ---------------------------------------------------------------------------

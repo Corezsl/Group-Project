@@ -24,7 +24,8 @@ void main() {
     client = await getTestClient();
     admin = getServiceClient();
     // create a deterministic test seller id
-    sellerId = await seed.seedUser(admin, username: 'fr1_seller');
+    final suffix = DateTime.now().millisecondsSinceEpoch.toString();
+    sellerId = await seed.seedUser(admin, username: 'fr1sell_$suffix');
   });
 
   tearDownAll(() async {
@@ -148,9 +149,9 @@ void main() {
 
     test('FR1 #15 - Exclude user owned items', () async {
       // ownedproduct = seller owner, other product = different seller. Buyer queries for products but should only see other product, not their own listing.
-      final buyerId = await seed.seedUser(admin, username: 'fr1_buyer');
-      final ownedProduct = await seed.seedProduct(admin, sellerId: buyerId, name: 'Owned By Buyer', brand: 'OwnerBrand', size: 'M', price: 10.0, department: 'Mens', );
-
+      final suffix = DateTime.now().millisecondsSinceEpoch.toString();
+      final buyerId = await seed.seedUser(admin, username: 'fr1buy_$suffix');        
+      final ownedProduct = await seed.seedProduct(admin, sellerId: buyerId, name: 'Owned By Buyer', brand: 'OwnerBrand', size: 'M', price: 10.0, department: 'Mens', );                                                                         
       final otherProduct = await seed.seedProduct( admin, sellerId: sellerId, name: 'Other Seller Product', brand: 'OtherBrand', size: 'M', price: 12.0, department: 'Mens',);
 
       try {
