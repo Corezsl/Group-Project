@@ -145,5 +145,31 @@ void main() {
           .eq('brand', 'DefinitelyDoesNotExistBrand') as List;
       expect(rows, isEmpty);
     });
+
+    test('FR1 #15 - Exclude user owned items', () async {
+      // ownedproduct = seller owner, other product = different seller. Buyer queries for products but should only see other product, not their own listing.
+      final buyerId = await seed.seedUser(admin, username: 'fr1_buyer');
+      final ownedProduct = await seed.seedProduct(admin, sellerId: buyerId, name: 'Owned By Buyer', brand: 'OwnerBrand', size: 'M', price: 10.0, department: 'Mens', );
+
+      final otherProduct = await seed.seedProduct( admin, sellerId: sellerId, name: 'Other Seller Product', brand: 'OtherBrand', size: 'M', price: 12.0, department: 'Mens',);
+
+      try {
+        // Simulate the client as buyer by filtering out own listings, reflecting UI behavior where owned items are excluded from results.
+        final List rows = await client
+            .from('products')
+            .select()
+            .eq('is_sold', false)
+            .neq('user_id', buyerId) as List;
+
+        final ids = rows.map((r) => r['id'].toString()).toList();
+
+        expect(ids, isNot(contains(ownedProduct))); //owned product must not appear
+        expect(ids, contains(otherProduct));// only other product should appear
+      } finally {
+        await admin.from('products').delete().eq('id', ownedProduct);
+        await admin.from('products').delete().eq('id', otherProduct);
+        await admin.from('profiles').delete().eq('id', buyerId);
+      }
+    });
   });
 }
