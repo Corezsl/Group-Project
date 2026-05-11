@@ -63,6 +63,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/create-listing',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) {
         final data = state.extra as Map<String, dynamic>?;
         return CreateListingScreen(initialData: data);
@@ -70,10 +71,12 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/my-listings',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const MyListingsScreen(),
     ),
     GoRoute(
       path: '/my-orders',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const MyOrdersScreen(),
     ),
 
@@ -88,6 +91,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/sold-items',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const SoldItemsScreen(),
     ),
     GoRoute(
