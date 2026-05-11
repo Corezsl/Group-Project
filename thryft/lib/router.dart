@@ -79,16 +79,6 @@ final GoRouter router = GoRouter(
       redirect: (context, state) => requireAuth(Supabase.instance.client),
       builder: (context, state) => const MyOrdersScreen(),
     ),
-
-     GoRoute(
-      path: '/my-offers',
-      builder: (context, state) => const MyOffersScreen(),
-    ),
-    
-    GoRoute(
-      path: '/my-offers',
-      builder: (context, state) => const MyOffersScreen(),
-    ),
     GoRoute(
       path: '/sold-items',
       redirect: (context, state) => requireAuth(Supabase.instance.client),
