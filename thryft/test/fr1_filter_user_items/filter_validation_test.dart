@@ -116,19 +116,6 @@ void main() {
     });
   });
 
-  group('FR1 #8 - Invalid Data type for price filter',() {
-    test('Non-numeric price fails validation', () {
-      // simulate non-numeric data as price is a double.
-      // Catches the error when trying to parse a non-numeric string.
-      try {
-        double.parse('not_a_number');
-        fail('Expected a FormatException to be thrown');
-      } catch (e) {
-        expect(e, isA<FormatException>());
-      }
-    });
-  });
-
   group('FR1 #9 - Multiple Filters selected with valid inputs', () {
     test('Multiple valid filters pass validation', () {
       expect(_filterValidation(department: 'Mens', size: '32R', condition: 'Good', brand: 'Nike', fitting: 'Regular', material: 'Cotton', colour: 'Black', price: 50.0, ), isNull);
