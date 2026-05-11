@@ -7,17 +7,20 @@ import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/header.dart';
 
-// Screen showing the products the user has saved to their wishlist.
-// Routed at /wishlist. Just renders Header + StandardProductGrid + Footer
-// with the data coming from WishlistProvider.
+// Wishlist page for saved products.
+//
+// This screen is used by the router at /wishlist. It gets the saved products
+// from WishlistProvider and shows them with the shared header, product grid,
+// empty state, and footer.
 class WishlistScreen extends StatelessWidget {
   const WishlistScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // watch so the grid rebuilds when items are added/removed elsewhere
+    // watch makes the grid refresh when items are added or removed elsewhere.
     final products = context.watch<WishlistProvider>().wishlistItems;
 
+    // Same simple account-page layout used by listings and sold items.
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
