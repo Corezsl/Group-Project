@@ -5,7 +5,6 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
-import 'package:go_router/go_router.dart';
 
 // Shows the logged-in user's active listings. Routed at /my-listings.
 // Only fetches is_sold=false so sold items don't clutter the view.
