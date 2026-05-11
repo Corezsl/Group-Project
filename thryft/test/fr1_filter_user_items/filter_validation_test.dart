@@ -127,6 +127,13 @@ void main() {
       }
     });
   });
+
+  group('FR1 #9 - Multiple Filters selected with valid inputs', () {
+    test('Multiple valid filters pass validation', () {
+      expect(_filterValidation(department: 'Mens', size: '32R', condition: 'Good', brand: 'Nike', fitting: 'Regular', material: 'Cotton', colour: 'Black', price: 50.0, ), isNull);
+      expect(_filterValidation(department:'Womens',size:'Any',condition:'All',brand:'Adidas',fitting:'All',material:'All',colour:'All',price:75.0), isNull);
+    });
+  });
 }
 
 
