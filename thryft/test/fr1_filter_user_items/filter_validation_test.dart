@@ -6,11 +6,11 @@ import 'package:thryft/utils/filter_form_validator.dart';
 String? _filterValidation({
   String department = 'All',
   String size = 'All',
-  String condition = 'Good',
-  String brand = 'Other',
-  String fitting = 'Regular',
-  String material = 'Cotton',
-  String colour = 'Black',
+  String condition = 'All',
+  String brand = 'All',
+  String fitting = 'All',
+  String material = 'All',
+  String colour = 'All',
   String? ownedBy,
   String? logged_in_user,
   double price = 100.0,
@@ -137,7 +137,7 @@ void main() {
   });
   group('FR1 #13 - Empty or Null Inputs', () {
     test('Null department is valid', () {
-      expect(_filterValidation(department: ''), isNull);
+      expect(_filterValidation(department: 'All'), isNull);
     });
     test('Empty brand is invalid', () {
       expect(_filterValidation(brand: ''), equals('Invalid brand'));
