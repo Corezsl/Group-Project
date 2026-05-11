@@ -1,5 +1,5 @@
 // Static FAQ page at /help-center. Linked from the site footer and app drawer.
-// Renders a responsive card grid — 1, 2, or 3 columns depending on screen width.
+// Renders responsive FAQ cards — 1, 2, or 3 columns depending on screen width.
 // FAQ entries are defined as a compile-time constant list so no network call is needed.
 
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ import '../widgets/header.dart';
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
-  // All FAQ entries — add new ones here to have them appear in the grid automatically.
+  // All FAQ entries — add new ones here to have them appear automatically.
   static const List<Map<String, String>> _faqItems = [
     {
       'question': 'How do I buy an item?',
@@ -27,6 +27,12 @@ class HelpCenterScreen extends StatelessWidget {
       'question': 'How can I contact support?',
       'answer':
           'Use the Contact page form and include your order details for faster support.',
+    },
+    {
+      'question':
+          'Am I able to negotiate with the seller if I think the price is too expensive?',
+      'answer':
+          'Yes, users are able to negotiate with sellers if they think the listed price is too expensive. Each listing includes a "Make an Offer" button, allowing buyers to submit their own proposed price to the seller. The seller can then choose to accept or reject the offer. Once an offer is accepted, the listing will be marked as sold.',
     },
   ];
 
@@ -74,7 +80,7 @@ class HelpCenterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   // LayoutBuilder lets us pick column count based on available width
-                  // rather than device type, so the grid works in split-screen too.
+                  // rather than device type, so the cards work in split-screen too.
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth;
@@ -84,30 +90,22 @@ class HelpCenterScreen extends StatelessWidget {
                               ? 2
                               : 1;
 
-                      // Aspect ratio tightens as columns increase so cards stay readable.
-                      final aspectRatio = crossAxisCount == 1
-                          ? 2.6
-                          : crossAxisCount == 2
-                              ? 1.7
-                              : 1.4;
+                      final itemWidth =
+                          (width - (crossAxisCount - 1) * 16) /
+                              crossAxisCount;
 
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _faqItems.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 18,
-                          childAspectRatio: aspectRatio,
-                        ),
-                        itemBuilder: (context, index) {
-                          final item = _faqItems[index];
-                          return _faqItem(
-                            item['question']!,
-                            item['answer']!,
+                      return Wrap(
+                        spacing: 16,
+                        runSpacing: 18,
+                        children: _faqItems.map((item) {
+                          return SizedBox(
+                            width: itemWidth,
+                            child: _faqItem(
+                              item['question']!,
+                              item['answer']!,
+                            ),
                           );
-                        },
+                        }).toList(),
                       );
                     },
                   ),
