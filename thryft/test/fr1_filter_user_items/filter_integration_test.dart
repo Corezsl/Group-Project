@@ -98,6 +98,24 @@ void main() {
       }
     });
 
+    test('FR1 #9 - Multiple filters combined return seeded product', () async {
+      final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Multi Filter Hoodie', brand: 'MultiBrand', size: 'M', price: 45.0, department: 'Mens', colour: 'Green',);
+      try {
+        final List rows = await client
+            .from('products')
+            .select()
+            .eq('brand', 'MultiBrand')
+            .eq('size', 'M')
+            .eq('department', 'Mens')
+            .lte('price', 50)
+            .gte('price', 40) as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(productId));
+      } finally {
+        await admin.from('products').delete().eq('id', productId);
+      }
+    });
+
     test('FR1 #10 filter by brand + size + department returns seeded product', () async {
       final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Nike Mens Shirt', brand: 'Nike', size: 'M', price: 25.0, department: 'Mens',);
       try {
