@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/repositories/create_listing_repository.dart';
 import 'package:thryft/utils/listing_form_validator.dart';
 import '../helpers/supabase_test_client.dart';
-import '../helpers/seed_helper.dart';
 
 // ---------------------------------------------------------------------------
 // Reuse existing test accounts to avoid email rate limits.

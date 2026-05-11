@@ -24,12 +24,18 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen>
     with SingleTickerProviderStateMixin {
+  // Basic page state used for loading and error screens.
   bool _isLoading = true;
   String? _error;
+
+  // Raw profile row from Supabase.
   Map<String, dynamic>? _profile;
+
+  // Active products currently listed by this seller.
   List<Product> _products = [];
   // raw rating rows joined with product + reviewer profile — passed straight to ReviewsScreen
   List<Map<String, dynamic>> _ratings = [];
+  // Number of products this seller has already sold.
   int _soldCount = 0;
   // controller for the Listings/Reviews tab bar
   late TabController _tabController;
@@ -37,6 +43,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   @override
   void initState() {
     super.initState();
+    // Two tabs: active listings and reviews.
     _tabController = TabController(length: 2, vsync: this);
     _fetchProfileAndProducts();
   }
@@ -123,6 +130,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
       final soldCount = (soldData as List).length;
 
+      // Save all loaded profile data together so the UI updates once.
       if (mounted) {
         setState(() {
           _profile = profileData;
@@ -144,10 +152,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show a simple spinner while the profile queries are still running.
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // If the profile cannot load, stop here with a clear message.
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('User Profile')),
@@ -171,6 +181,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     final createdAt = _profile?['created_at']?.toString();
     final accountAge = _calculateAccountAge(createdAt);
 
+    // Main profile view with a sticky tab bar for listings and reviews.
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -376,8 +387,13 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 // Single stat cell used in the listings/sold/rating row at the top of the profile.
 // icon is optional — we only use it for the rating star.
 class _StatBox extends StatelessWidget {
+  // Number or rating text shown at the top of the cell.
   final String value;
+
+  // Small label under the value.
   final String label;
+
+  // Optional icon, used for the rating star.
   final IconData? icon;
   final Color? iconColor;
 
