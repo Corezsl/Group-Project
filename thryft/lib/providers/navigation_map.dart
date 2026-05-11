@@ -18,6 +18,7 @@ class AppNavigationMap {
     'listings': '/my-listings',
     'sold': '/sold-items',
     'offers': '/my-offers',
+    'reviews': '/my-reviews',
     'search': '/search',
   };
 
@@ -154,6 +155,13 @@ class AppNavigationMap {
       'offers made',
       'bids',
       'negotiations',
+    ],
+    'reviews': [
+      'reviews',
+      'my reviews',
+      'feedback',
+      'ratings',
+      'testimonials',
     ],
     'search': [
       'search',
