@@ -16,8 +16,7 @@ const _serviceKey = String.fromEnvironment('TEST_SUPABASE_SERVICE_KEY');
 
 /// A unique prefix applied to every test user / product id in this run.
 /// Using a timestamp keeps things readable in the DB if teardown ever fails.
-final String runId =
-    'test-${DateTime.now().millisecondsSinceEpoch}';
+final String runId = 'test-${DateTime.now().millisecondsSinceEpoch}';
 
 // ---------------------------------------------------------------------------
 // Public seed functions
@@ -39,7 +38,8 @@ Future<String> seedUser(
     'Run tests with --dart-define=TEST_SUPABASE_SERVICE_KEY=<key>',
   );
 
-  final email = 'testuser_${DateTime.now().millisecondsSinceEpoch}_${username.replaceAll(' ', '')}@test.com';
+  final email =
+      'testuser_${DateTime.now().millisecondsSinceEpoch}_${username.replaceAll(' ', '')}@test.com';
 
   final response = await client.auth.admin.createUser(
     AdminUserAttributes(
@@ -189,7 +189,7 @@ Future<String> seedRating(
 /// Call from [tearDownAll] in each test file. The deletion order respects FK
 /// constraints (child tables first).
 Future<void> tearDownTestData(SupabaseClient client) async {
-  // We cannot reliably track everything that was added safely via fuzzy matches anymore, 
+  // We cannot reliably track everything that was added safely via fuzzy matches anymore,
   // we just delete anything older than an hour or we can delete what starts with 'testuser_' in auth.
   // Actually, we'll try catching exceptions if the user was already deleted.
   try {
