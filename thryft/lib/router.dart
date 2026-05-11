@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/screens/about_screen.dart';
 import 'package:thryft/screens/contact_screen.dart';
 import 'package:thryft/screens/help_center_screen.dart';
@@ -23,6 +24,9 @@ import 'package:thryft/screens/forgot_password_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
+
+String? requireAuth(SupabaseClient client) =>
+    client.auth.currentUser == null ? '/auth' : null;
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
