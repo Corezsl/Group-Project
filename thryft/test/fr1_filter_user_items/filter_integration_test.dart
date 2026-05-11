@@ -36,14 +36,7 @@ void main() {
     // Each test seeds own product and remove after test
     test('FR1 #1 - Department filter returns seeded product', () async {
       final productId = await seed.seedProduct(
-        admin,
-        sellerId: sellerId,
-        name: 'Mens Nike Shirt',
-        brand: 'Nike',
-        size: 'M',
-        price: 20.0,
-        department: 'Mens',
-      );
+        admin, sellerId: sellerId, name: 'Mens Nike Shirt', brand: 'Nike', size: 'M', price: 20.0, department: 'Mens',);
       try {
         final List rows = await client
             .from('products')
@@ -56,16 +49,24 @@ void main() {
       }
     });
 
-    test('FR1 #10 filter by brand + size + department returns seeded product', () async {
+    test('FR1 #2 - Dynamic Size filter returns seeded product', () async {
       final productId = await seed.seedProduct(
-        admin,
-        sellerId: sellerId,
-        name: 'Nike Mens Shirt',
-        brand: 'Nike',
-        size: 'M',
-        price: 25.0,
-        department: 'Mens',
-      );
+        admin, sellerId: sellerId, name: 'Blue Pants', brand: 'SizeBrand', size: '32R', price: 30.0, department: 'Mens',);
+      try {
+        final List rows = await client
+            .from('products')
+            .select()
+            .eq('size', '32R') as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(productId));
+      } finally {
+        await admin.from('products').delete().eq('id', productId);
+      }
+    });
+
+
+    test('FR1 #10 filter by brand + size + department returns seeded product', () async {
+      final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Nike Mens Shirt', brand: 'Nike', size: 'M', price: 25.0, department: 'Mens',);
       try {
         // query the product table
         final response = await client
