@@ -83,6 +83,20 @@ void main() {
         await admin.from('products').delete().eq('id', pOut);
       }
     });
+    
+    test('FR1 #7 - Brand filter returns seeded product', () async {
+      final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Brand Test Tee', brand: 'BrandX', size: 'L', price: 15.0, department: 'Womens',);
+      try {
+        final List rows = await client
+            .from('products')
+            .select()
+            .eq('brand', 'BrandX') as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(productId));
+      } finally {
+        await admin.from('products').delete().eq('id', productId);
+      }
+    });
 
     test('FR1 #10 filter by brand + size + department returns seeded product', () async {
       final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Nike Mens Shirt', brand: 'Nike', size: 'M', price: 25.0, department: 'Mens',);
