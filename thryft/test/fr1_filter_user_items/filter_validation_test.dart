@@ -76,20 +76,24 @@ void main() {
       expect(_filterValidation(colour: 'Black', department: 'All', size: 'All', brand: 'All', fitting: 'All', material: 'All', condition: 'All'), isNull);
     });
   });
-  group('FR1 #4 - Filter Validation on Price Range', () {
-    test('Negative min price fails validation', () {
+  group('FR1 #5 - Filter Validation on Price Range (Lower Bound)', () {
+    test('Negative price fails validation', () {
   expect(_filterValidation(price: -5.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
     });
 
-    test('Negative max price fails validation', () {
-      // validator currently validates a single price value, so negative prices
-      // return the same error message
-  expect(_filterValidation(price: -10.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
+
+    test('Zero price fails validation', () {
+      expect(_filterValidation(price: 0.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
     });
-    test('Min price greater than max price fails validation', () {
-      // The validator validates a single price token; ensure an out-of-range
-      // price is rejected instead.
-  expect(_filterValidation(price: 100000.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
+  });
+
+  group('FR1 #6 - Filter Validation on Price Range (Upper Bound)', () {
+    test('Price above maximum fails validation', () {
+      expect(_filterValidation(price: 100000.0), equals('Please enter a valid price greater than 0 or less than 10000.'));
+
+    test('Price just over 10000 fails validation', () {
+      expect(_filterValidation(price: 10000.01), equals('Please enter a valid price greater than 0 or less than 10000.'));
+      });
     });
   });
   
