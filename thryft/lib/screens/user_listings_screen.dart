@@ -5,7 +5,6 @@ import 'package:thryft/models/product.dart';
 import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
-import 'package:go_router/go_router.dart';
 
 // Active listings page for the logged-in seller.
 //
