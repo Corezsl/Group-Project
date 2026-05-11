@@ -17,7 +17,7 @@ void main() {
   }
 
   late SupabaseClient client; // regular user client — respects RLS
-  late SupabaseClient admin; // service-role client — bypasses RLS for seeding
+  late SupabaseClient admin; // service-role client — bypasses RLS for seeding/cleanup
   late String sellerId;
 
   setUpAll(() async {
@@ -34,42 +34,64 @@ void main() {
 
   group('FR1 integration - filter queries', () {
     // Each test seeds own product and remove after test
-    late String productId;
-
-    setUp(() async {
-      productId = await seed.seedProduct(
+    test('FR1 #1 - Department filter returns seeded product', () async {
+      final productId = await seed.seedProduct(
         admin,
         sellerId: sellerId,
-        name: 'Integration Test Shirt',
+        name: 'Mens Nike Shirt',
         brand: 'Nike',
         size: 'M',
-        price: 19.99,
+        price: 20.0,
         department: 'Mens',
-        material: 'Cotton',
-        colour: 'Blue',
-        condition: 'Good',
       );
+      try {
+        final List rows = await client
+            .from('products')
+            .select()
+            .eq('department', 'Mens') as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(productId));
+      } finally {
+        await admin.from('products').delete().eq('id', productId);
+      }
     });
 
-    //Ensures product is removed even if test fails.
-    tearDown(() async {
-      await admin.from('products').delete().eq('id', productId);
+    test('FR1 #10 filter by brand + size + department returns seeded product', () async {
+      final productId = await seed.seedProduct(
+        admin,
+        sellerId: sellerId,
+        name: 'Nike Mens Shirt',
+        brand: 'Nike',
+        size: 'M',
+        price: 25.0,
+        department: 'Mens',
+      );
+      try {
+        // query the product table
+        final response = await client
+          .from('products')
+          .select()
+          .eq('is_sold', false)
+          .eq('brand', 'Nike')
+          .eq('size', 'M')
+          .eq('department', 'Mens');
+
+        // helper returns rows, cast to list for inspection
+        final List rows = response as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(productId));
+      } finally {
+        await admin.from('products').delete().eq('id', productId);
+      }
     });
 
-    test('filter by brand + size + department returns seeded product', () async {
-      //query the product table
-    final response = await client
-      .from('products')
-      .select()
-      .eq('is_sold', false)
-      .eq('brand', 'Nike')
-      .eq('size', 'M')
-      .eq('department', 'Mens');
-
-    //helper returns rows, cast to list for inspection
-    final List rows = response as List;
-      final ids = rows.map((r) => r['id'].toString()).toList();
-      expect(ids, contains(productId));
+    test('FR1 #11 - No matching results returns empty set', () async {
+      // Query for a brand that we do not seed — expect no rows with that brand
+      final List rows = await client
+          .from('products')
+          .select()
+          .eq('brand', 'DefinitelyDoesNotExistBrand') as List;
+      expect(rows, isEmpty);
     });
   });
 }
