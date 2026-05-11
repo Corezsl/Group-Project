@@ -7,8 +7,11 @@ import 'package:thryft/widgets/footer.dart';
 import 'package:thryft/widgets/standard_product_grid.dart';
 import 'package:go_router/go_router.dart';
 
-// Shows the logged-in user's active listings. Routed at /my-listings.
-// Only fetches is_sold=false so sold items don't clutter the view.
+// Active listings page for the logged-in seller.
+//
+// This screen is used by the router at /my-listings. It loads the user's
+// unsold products from Supabase and displays them in the shared product grid,
+// with shortcuts to create a new listing.
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
 
@@ -17,16 +20,17 @@ class MyListingsScreen extends StatefulWidget {
 }
 
 class _MyListingsScreenState extends State<MyListingsScreen> {
-  // cached so a hot-reload or tab switch doesn't re-fire the query
+  // Cached so rebuilds do not restart the Supabase query.
   late Future<List<Product>> _listingsFuture;
 
   @override
   void initState() {
     super.initState();
+    // Start loading the seller's active listings when the page opens.
     _listingsFuture = _fetchMyListings();
   }
 
-  // fetches only active listings for the current user, joined with seller name
+  // Fetches only active listings for the current user, joined with seller name.
   Future<List<Product>> _fetchMyListings() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     // unauthenticated — nothing to show
@@ -39,6 +43,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         .eq('is_sold', false)
         .order('created_at', ascending: false);
 
+    // Convert each database row into the Product model used by the grid.
     return (response as List).map((data) => Product(
       id: data['id'].toString(),
       name: data['name'].toString(),
@@ -65,6 +70,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Header, content, and footer match the other account pages.
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -89,6 +95,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                   ),
                   const SizedBox(height: 16),
+                  // Quick route to the create listing form.
                   ElevatedButton.icon(
                     onPressed: () => context.push('/create-listing'),
                     icon: const Icon(Icons.add),
@@ -100,6 +107,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
+                  // FutureBuilder handles loading and then passes results to the grid.
                   FutureBuilder<List<Product>>(
                     future: _listingsFuture,
                     builder: (context, snapshot) {
@@ -112,6 +120,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
                       final items = snapshot.data ?? [];
 
+                      // Shared grid gives us the product cards and empty state.
                       return SizedBox(
                         width: double.infinity,
                         child: StandardProductGrid(
