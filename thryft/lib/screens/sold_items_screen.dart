@@ -7,7 +7,11 @@ import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Shows items the user has sold and lets them mark them as shipped. Routed at /sold.
+// Sold items page for sellers.
+//
+// This screen is opened from the app router at /sold. It loads the current
+// user's sold listings, shows buyer addresses where possible, and lets the
+// seller mark an order as shipped.
 class SoldItemsScreen extends StatefulWidget {
   const SoldItemsScreen({super.key});
 
@@ -16,16 +20,23 @@ class SoldItemsScreen extends StatefulWidget {
 }
 
 class _SoldItemsScreenState extends State<SoldItemsScreen> {
+  // Products shown in the sold list.
   List<Product> _soldItems = [];
+
+  // Buyer ID mapped to a short printable address.
   Map<String, String> _buyerAddresses = {};
+
+  // Controls the first loading spinner while data is fetched.
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    // Start loading the seller's sold products when the page opens.
     _fetchSoldItems();
   }
 
+  // Fetches sold items first, then fetches addresses for their buyers.
   Future<void> _fetchSoldItems() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     // no auth, no sold items to show
@@ -42,6 +53,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           .eq('is_sold', true)
           .order('created_at', ascending: false);
 
+      // Turn the raw Supabase rows into Product objects for the UI.
       final items = (response as List)
           .map(
             (data) => Product(
@@ -74,7 +86,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
           )
           .toList();
 
-      // extract unique buyer IDs so we can bulk fetch addresses
+      // Get each buyer once so the address lookup stays small.
       final buyerIds = items
           .map((p) => p.buyerId)
           .whereType<String>()
@@ -90,6 +102,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
               .filter('user_id', 'in', buyerIds);
 
           for (var addr in addressResponse) {
+            // Join only the address parts the buyer has saved.
             final parts = [
               addr['street'],
               addr['city'],
@@ -105,6 +118,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         }
       }
 
+      // Store everything together so the page updates in one go.
       setState(() {
         _soldItems = items;
         _buyerAddresses = addresses;
@@ -117,6 +131,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
   }
 
   Future<void> _markAsShipped(Product product) async {
+    // Confirm first so the seller does not change the status by mistake.
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -144,12 +159,13 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      // hit supabase directly here to update the order status
+      // Update the listing's order status in Supabase.
       await Supabase.instance.client
           .from('products')
           .update({'order_status': 'shipped'})
           .eq('id', product.id);
 
+      // Notify the buyer if this sold item has one linked.
       if (product.buyerId != null) {
         await NotificationProvider.insertNotification(
           userId: product.buyerId!,
@@ -160,6 +176,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         );
       }
 
+      // Reflect the shipped state locally without waiting for a full reload.
       setState(() {
         final idx = _soldItems.indexWhere((p) => p.id == product.id);
         if (idx != -1) {
@@ -186,12 +203,14 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
         }
       });
 
+      // Let the seller know the update worked.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Marked as shipped. Buyer notified.')),
         );
       }
     } catch (e) {
+      // Keep the message simple; the seller can try the button again.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update status.')),
@@ -202,6 +221,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Shared header and footer keep this page consistent with the rest of Thryft.
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -227,11 +247,13 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                   ),
                   const SizedBox(height: 32),
                   if (_isLoading)
+                    // Loading state while products and addresses are fetched.
                     const SizedBox(
                       height: 300,
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (_soldItems.isEmpty)
+                    // Empty state for sellers with no completed sales yet.
                     SizedBox(
                       height: 300,
                       child: Center(
@@ -264,7 +286,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
                       ),
                     )
                   else
-                    // shrinkWrap true since it's inside a SingleChildScrollView
+                    // shrinkWrap is needed because this list sits inside the page scroll.
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -285,6 +307,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
   }
 
   Widget _buildSoldCard(Product product) {
+    // Older products may not have a saved status, so treat them as pending.
     final status = product.orderStatus ?? 'pending';
     return Card(
       elevation: 0,
@@ -310,8 +333,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            // Product row
-            // push instead of go so they can easily back out to the sold items list
+            // Product summary. push keeps the sold list in the back stack.
             InkWell(
               borderRadius: BorderRadius.circular(6),
               onTap: () => context.push(
@@ -390,6 +412,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
               const SizedBox(height: 10),
               if (product.buyerId != null &&
                   _buyerAddresses[product.buyerId] != null) ...[
+                // Shows the address the seller should use for postage.
                 Container(
                   padding: const EdgeInsets.all(10),
                   margin: const EdgeInsets.only(bottom: 12),
@@ -427,6 +450,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  // Main seller action for a pending order.
                   FilledButton.icon(
                     onPressed: () => _markAsShipped(product),
                     icon: const Icon(Icons.local_shipping_outlined, size: 16),
@@ -454,6 +478,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
     );
   }
 
+  // Builds the small coloured label used for pending, shipped, or delivered.
   Widget _buildStatusBadge(String status) {
     final (label, color, bg) = switch (status) {
       'shipped' => (
@@ -482,6 +507,7 @@ class _SoldItemsScreenState extends State<SoldItemsScreen> {
     );
   }
 
+  // Formats a saved date into a short readable version for the card.
   String _formatDate(DateTime date) {
     const months = [
       'Jan',
