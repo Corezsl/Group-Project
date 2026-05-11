@@ -24,6 +24,7 @@ import 'package:thryft/screens/forgot_password_screen.dart';
 import 'package:thryft/screens/my_offers_screen.dart';
 import 'package:thryft/screens/nav_assistant_chat_screen.dart';
 import 'package:thryft/screens/search_screen.dart';
+import 'package:thryft/screens/my_reviews_screen.dart';
 
 String? requireAuth(SupabaseClient client) =>
     client.auth.currentUser == null ? '/auth' : null;
@@ -38,7 +39,10 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const WishlistScreen(),
     ),
     GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
-    GoRoute(path: '/contact', builder: (context, state) => const ContactScreen()),
+    GoRoute(
+      path: '/contact',
+      builder: (context, state) => const ContactScreen(),
+    ),
     GoRoute(
       path: '/help-center',
       builder: (context, state) => const HelpCenterScreen(),
@@ -51,7 +55,10 @@ final GoRouter router = GoRouter(
       path: '/privacy-policy',
       builder: (context, state) => const PrivacyPolicyScreen(),
     ),
-    GoRoute(path: '/returns', builder: (context, state) => const ReturnsScreen()),
+    GoRoute(
+      path: '/returns',
+      builder: (context, state) => const ReturnsScreen(),
+    ),
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
@@ -130,6 +137,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/my-offers',
       builder: (context, state) => const MyOffersScreen(),
+    ),
+    GoRoute(
+      path: '/my-reviews',
+      redirect: (context, state) => requireAuth(Supabase.instance.client),
+      builder: (context, state) => const MyReviewsScreen(),
     ),
   ],
 );
