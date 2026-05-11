@@ -134,6 +134,22 @@ void main() {
       expect(_filterValidation(department:'Womens',size:'Any',condition:'All',brand:'Adidas',fitting:'All',material:'All',colour:'All',price:75.0), isNull);
     });
   });
+
+  group('FR1 #11 - No matching results', () {
+    test('Valid filters that yield no results still pass validation', () {
+      // Assuming the validation function does not check for actual database matches, it should return null (valid) even if no items match the criteria.
+      expect(_filterValidation(department: 'Mens', size: '32R', condition: 'New with tags', brand: 'Under Armour', fitting: 'Slim', material: 'Leather', colour: 'Pink', price: 9999.99), isNull);
+    });
+  });
+
+  group('FR1 #13 - Empty or Null Inputs', () {
+    test('Null department is valid', () {
+      expect(_filterValidation(department: ''), isNull);
+    });
+    test('Empty brand is invalid', () {
+      expect(_filterValidation(brand: ''), equals('Invalid brand'));
+    });
+  });
 }
 
 
