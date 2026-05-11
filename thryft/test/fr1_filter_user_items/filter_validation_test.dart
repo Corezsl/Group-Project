@@ -12,6 +12,7 @@ String? _filterValidation({
   String material = 'Cotton',
   String colour = 'Black',
   String? ownedBy,
+  String? logged_in_user,
   double price = 100.0,
 }) =>
     validateFilterForm(
@@ -148,6 +149,24 @@ void main() {
     });
     test('Empty brand is invalid', () {
       expect(_filterValidation(brand: ''), equals('Invalid brand'));
+    });
+  });
+
+  group('FR1 #14 - Rapid Filter Switching', () {
+    test('Rapidly changing filters does not cause validation errors', () {
+      expect(_filterValidation(department: 'Mens', size: '32R', condition: 'Good', brand: 'Nike', fitting: 'Regular', material: 'Cotton', colour: 'Black', price: 50.0), isNull);
+      expect(_filterValidation(department:'Womens',size:'Any',condition:'All',brand:'Adidas',fitting:'All',material:'All',colour:'All',price:75.0), isNull);
+      expect(_filterValidation(department: 'Mens', size: '32R', condition: 'New with tags', brand: 'Under Armour', fitting: 'Slim', material: 'Leather', colour: 'Pink', price: 9999.99), isNull);
+    });
+  });
+
+  group('FR1 #15 - Exclude User owned items', () {
+    test('OwnedBy filter is optional and does not affect validation', () {
+      expect(_filterValidation(ownedBy: null), isNull);
+      expect(_filterValidation(ownedBy: 'user123', logged_in_user: 'user123'), isNull);
+    });
+    test('OwnedBy filter with different user does not affect validation', () {
+      expect(_filterValidation(ownedBy: 'user123', logged_in_user: 'user456'), isNull);
     });
   });
 }
