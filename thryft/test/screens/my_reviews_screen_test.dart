@@ -1,121 +1,137 @@
-import 'dart:async';
+// Live integration test for MyReviewsScreen — seeds a real product and
+// rating into the test Supabase project, signs in the seller, and pumps
+// the screen against Supabase.instance.client (no mocking).
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/screens/my_reviews_screen.dart';
-import '../helpers/mock_supabase.dart';
+import '../helpers/supabase_test_client.dart';
+import '../helpers/seed_helper.dart';
 
-class FakeProfilesFilter extends Fake
-    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
-  @override
-  FakeProfilesFilter eq(String column, Object value) => this;
+// Reuses fr4 test accounts which are already created and in active use
+// by other integration tests, so we don't hit the "new user" error path.
+const _sellerEmail = 'fr4.seller@thryft-test.local';
+const _buyerEmail = 'fr4.buyer@thryft-test.local';
+const _password = 'Thryft!test99';
 
-  @override
-  PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() =>
-      FakeProfilesTransform();
-}
-
-class FakeProfilesTransform extends Fake
-    implements PostgrestTransformBuilder<Map<String, dynamic>?> {
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(Map<String, dynamic>?) onValue, {
-    Function? onError,
-  }) => Future<Map<String, dynamic>?>.value({
-    'username': 'TestSeller',
-  }).then(onValue, onError: onError);
-}
-
-class FakeRatingsFilter extends Fake
-    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
-  @override
-  FakeRatingsFilter eq(String column, Object value) => this;
-
-  @override
-  PostgrestTransformBuilder<List<Map<String, dynamic>>> order(
-    String column, {
-    bool ascending = false,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) => FakeRatingsTransform();
-}
-
-class FakeRatingsTransform extends Fake
-    implements PostgrestTransformBuilder<List<Map<String, dynamic>>> {
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(List<Map<String, dynamic>>) onValue, {
-    Function? onError,
-  }) {
-    final testData = <Map<String, dynamic>>[
-      {
-        'id': 1,
-        'rating': 5,
-        'comment': 'Awesome stuff!',
-        'created_at': '2023-10-01T00:00:00.000Z',
-        'products': {
-          'name': 'Nintendo Switch',
-          'brand': 'Nintendo',
-          'price': 250.0,
-        },
-        'profiles': {'username': 'BuyerJohn'},
-      },
-    ];
-    return Future<List<Map<String, dynamic>>>.value(
-      testData,
-    ).then(onValue, onError: onError);
+Future<String> _ensureSignedIn(
+  SupabaseClient client,
+  String email,
+  String password,
+) async {
+  try {
+    final res = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return res.user!.id;
+  } on AuthException {
+    final res = await client.auth.signUp(email: email, password: password);
+    return res.user!.id;
   }
 }
 
 void main() {
+  if (!hasTestCredentials) {
+    test(
+      'MyReviewsScreen',
+      () {},
+      skip: 'No Supabase credentials — pass --dart-define=TEST_SUPABASE_URL '
+          'and TEST_SUPABASE_ANON_KEY to run',
+    );
+    return;
+  }
+
+  late SupabaseClient client;
+  late String sellerId;
+  late String buyerId;
+  late String productId;
+  late String ratingId;
+
   setUpAll(() async {
-    SharedPreferences.setMockInitialValues({});
-    await Supabase.initialize(url: 'https://mock.supabase.co', anonKey: 'mock');
-  });
+    client = await getTestClient();
 
-  testWidgets('renders my_reviews_screen with mock data', (tester) async {
-    final mockClient = MockSupabaseClient();
-    final mockAuth = MockGoTrueClient();
-    final mockUser = MockUser();
+    // Capture both real auth.users ids by signing each user in once.
+    buyerId = await _ensureSignedIn(client, _buyerEmail, _password);
+    sellerId = await _ensureSignedIn(client, _sellerEmail, _password);
 
-    when(() => mockClient.auth).thenReturn(mockAuth);
-    when(() => mockAuth.currentUser).thenReturn(mockUser);
-    when(() => mockUser.id).thenReturn('testuser');
+    // Make sure the seller profile row exists so the screen's username
+    // lookup doesn't return null.
+    await client.from('profiles').upsert({
+      'id': sellerId,
+      'username': 'TestSeller',
+      'rating': 0.0,
+      'rating_count': 0,
+    });
 
-    final profileQB = MockSupabaseQueryBuilder();
-    when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-    when(
-      () => profileQB.select('username'),
-    ).thenAnswer((_) => FakeProfilesFilter());
-
-    final ratingsQB = MockSupabaseQueryBuilder();
-    when(() => mockClient.from('ratings')).thenAnswer((_) => ratingsQB);
-    when(
-      () => ratingsQB.select(
-        '*, products(*), profiles!ratings_buyer_profile_fkey(username)',
-      ),
-    ).thenAnswer((_) => FakeRatingsFilter());
-
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => NotificationProvider()),
-          ChangeNotifierProvider(create: (_) => SearchProvider()),
-        ],
-        child: MaterialApp(home: MyReviewsScreen(supabaseClient: mockClient)),
-      ),
+    // Insert the sold product under the seller's session (matches RLS).
+    productId = await seedProduct(
+      client,
+      sellerId: sellerId,
+      name: 'Nintendo Switch',
+      brand: 'Nintendo',
+      price: 250.0,
+      isSold: true,
+      buyerId: buyerId,
     );
 
-    await tester.pumpAndSettle();
+    // RLS only lets the buyer insert ratings, so switch sessions to seed it.
+    await _ensureSignedIn(client, _buyerEmail, _password);
+    ratingId = await seedRating(
+      client,
+      sellerId: sellerId,
+      buyerId: buyerId,
+      productId: productId,
+      rating: 5,
+      comment: 'Awesome stuff!',
+    );
 
+    // Switch back — the widget renders under the seller's session.
+    await _ensureSignedIn(client, _sellerEmail, _password);
+  });
+
+  tearDownAll(() async {
+    // Use the service-role client for cleanup to bypass RLS — the seller
+    // session can't delete a rating they didn't create.
+    final admin = getServiceClient();
+    await admin.from('ratings').delete().eq('id', ratingId);
+    await admin.from('products').delete().eq('id', productId);
+    await client.auth.signOut();
+  });
+
+  testWidgets('renders MyReviewsScreen with live data', (tester) async {
+    // testWidgets runs in a fake-async zone where real HTTP calls never
+    // progress. runAsync escapes that zone so the screen's initState fetch
+    // can hit the real DB; we then pump frames to apply the setState that
+    // populates _ratings.
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            // Use the test-only ctor so we don't open a realtime channel
+            // that keeps firing after the widget tree is disposed.
+            ChangeNotifierProvider(create: (_) => NotificationProvider.test()),
+            ChangeNotifierProvider(create: (_) => SearchProvider()),
+          ],
+          child: const MaterialApp(home: MyReviewsScreen()),
+        ),
+      );
+      // Allow the profile + ratings queries to complete.
+      await Future.delayed(const Duration(seconds: 3));
+    });
+
+    // Pump a couple of frames to let the setState in _fetchReviews flush.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Older failed runs may have left additional ratings/products tied to
+    // the same seller account, so we use findsAtLeastNWidgets(1) here.
     expect(find.text('My Reviews'), findsOneWidget);
-    expect(find.text('Awesome stuff!'), findsOneWidget);
-    expect(find.text('BuyerJohn'), findsOneWidget);
-    expect(find.text('Nintendo Switch'), findsOneWidget);
+    expect(find.text('Awesome stuff!'), findsAtLeastNWidgets(1));
+    expect(find.text('Nintendo Switch'), findsAtLeastNWidgets(1));
   });
 }

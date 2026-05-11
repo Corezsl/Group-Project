@@ -13,6 +13,10 @@ class NotificationProvider extends ChangeNotifier {
     _init();
   }
 
+  /// Test-only constructor. Skips _init() so widget tests don't open a
+  /// realtime channel that keeps firing after the widget tree is disposed.
+  NotificationProvider.test();
+
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
   bool get isLoading => _isLoading;

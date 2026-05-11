@@ -1,6 +1,5 @@
 // Shows all buyer reviews left on the logged-in user's sold listings.
-// Reached from the account hub. Accepts an optional supabaseClient so the
-// screen can be driven by a mock in tests without hitting the real DB.
+// Reached from the account hub.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +8,7 @@ import 'package:thryft/widgets/header.dart';
 import 'package:thryft/widgets/footer.dart';
 
 class MyReviewsScreen extends StatefulWidget {
-  // Injected in tests; falls back to the real Supabase singleton in production.
-  final SupabaseClient? supabaseClient;
-
-  const MyReviewsScreen({super.key, this.supabaseClient});
+  const MyReviewsScreen({super.key});
 
   @override
   State<MyReviewsScreen> createState() => _MyReviewsScreenState();
@@ -24,9 +20,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   String? _sellerId;   // current user's id — used when building product navigation extras
   String? _sellerName; // current user's username — displayed on product detail
 
-  // Uses the injected client in tests, the global singleton otherwise.
-  SupabaseClient get _supabase =>
-      widget.supabaseClient ?? Supabase.instance.client;
+  SupabaseClient get _supabase => Supabase.instance.client;
 
   @override
   void initState() {
