@@ -143,6 +143,11 @@ void main() {
     });
   });
 
+  group('FR1 #12 - Filter reset', () {
+    test('Resetting filters to default values passes validation', () {
+      expect(_filterValidation(department: 'All', size: 'All', condition: 'All', brand: 'All', fitting: 'All', material: 'All', colour: 'All', price: 10000), isNull);
+    });
+  });
   group('FR1 #13 - Empty or Null Inputs', () {
     test('Null department is valid', () {
       expect(_filterValidation(department: ''), isNull);
