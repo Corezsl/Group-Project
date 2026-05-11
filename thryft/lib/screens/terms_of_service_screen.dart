@@ -4,23 +4,29 @@ import '../widgets/footer.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/header.dart';
 
-// Terms of service static page. Routed at /tos.
+// Static Terms of Service page.
+//
+// This is used by the router at /tos and gives users the basic rules for using
+// Thryft. It does not load any data; it just shares the normal header, drawer,
+// page content, and footer.
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // grab screen type so we don't look cramped on desktop
+    // Adjust the spacing and title size so the page works on phones and desktop.
     final isMobile = Responsive.isMobile(context);
     final hPadding = isMobile ? 16.0 : 80.0;
     final titleSize = isMobile ? 28.0 : 48.0;
 
     return Scaffold(
+      // Mobile users can still reach the main navigation from this page.
       drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
             const Header(),
+            // Main content wrapper for the terms text.
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(
@@ -41,7 +47,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: isMobile ? 24 : 40),
-                  // using RichText instead of a bunch of columns so the text flows naturally
+                  // RichText keeps the headings and paragraphs flowing like one document.
                   RichText(
                     text: TextSpan(
                       style: TextStyle(
