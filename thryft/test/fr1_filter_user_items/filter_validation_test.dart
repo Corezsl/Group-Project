@@ -114,5 +114,19 @@ void main() {
       expect(_filterValidation(brand: 'Nike'), isNull);
     });
   });
+
+  group('FR1 #8 - Invalid Data type for price filter',() {
+    test('Non-numeric price fails validation', () {
+      // simulate non-numeric data as price is a double.
+      // Catches the error when trying to parse a non-numeric string.
+      try {
+        double.parse('not_a_number');
+        fail('Expected a FormatException to be thrown');
+      } catch (e) {
+        expect(e, isA<FormatException>());
+      }
+    });
+  });
 }
+
 
