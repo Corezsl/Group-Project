@@ -64,6 +64,25 @@ void main() {
       }
     });
 
+    test('FR1 #4/#5/#6 - Price range filtering includes/excludes as expected', () async {
+      // Seed product within allowed range
+      final pIn = await seed.seedProduct( admin, sellerId: sellerId, name: 'Price In Range', brand: 'PriceBrand', size: 'S', price: 99.99, department: 'Mens',);
+      // Seed product above max range
+      final pOut = await seed.seedProduct( admin, sellerId: sellerId, name: 'Price Out Of Range', brand: 'PriceBrand', size: 'S', price: 10001.0, department: 'Mens',);
+      try {
+        // Query products with price <= 10000 should include pIn but exclude pOut
+        final List rows = await client
+            .from('products')
+            .select()
+            .lte('price', 10000) as List;
+        final ids = rows.map((r) => r['id'].toString()).toList();
+        expect(ids, contains(pIn));
+        expect(ids, isNot(contains(pOut)));
+      } finally {
+        await admin.from('products').delete().eq('id', pIn);
+        await admin.from('products').delete().eq('id', pOut);
+      }
+    });
 
     test('FR1 #10 filter by brand + size + department returns seeded product', () async {
       final productId = await seed.seedProduct( admin, sellerId: sellerId, name: 'Nike Mens Shirt', brand: 'Nike', size: 'M', price: 25.0, department: 'Mens',);
