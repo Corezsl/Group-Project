@@ -1,6 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ---------------------------------------------------------------------------
+final List<String> _seededUsers = [];
+final List<String> _seededProducts = [];
+final List<int> _seededOffers = [];
+final List<int> _seededNotifications = [];
+final List<String> _seededRatings = [];// ---------------------------------------------------------------------------
 // Seed & teardown helpers for integration tests
 //
 // All rows inserted by these helpers are tagged with a shared [runId] UUID
@@ -42,18 +46,33 @@ Future<String> seedUser(
   // Build a deterministic UUID from the username so we can reference it later.
   // We use a fixed namespace prefix rather than truly random UUIDs so teardown
   // can delete rows by prefix match.
-  final userId = _fakeUuid('$runId-$username');
+  final userIdPrefix = _fakeUuid('$runId-$username');
+  late String realUserId;
 
-  // Insert into profiles — the FK to auth.users is deferred in the test
-  // project so we can seed profiles without a real auth row.
+  try {
+    final res = await client.auth.admin.createUser(AdminUserAttributes(
+      email: '$userIdPrefix@thryft-test.local',
+      emailConfirm: true,
+      password: 'Password123!',
+      userMetadata: {'username': username},
+    ));
+    realUserId = res.user!.id;
+  } catch (e) {
+    print('Error creating user: $e');
+    // Fallback if needed, but runId makes it unique
+    realUserId = userIdPrefix;
+  }
+
+  // Insert into profiles
   await client.from('profiles').upsert({
-    'id': userId,
+    'id': realUserId,
     'username': username,
     'rating': 0.0,
     'rating_count': 0,
   });
 
-  return userId;
+  _seededUsers.add(realUserId);
+  return realUserId;
 }
 
 /// Inserts a row into [products] and returns the product id.
@@ -93,6 +112,7 @@ Future<String> seedProduct(
     if (orderStatus != null) 'order_status': orderStatus,
   });
 
+  _seededProducts.add(productId);
   return productId;
 }
 
@@ -117,7 +137,9 @@ Future<int> seedOffer(
       .select('offer_id')
       .single();
 
-  return response['offer_id'] as int;
+  final offerId = response['offer_id'] as int;
+  _seededOffers.add(offerId);
+  return offerId;
 }
 
 /// Inserts a row into [notification] and returns the notification_id.
@@ -148,7 +170,10 @@ Future<int> seedNotification(
       })
       .select('notification_id')
       .single();
-  return response['notification_id'] as int;
+  
+  final notifId = response['notification_id'] as int;
+  _seededNotifications.add(notifId);
+  return notifId;
 }
 
 /// Inserts a row into [ratings] and returns the rating id.
@@ -172,7 +197,9 @@ Future<String> seedRating(
       .select('id')
       .single();
 
-  return response['id'] as String;
+  final ratingId = response['id'] as String;
+  _seededRatings.add(ratingId);
+  return ratingId;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,17 +211,25 @@ Future<String> seedRating(
 /// Call from [tearDownAll] in each test file. The deletion order respects FK
 /// constraints (child tables first).
 Future<void> tearDownTestData(SupabaseClient client) async {
-  // Delete in FK-safe order (children before parents).
-  // Note: Cannot use like('%') on UUID columns without casting.
-  await client.from('offers').delete().like('listing_id', '%$runId%');
-  await client
-      .from('products')
-      .delete()
-      .like('id', '%$runId%');
-  await client
-      .from('profiles')
-      .delete()
-      .like('id', '%$runId%');
+  if (_seededRatings.isNotEmpty) await client.from('ratings').delete().inFilter('id', _seededRatings);
+  if (_seededNotifications.isNotEmpty) await client.from('notification').delete().inFilter('notification_id', _seededNotifications);
+  if (_seededOffers.isNotEmpty) await client.from('offers').delete().inFilter('offer_id', _seededOffers);
+  if (_seededProducts.isNotEmpty) await client.from('products').delete().inFilter('id', _seededProducts);
+  
+  if (_seededUsers.isNotEmpty) {
+    await client.from('profiles').delete().inFilter('id', _seededUsers);
+    for (final userId in _seededUsers) {
+      try {
+        await client.auth.admin.deleteUser(userId);
+      } catch (_) {}
+    }
+  }
+
+  _seededRatings.clear();
+  _seededNotifications.clear();
+  _seededOffers.clear();
+  _seededProducts.clear();
+  _seededUsers.clear();
 }
 
 // ---------------------------------------------------------------------------
