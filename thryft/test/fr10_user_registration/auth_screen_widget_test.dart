@@ -1,6 +1,6 @@
 // Tests for FR10 (user registration & account creation) — widget tests.
 // Covers AuthScreen UI: form validation, tab switching, password visibility.
-// Tests 5 and 8 use mocked Supabase calls to simulate database interactions.
+// Only the purely UI-specific interactions remain in this widget test file.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

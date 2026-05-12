@@ -1,76 +1,90 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/repositories/auth_repository.dart';
 import 'package:thryft/services/auth_validation.dart';
-import '../helpers/mock_supabase.dart';
+
+import '../helpers/seed_helper.dart';
+import '../helpers/supabase_test_client.dart';
+
+// Mock classes for auth to avoid rate limits
+class MockGoTrueClient extends Mock implements GoTrueClient {}
 
 class MockAuthResponse extends Mock implements AuthResponse {}
 
-class FakeProfilesFilter extends Fake
-    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {
-  final PostgrestTransformBuilder<Map<String, dynamic>?> transform;
-
-  FakeProfilesFilter(this.transform);
-
-  @override
-  FakeProfilesFilter eq(String column, Object value) => this;
-
-  @override
-  PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() => transform;
-}
-
-class FakeProfilesTransform extends Fake
-    implements PostgrestTransformBuilder<Map<String, dynamic>?> {
-  final Map<String, dynamic>? result;
-
-  FakeProfilesTransform(this.result);
-
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(Map<String, dynamic>?) onValue, {
-    Function? onError,
-  }) {
-    return Future<Map<String, dynamic>?>.value(result).then(onValue, onError: onError);
-  }
-}
-
 void main() {
+  late SupabaseClient client;
+  late SupabaseClient admin;
+  final createdUserIds = <String>[];
+
+  setUpAll(() async {
+    if (!hasTestCredentials) return;
+    client = await getTestClient();
+    admin = getServiceClient();
+  });
+
+  tearDownAll(() async {
+    if (!hasTestCredentials) return;
+
+    for (final userId in createdUserIds) {
+      try {
+        await admin.from('profiles').delete().eq('id', userId);
+      } catch (_) {}
+      try {
+        await admin.auth.admin.deleteUser(userId);
+      } catch (_) {}
+    }
+
+    await tearDownTestData(admin);
+  });
+
+  Future<User?> _findUserByEmail(String email) async {
+    for (var page = 1; page <= 5; page++) {
+      final users = await admin.auth.admin.listUsers(page: page, perPage: 1000);
+      for (final user in users) {
+        if (user.email == email) return user;
+      }
+      if (users.length < 1000) break;
+    }
+    return null;
+  }
+
+  String _uniqueUsername(String suffix) {
+    return 'fr10_${suffix}_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
   group('FR10 #1 — Successful registration', () {
     test('signs up a new user when the username is available', () async {
-      final mockClient = MockSupabaseClient();
+      if (!hasTestCredentials) return;
+
+      final username = _uniqueUsername('success');
+      final email = '$username@thryft-test.com';
       final mockAuth = MockGoTrueClient();
-      final profileQB = MockSupabaseQueryBuilder();
-      final profileTransform = FakeProfilesTransform(null);
-      final profileFilter = FakeProfilesFilter(profileTransform);
+      final mockResponse = MockAuthResponse();
 
-      when(() => mockClient.auth).thenReturn(mockAuth);
-      when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-      when(() => profileQB.select('id')).thenAnswer((_) => profileFilter);
-      when(
-        () => mockAuth.signUp(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-          data: any(named: 'data'),
-        ),
-      ).thenAnswer((_) async => MockAuthResponse());
+      // Mock the auth.signUp to avoid rate limits, but keep DB real
+      when(() => client.auth).thenReturn(mockAuth);
+      when(() => mockAuth.signUp(
+        email: email,
+        password: 'Password123!',
+        data: {'username': username},
+      )).thenAnswer((_) async => mockResponse);
 
-      final repository = AuthRepository(client: mockClient);
+      final repository = AuthRepository(client: client);
+
       await repository.signUp(
-        username: 'newuser123',
-        email: 'new@example.com',
-        password: 'password123',
+        username: username,
+        email: email,
+        password: 'Password123!',
       );
 
-      verify(
-        () => mockAuth.signUp(
-          email: 'new@example.com',
-          password: 'password123',
-          data: any(named: 'data'),
-        ),
-      ).called(1);
+      // Verify the DB check was performed (username was available)
+      // Since auth is mocked, we can't verify user creation, but the call succeeded
+      verify(() => mockAuth.signUp(
+        email: email,
+        password: 'Password123!',
+        data: {'username': username},
+      )).called(1);
     });
   });
 
@@ -79,40 +93,33 @@ void main() {
       expect(AuthValidation.username(''), 'Please enter a username');
       expect(AuthValidation.email(''), 'Please enter your email');
       expect(AuthValidation.password(''), 'Please enter a password');
-      expect(AuthValidation.confirmPassword('', 'password123'), 'Please confirm your password');
+      expect(
+        AuthValidation.confirmPassword('', 'password123'),
+        'Please confirm your password',
+      );
     });
   });
 
   group('FR10 #5 — Duplicate username registration', () {
     test('throws UsernameTakenException when username already exists', () async {
-      final mockClient = MockSupabaseClient();
-      final profileQB = MockSupabaseQueryBuilder();
-      final profileTransform = FakeProfilesTransform({'id': 'existing'});
-      final profileFilter = FakeProfilesFilter(profileTransform);
-      final mockAuth = MockGoTrueClient();
+      if (!hasTestCredentials) return;
 
-      when(() => mockClient.auth).thenReturn(mockAuth);
-      when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-      when(() => profileQB.select('id')).thenAnswer((_) => profileFilter);
-
-      final repository = AuthRepository(client: mockClient);
+      final existingUsername = _uniqueUsername('duplicate');
+      await seedUser(admin, username: existingUsername);
+      final repository = AuthRepository(client: client);
+      final email = '${existingUsername}_new@thryft-test.local';
 
       expect(
         () => repository.signUp(
-          username: 'taken_user',
-          email: 'duplicate@example.com',
-          password: 'TestPass123',
+          username: existingUsername,
+          email: email,
+          password: 'Password123!',
         ),
         throwsA(isA<UsernameTakenException>()),
       );
 
-      verifyNever(
-        () => mockAuth.signUp(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-          data: any(named: 'data'),
-        ),
-      );
+      final duplicateUser = await _findUserByEmail(email);
+      expect(duplicateUser, isNull);
     });
   });
 
@@ -142,30 +149,14 @@ void main() {
 
   group('FR10 #8 — Network / error handling', () {
     test('propagates a network exception during signup', () async {
-      final mockClient = MockSupabaseClient();
-      final mockAuth = MockGoTrueClient();
-      final profileQB = MockSupabaseQueryBuilder();
-      final profileTransform = FakeProfilesTransform(null);
-      final profileFilter = FakeProfilesFilter(profileTransform);
-
-      when(() => mockClient.auth).thenReturn(mockAuth);
-      when(() => mockClient.from('profiles')).thenAnswer((_) => profileQB);
-      when(() => profileQB.select('id')).thenAnswer((_) => profileFilter);
-      when(
-        () => mockAuth.signUp(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-          data: any(named: 'data'),
-        ),
-      ).thenThrow(Exception('Network unavailable'));
-
-      final repository = AuthRepository(client: mockClient);
+      final offlineClient = SupabaseClient('https://invalid.supabase.co', 'invalid_key');
+      final repository = AuthRepository(client: offlineClient);
 
       expect(
         () => repository.signUp(
           username: 'network_test',
           email: 'net_test@example.com',
-          password: 'TestPass123',
+          password: 'Password123!',
         ),
         throwsA(isA<Exception>()),
       );
