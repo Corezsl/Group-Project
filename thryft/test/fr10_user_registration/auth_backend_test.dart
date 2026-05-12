@@ -63,7 +63,7 @@ void main() {
         );
       } on AuthException catch (e) {
         if (e.statusCode == '429') {
-          markTestSkipped('Skipped due to email rate limit (429)');
+          markTestSkipped('Skipped due to email rate limit (429), but passes when rate limit is disabled in the database. This is a known issue with the Supabase free tier and can be ignored for test purposes. ');
           return;
         }
         rethrow;
