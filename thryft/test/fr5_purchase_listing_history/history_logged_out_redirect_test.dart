@@ -1,17 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/router.dart';
-
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockUser extends Mock implements User {}
+import '../helpers/supabase_test_client.dart';
 
 // ---------------------------------------------------------------------------
 // FR5 Partition 6 — View order history while logged out
@@ -19,26 +9,33 @@ class MockUser extends Mock implements User {}
 // ---------------------------------------------------------------------------
 
 void main() {
-  late MockSupabaseClient client;
-  late MockGoTrueClient auth;
-
-  setUp(() {
-    client = MockSupabaseClient();
-    auth = MockGoTrueClient();
-    when(() => client.auth).thenReturn(auth);
+  setUpAll(() async {
+    if (hasTestCredentials) {
+      await getTestClient();
+    }
   });
 
   group('FR5 #6 — logged-out redirect guard', () {
-    test('returns /auth when no user is logged in', () {
-      when(() => auth.currentUser).thenReturn(null);
+    test('returns /auth when no user is logged in', () async {
+      if (!hasTestCredentials) return;
+      final client = Supabase.instance.client;
+      await client.auth.signOut();
 
       expect(requireAuth(client), equals('/auth'));
     });
 
-    test('returns null (allow) when a user is logged in', () {
-      when(() => auth.currentUser).thenReturn(MockUser());
+    test('returns null (allow) when a user is logged in', () async {
+      if (!hasTestCredentials) return;
+      final client = Supabase.instance.client;
+
+      await client.auth.signInWithPassword(
+        email: 'fr4.seller@thryft-test.local',
+        password: 'Thryft!test99',
+      );
 
       expect(requireAuth(client), isNull);
+
+      await client.auth.signOut();
     });
   });
 }
