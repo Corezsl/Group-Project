@@ -1,16 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/repositories/auth_repository.dart';
 import 'package:thryft/services/auth_validation.dart';
 
 import '../helpers/seed_helper.dart';
 import '../helpers/supabase_test_client.dart';
-
-// Mock classes for auth to avoid rate limits
-class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockAuthResponse extends Mock implements AuthResponse {}
 
 void main() {
   late SupabaseClient client;
@@ -59,32 +53,26 @@ void main() {
 
       final username = _uniqueUsername('success');
       final email = '$username@thryft-test.com';
-      final mockAuth = MockGoTrueClient();
-      final mockResponse = MockAuthResponse();
-
-      // Mock the auth.signUp to avoid rate limits, but keep DB real
-      when(() => client.auth).thenReturn(mockAuth);
-      when(() => mockAuth.signUp(
-        email: email,
-        password: 'Password123!',
-        data: {'username': username},
-      )).thenAnswer((_) async => mockResponse);
-
       final repository = AuthRepository(client: client);
 
-      await repository.signUp(
-        username: username,
-        email: email,
-        password: 'Password123!',
-      );
+      try {
+        await repository.signUp(
+          username: username,
+          email: email,
+          password: 'Password123!',
+        );
+      } on AuthException catch (e) {
+        if (e.statusCode == '429') {
+          markTestSkipped('Skipped due to email rate limit (429)');
+          return;
+        }
+        rethrow;
+      }
 
-      // Verify the DB check was performed (username was available)
-      // Since auth is mocked, we can't verify user creation, but the call succeeded
-      verify(() => mockAuth.signUp(
-        email: email,
-        password: 'Password123!',
-        data: {'username': username},
-      )).called(1);
+      final createdUser = await _findUserByEmail(email);
+      expect(createdUser, isNotNull);
+      expect(createdUser!.email, email);
+      createdUserIds.add(createdUser.id);
     });
   });
 
