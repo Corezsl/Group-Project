@@ -55,8 +55,11 @@ void main() {
 
     sellerId = await _signInOrSignUp(
         client, _sellerEmail, _sellerPassword, 'fr4_seller');
+    await admin.from('profiles').update({'username': 'fr4_seller'}).eq('id', sellerId);
+    
     buyerId = await _signInOrSignUp(
         client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+    await admin.from('profiles').update({'username': 'fr4_buyer'}).eq('id', buyerId);
 
     // Run tests as buyer (they are viewing the seller's profile)
     await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');

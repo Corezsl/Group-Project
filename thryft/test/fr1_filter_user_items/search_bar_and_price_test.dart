@@ -2,28 +2,31 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thryft/providers/search_provider.dart';
 import 'package:thryft/utils/filter_form_validator.dart';
+import '../helpers/supabase_test_client.dart';
 
 //FR1 #10 - Search bar text filtering
 // Verifies SearchProvider debounces input, sets + clears loading and provides
 //results list after debounce.
 void main() {
-  test('SearchProvider debounces and runs a search', () {
+  setUpAll(() async {
+    if (hasTestCredentials) {
+      await getTestClient();
+    }
+  });
+
+  test('SearchProvider debounces and runs a search', () async {
+    if (!hasTestCredentials) return;
     final provider = SearchProvider();
 
-    FakeAsync().run((fa) { //simulate user typing into search bar
-      provider.onQueryChanged('abc');
-      // Immediately after typing query and loading should be true
-      expect(provider.query, 'abc'); //immediately after typing, set the query 
-      expect(provider.isLoading, isTrue); // load = true
+    provider.onQueryChanged('abc');
+    expect(provider.query, 'abc');
+    expect(provider.isLoading, isTrue);
 
-      // advance past the debounce and let async work flush
-      fa.elapse(const Duration(milliseconds: 400));
-      fa.flushMicrotasks();
+    // advance past the debounce (400ms) plus network time
+    await Future.delayed(const Duration(milliseconds: 1500));
 
-      // _executeSearch catches network errors and sets loading to false
-      expect(provider.isLoading, isFalse);
-      expect(provider.results, isA<List>());
-    });
+    expect(provider.isLoading, isFalse);
+    expect(provider.results, isA<List>());
   });
 
 //FR 1 #8: Invalid Price filter test - wrong data type

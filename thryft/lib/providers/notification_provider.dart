@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:thryft/models/notification_model.dart';
@@ -8,6 +9,7 @@ class NotificationProvider extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
   RealtimeChannel? _realtimeChannel;
+  StreamSubscription<AuthState>? _authSub;
 
   NotificationProvider() {
     _init();
@@ -19,7 +21,7 @@ class NotificationProvider extends ChangeNotifier {
 
   /// Initializes authentication listeners to sync notifications.
   Future<void> _init() async {
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
         fetchNotifications();
         _subscribeToNotifications();
@@ -84,6 +86,7 @@ class NotificationProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _unsubscribeFromNotifications();
     super.dispose();
   }
