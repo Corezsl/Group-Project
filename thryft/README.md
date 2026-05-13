@@ -107,7 +107,8 @@ thryft/
 │       └── notification_badge.dart
 ├── test/                                # Unit & widget tests
 ├── pubspec.yaml                         # Dependencies
-└── .env                                 # Supabase keys (not committed)
+├── .env                                 # Supabase keys (not committed)
+└── .env.test                            # Test Supabase keys for integration tests (not committed)
 ```
 
 ---
@@ -145,6 +146,20 @@ SUPABASE_ANON_KEY=your-anon-key
 
 The `.env` file is loaded at startup via `flutter_dotenv` and is declared as an asset in `pubspec.yaml`.
 
+#### `.env.test` (for integration tests)
+
+Integration tests run against a **separate** Supabase test project so they never touch production data. To run them, create a `.env.test` file in the project root (next to `pubspec.yaml`) with the test project's credentials:
+
+```env
+TEST_SUPABASE_URL=https://your-test-project.supabase.co
+TEST_SUPABASE_ANON_KEY=your-test-anon-key
+TEST_SUPABASE_SERVICE_KEY=your-test-service-role-key
+```
+
+See [.env.test.example](.env.test.example) for the full template. Credentials for the shared team test project can be obtained from George / the team password manager. The `service_role` key bypasses Row Level Security and must be kept secret — `.env.test` is gitignored.
+
+If `.env.test` is missing, integration test suites are skipped automatically rather than failing.
+
 ### 4. Run the app
 
 ```bash
@@ -160,7 +175,13 @@ flutter run -d windows         # Windows desktop
 ### 5. Run tests
 
 ```bash
+# Unit & widget tests (no test credentials required)
 flutter test
+
+# Integration tests (require .env.test — see above)
+flutter test --dart-define-from-file=.env.test test/fr8_wishlist
+flutter test --dart-define-from-file=.env.test test/fr7_making_offer
+flutter test --dart-define-from-file=.env.test test/fr11_chatbot
 ```
 
 ---
@@ -228,10 +249,10 @@ Notifications update both parties at each step
 | Member | GitHub |
 |---|---|
 | Joyee Hing | [up2245819 / Joyeehing](https://github.com/Joyeehing) |
-| Konstantinos | [up2219830 / Konstantinos](https://github.com/Konstantinos) |
-| Georgios | [up2227777 / Georgios](https://github.com/Georgios) |
+| Konstantinos Savva | [up2219830 / kotsiossav](https://github.com/Konstantinos) |
+| Georgios Papageorgiou | [up2227777 / geopadev](https://github.com/Georgios) |
 | Abigail Hinchliffe | [up2205638 / AbigailHinchliffe](https://github.com/AbigailHinchliffe) |
-| — | [up2306089 / AlucardOffD2](https://github.com/AlucardOffD2) |
+| Connor Watkin | [up2306089 / Corezsl](https://github.com/Corezsl) |
 | Chrystalla Tambouri | [up2257593 / ChrystallaT1](https://github.com/ChrystallaT1) |
 
 ---
