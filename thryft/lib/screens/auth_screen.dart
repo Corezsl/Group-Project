@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:thryft/repositories/auth_repository.dart';
+import 'package:thryft/services/auth_validation.dart';
 
 // Single screen that handles both login and signup — toggled via the tab at the top.
 class AuthScreen extends StatefulWidget {
@@ -35,39 +37,26 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isLogin) {
-        // Authenticate existing user.
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
+        await AuthRepository().signInWithPassword(
+          email: _emailController.text,
           password: _passwordController.text,
         );
       } else {
-        final username = _usernameController.text.trim();
-
-        // Make sure the username isn't already taken before creating the account.
-        final existingProfile = await Supabase.instance.client
-            .from('profiles')
-            .select('id')
-            .eq('username', username)
-            .maybeSingle();
-
-        if (existingProfile != null) {
-          if (mounted) {
-            setState(() {
-              _errorMessage = 'Username "$username" is already taken';
-            });
-          }
-          return;
-        }
-
-        // Register new user with metadata.
-        await Supabase.instance.client.auth.signUp(
-          email: _emailController.text.trim(),
+        await AuthRepository().signUp(
+          username: _usernameController.text,
+          email: _emailController.text,
           password: _passwordController.text,
-          data: {'username': username},
         );
       }
+
       if (mounted) {
         context.go('/account');
+      }
+    } on UsernameTakenException catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
       }
     } on AuthException catch (e) {
       if (mounted) {
@@ -224,12 +213,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 labelText: 'Username',
                                 border: OutlineInputBorder(),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter a username';
-                                }
-                                return null;
-                              },
+                              validator: AuthValidation.username,
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -240,17 +224,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                              ).hasMatch(value.trim())) {
-                                return 'Please enter a valid email address';
-                              }
-                              return null;
-                            },
+                            validator: AuthValidation.email,
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -272,15 +246,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 },
                               ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a password';
-                              }
-                              if (value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
+                            validator: AuthValidation.password,
                           ),
                           if (!_isLogin) ...[
                             const SizedBox(height: 16),
@@ -291,15 +257,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 labelText: 'Confirm Password',
                                 border: OutlineInputBorder(),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
+                              validator: (value) => AuthValidation.confirmPassword(
+                                value,
+                                _passwordController.text,
+                              ),
                             ),
                           ],
                           if (_isLogin) ...[
