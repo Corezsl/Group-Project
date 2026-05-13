@@ -32,18 +32,18 @@ Buying and selling used goods is messy. Listings live across scattered marketpla
 
 ## ✨ Features
 
-| Feature | Description |
-|---|---|
-| 🛍️ **Browse & Search** | Category-based browsing, keyword search, and a flexible filter system |
-| 📸 **Create Listings** | Photo upload via image picker, category tagging, and price setting |
-| 💬 **Make Offers** | Send, receive, accept, or decline offers on listings |
-| 🛒 **Cart & Orders** | Add items to cart, place orders, and track sold items |
-| ❤️ **Wishlist** | Save listings to revisit later |
-| ⭐ **Reviews** | Leave and read reviews to build seller trust |
-| 🤖 **Navigation Assistant** | In-app chat assistant to help users find their way around |
-| 🔔 **Notifications** | In-app notification feed with unread badges |
-| 🔐 **Secure Auth** | Email/password authentication with password reset via Supabase |
-| 👤 **Profiles** | Public seller profiles, account settings, and listing management |
+| Feature                     | Description                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| 🛍️ **Browse & Search**      | Category-based browsing, keyword search, and a flexible filter system |
+| 📸 **Create Listings**      | Photo upload via image picker, category tagging, and price setting    |
+| 💬 **Make Offers**          | Send, receive, accept, or decline offers on listings                  |
+| 🛒 **Cart & Orders**        | Add items to cart, place orders, and track sold items                 |
+| ❤️ **Wishlist**             | Save listings to revisit later                                        |
+| ⭐ **Reviews**              | Leave and read reviews to build seller trust                          |
+| 🤖 **Navigation Assistant** | In-app chat assistant to help users find their way around             |
+| 🔔 **Notifications**        | In-app notification feed with unread badges                           |
+| 🔐 **Secure Auth**          | Email/password authentication with password reset via Supabase        |
+| 👤 **Profiles**             | Public seller profiles, account settings, and listing management      |
 
 ---
 
@@ -246,14 +246,14 @@ Notifications update both parties at each step
 
 ## 👥 Team — SETAP Group 4c
 
-| Member | GitHub |
-|---|---|
-| Joyee Hing | [up2245819 / Joyeehing](https://github.com/Joyeehing) |
-| Konstantinos Savva | [up2219830 / kotsiossav](https://github.com/Konstantinos) |
-| Georgios Papageorgiou | [up2227777 / geopadev](https://github.com/Georgios) |
-| Abigail Hinchliffe | [up2205638 / AbigailHinchliffe](https://github.com/AbigailHinchliffe) |
-| Connor Watkin | [up2306089 / Corezsl](https://github.com/Corezsl) |
-| Chrystalla Tambouri | [up2257593 / ChrystallaT1](https://github.com/ChrystallaT1) |
+| Member                | GitHub                                                                |
+| --------------------- | --------------------------------------------------------------------- |
+| Joyee Hing            | [up2245819 / Joyeehing](https://github.com/Joyeehing)                 |
+| Konstantinos Savva    | [up2219830 / kotsiossav](https://github.com/Konstantinos)             |
+| Georgios Papageorgiou | [up2227777 / geopadev](https://github.com/Georgios)                   |
+| Abigail Hinchliffe    | [up2205638 / AbigailHinchliffe](https://github.com/AbigailHinchliffe) |
+| Connor Watkin         | [up2306089 / Corezsl](https://github.com/Corezsl)                     |
+| Chrystalla Tambouri   | [up2257593 / ChrystallaT1](https://github.com/ChrystallaT1)           |
 
 ---
 
