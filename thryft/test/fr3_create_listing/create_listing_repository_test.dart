@@ -35,16 +35,16 @@ Future<String> _signInOrSignUp(
 /// A set of valid form fields used as a baseline for validator tests.
 /// Individual tests override one field at a time to check specific errors.
 Map<String, dynamic> _validFormFields() => {
-      'title': 'Test Vintage Jacket',
-      'price': '25.00',
-      'condition': 'Good',
-      'brand': 'Nike',
-      'department': 'Mens',
-      'category': 'Shirt',
-      'size': 'M',
-      'isNewListing': true,
-      'hasImage': true,
-    };
+  'title': 'Test Vintage Jacket',
+  'price': '25.00',
+  'condition': 'Good',
+  'brand': 'Nike',
+  'department': 'Mens',
+  'category': 'Shirt',
+  'size': 'M',
+  'isNewListing': true,
+  'hasImage': true,
+};
 
 void main() {
   // ---------------------------------------------------------------------------
@@ -179,22 +179,24 @@ void main() {
       expect(result, contains('valid price'));
     });
 
-    test('Partition 6: missing size for non-Accessories category returns error',
-        () {
-      final result = validateListingForm(
-        title: 'Test Jacket',
-        price: '25.00',
-        condition: 'Good',
-        brand: 'Nike',
-        department: 'Mens',
-        category: 'Shirt',
-        size: null, // missing size
-        isNewListing: true,
-        hasImage: true,
-      );
-      expect(result, isNotNull);
-      expect(result, contains('size'));
-    });
+    test(
+      'Partition 6: missing size for non-Accessories category returns error',
+      () {
+        final result = validateListingForm(
+          title: 'Test Jacket',
+          price: '25.00',
+          condition: 'Good',
+          brand: 'Nike',
+          department: 'Mens',
+          category: 'Shirt',
+          size: null, // missing size
+          isNewListing: true,
+          hasImage: true,
+        );
+        expect(result, isNotNull);
+        expect(result, contains('size'));
+      },
+    );
 
     test('Partition 8: Accessories — size not required, validation passes', () {
       final result = validateListingForm(
@@ -280,9 +282,13 @@ void main() {
   // Repository tests — live DB
   // ---------------------------------------------------------------------------
   if (!hasTestCredentials) {
-    test('FR3 repository tests', () {},
-        skip: 'No Supabase credentials — pass '
-            '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    test(
+      'FR3 repository tests',
+      () {},
+      skip:
+          'No Supabase credentials — pass '
+          '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run',
+    );
     return;
   }
 
@@ -296,7 +302,11 @@ void main() {
     admin = getServiceClient();
 
     sellerId = await _signInOrSignUp(
-        client, _sellerEmail, _sellerPassword, 'fr4_seller');
+      client,
+      _sellerEmail,
+      _sellerPassword,
+      'fr4_seller',
+    );
 
     repo = CreateListingRepository(client);
   });
@@ -314,7 +324,7 @@ void main() {
     late String productId;
 
     test('insert succeeds and row appears in DB', () async {
-      productId = await repo.createListing({
+      final product = await repo.createListing({
         'name': 'FR3 Test Jacket',
         'price': 25.00,
         'size': 'M',
@@ -325,6 +335,7 @@ void main() {
         'material': 'Cotton',
         'colour': 'Blue',
       });
+      productId = product['id'].toString();
 
       // Verify the row exists in DB
       final row = await client
@@ -354,7 +365,11 @@ void main() {
 
     tearDown(() async {
       await _signInOrSignUp(
-          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+        client,
+        _sellerEmail,
+        _sellerPassword,
+        'fr4_seller',
+      );
     });
 
     test('throws NotLoggedInException', () {
@@ -382,7 +397,7 @@ void main() {
     late String productId;
 
     test('secondary image URLs are persisted in DB', () async {
-      productId = await repo.createListing({
+      final product = await repo.createListing({
         'name': 'FR3 Multi Photo Item',
         'price': 30.00,
         'size': 'L',
@@ -398,10 +413,13 @@ void main() {
         'image_url_4': 'https://example.com/photo4.jpg',
         'image_url_5': 'https://example.com/photo5.jpg',
       });
+      productId = product['id'].toString();
 
       final row = await client
           .from('products')
-          .select('image_url, image_url_2, image_url_3, image_url_4, image_url_5')
+          .select(
+            'image_url, image_url_2, image_url_3, image_url_4, image_url_5',
+          )
           .eq('id', productId)
           .single();
 
@@ -444,7 +462,7 @@ void main() {
     late String productId;
 
     test('insert succeeds with price 0.01', () async {
-      productId = await repo.createListing({
+      final product = await repo.createListing({
         'name': 'FR3 Cheap Item',
         'price': 0.01,
         'size': 'S',
@@ -455,6 +473,7 @@ void main() {
         'material': 'Cotton',
         'colour': 'White',
       });
+      productId = product['id'].toString();
 
       final row = await client
           .from('products')
@@ -477,7 +496,7 @@ void main() {
     late String productId;
 
     test('insert succeeds with price 10000', () async {
-      productId = await repo.createListing({
+      final product = await repo.createListing({
         'name': 'FR3 Expensive Item',
         'price': 10000.0,
         'size': 'XL',
@@ -488,6 +507,7 @@ void main() {
         'material': 'Silk',
         'colour': 'Black',
       });
+      productId = product['id'].toString();
 
       final row = await client
           .from('products')

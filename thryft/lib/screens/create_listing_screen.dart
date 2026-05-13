@@ -18,6 +18,8 @@ import 'package:thryft/providers/notification_provider.dart';
 import 'package:thryft/models/notification_model.dart';
 import 'package:thryft/utils/listing_form_validator.dart';
 
+import 'package:thryft/repositories/create_listing_repository.dart';
+
 class CreateListingScreen extends StatefulWidget {
   // Null when creating a new listing; populated with the existing product data when editing.
   final Map<String, dynamic>? initialData;
@@ -28,8 +30,10 @@ class CreateListingScreen extends StatefulWidget {
 }
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
-  bool _isLoading = false;   // disables the submit button while upload is in progress
-  int _selectedIndex = 0;    // which thumbnail slot is currently shown in the main preview
+  bool _isLoading =
+      false; // disables the submit button while upload is in progress
+  int _selectedIndex =
+      0; // which thumbnail slot is currently shown in the main preview
   late final TextEditingController _titleController;
   String? _selectedCategory;
   String? _selectedSize;
@@ -63,9 +67,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     _titleController = TextEditingController(text: data?['name']?.toString());
 
     final priceVal = data?['price'];
-    _priceController = TextEditingController(text: priceVal != null ? priceVal.toString() : '');
+    _priceController = TextEditingController(
+      text: priceVal != null ? priceVal.toString() : '',
+    );
 
-    _descriptionController = TextEditingController(text: data?['description']?.toString());
+    _descriptionController = TextEditingController(
+      text: data?['description']?.toString(),
+    );
 
     if (data != null) {
       _selectedCategory = data['category']?.toString();
@@ -76,7 +84,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       _selectedMaterial = data['material']?.toString();
       _selectedColour = data['colour']?.toString();
       // Use normalized department so it matches dropdown items
-      _selectedDepartment = _normalizeDepartment(data['department']?.toString());
+      _selectedDepartment = _normalizeDepartment(
+        data['department']?.toString(),
+      );
 
       final existingMain = data['imageUrl']?.toString();
       if (existingMain != null && existingMain.trim().isNotEmpty) {
@@ -105,10 +115,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     return input[0].toUpperCase() + input.substring(1);
   }
 
-  final List<XFile?> _images = List.filled(5, null);                   // newly picked files, one per slot
-  final List<String?> _existingImageUrls = List.filled(5, null);       // old URLs shown in edit mode until replaced
+  final List<XFile?> _images = List.filled(
+    5,
+    null,
+  ); // newly picked files, one per slot
+  final List<String?> _existingImageUrls = List.filled(
+    5,
+    null,
+  ); // old URLs shown in edit mode until replaced
   final ImagePicker _picker = ImagePicker();
-
 
   @override
   void dispose() {
@@ -144,9 +159,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       hasImage: _images[0] != null,
     );
     if (validationError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(validationError)));
       return;
     }
 
@@ -159,18 +174,18 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         throw Exception('You must be logged in to modify a listing.');
       }
 
-      // Block listing creation if the seller hasn't added a payment method yet.
-      final paymentData = await supabase
-          .from('payment_methods')
-          .select()
-          .eq('user_id', user.id)
-          .maybeSingle();
+      final listingRepo = CreateListingRepository(supabase);
 
-      if (paymentData == null) {
+      // Block listing creation if the seller hasn't added a payment method yet.
+      final hasPaymentMethod = await listingRepo.hasPaymentMethod(user.id);
+
+      if (!hasPaymentMethod) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Please add a payment method in your profile settings before creating a listing.'),
+              content: Text(
+                'Please add a payment method in your profile settings before creating a listing.',
+              ),
             ),
           );
           setState(() => _isLoading = false);
@@ -182,42 +197,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
       // Only upload a new main image if the user picked one; otherwise keep the existing URL.
       if (_images[0] != null) {
-        final mainImage = _images[0]!;
-        final fileExt = mainImage.name.split('.').last;
-        final fileName = '${const Uuid().v4()}.$fileExt';
-        final bytes = await mainImage.readAsBytes();
-
-        await supabase.storage
-            .from('product-images')
-            .uploadBinary(
-              fileName,
-              bytes,
-              fileOptions: FileOptions(contentType: 'image/$fileExt'),
-            );
-
-        publicImageUrl = supabase.storage
-            .from('product-images')
-            .getPublicUrl(fileName);
+        publicImageUrl = await listingRepo.uploadImage(_images[0]!);
       }
 
       // Upload each additional slot only if a new file was picked; keep the old URL otherwise.
       final List<String?> secondaryImageUrls = List.filled(4, null);
       for (int i = 1; i <= 4; i++) {
         if (_images[i] != null) {
-          final img = _images[i]!;
-          final fileExt = img.name.split('.').last;
-          final fileName = '${const Uuid().v4()}.$fileExt';
-          final bytes = await img.readAsBytes();
-          await supabase.storage
-              .from('product-images')
-              .uploadBinary(
-                fileName,
-                bytes,
-                fileOptions: FileOptions(contentType: 'image/$fileExt'),
-              );
-          secondaryImageUrls[i - 1] = supabase.storage
-              .from('product-images')
-              .getPublicUrl(fileName);
+          secondaryImageUrls[i - 1] = await listingRepo.uploadImage(
+            _images[i]!,
+          );
         } else {
           secondaryImageUrls[i - 1] = _existingImageUrls[i];
         }
@@ -239,8 +228,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'image_url_5': secondaryImageUrls[3],
         'category': _selectedCategory,
         'fitting': _selectedFitting,
-        'material' : _selectedMaterial,
-        'colour' : _selectedColour, 
+        'material': _selectedMaterial,
+        'colour': _selectedColour,
         'description': _descriptionController.text.isNotEmpty
             ? _descriptionController.text
             : null,
@@ -251,44 +240,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         final double? oldPrice = double.tryParse(
           widget.initialData!['price']?.toString() ?? '',
         );
-        final bool isPriceDrop =
-            oldPrice != null && newPrice < oldPrice;
-        if (isPriceDrop) {
-          productData['original_price'] = oldPrice;
-        } else {
-          productData['original_price'] = null;
-        }
 
-        await supabase
-            .from('products')
-            .update(productData)
-            .eq('id', widget.initialData!['id']);
-
-        // Send a price drop notification to everyone who wishlisted this item.
-        if (isPriceDrop) {
-          try {
-            final listingId = widget.initialData!['id']?.toString();
-            if (listingId == null) throw Exception('Missing listing id');
-            final wishlistEntries = await supabase
-                .from('wishlist')
-                .select('user_id')
-                .eq('listing_id', listingId);
-            for (final entry in wishlistEntries as List) {
-              final wishlisterId = entry['user_id']?.toString();
-              if (wishlisterId != null && wishlisterId != user.id) {
-                await NotificationProvider.insertNotification(
-                  userId: wishlisterId,
-                  type: NotificationType.priceDrop,
-                  content:
-                      '"${_titleController.text}" dropped from £${oldPrice.toStringAsFixed(2)} to £${newPrice.toStringAsFixed(2)}!',
-                  listingId: listingId,
-                );
-              }
-            }
-          } catch (e) {
-            debugPrint('Error sending price drop notifications: $e');
-          }
-        }
+        await listingRepo.updateListing(
+          listingId: widget.initialData!['id'].toString(),
+          productData: productData,
+          oldPrice: oldPrice,
+          newPrice: newPrice,
+          title: _titleController.text,
+        );
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -296,8 +255,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         );
         context.pop(); // return to the previous screen after a successful edit
       } else {
-        productData['user_id'] = user.id;
-        await supabase.from('products').insert(productData);
+        await listingRepo.createListing(productData);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +360,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         child: currentImage != null
             ? _buildImagePreview(currentImage)
             : (existingUrl != null && existingUrl.isNotEmpty)
-                ? _buildNetworkPreview(existingUrl)
+            ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -460,7 +418,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         child: currentImage != null
             ? _buildImagePreview(currentImage)
             : (existingUrl != null && existingUrl.isNotEmpty)
-                ? _buildNetworkPreview(existingUrl)
+            ? _buildNetworkPreview(existingUrl)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -539,75 +497,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 20),
         const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        Builder(builder: (context) {
-          final safeCat = _selectedCategory != null && categories.contains(_selectedCategory)
-              ? _selectedCategory
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeCat,
-            hint: const Text('Select a category'),
-            items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedCategory = val;
-                _selectedSize = null;
-              });
-            },
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: 20),
-        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Builder(builder: (context) {
-          const deptItems = ['All', 'Womens', 'Mens'];
-          final validDept = _selectedDepartment != null && deptItems.contains(_selectedDepartment)
-              ? _selectedDepartment
-              : null;
-
-          return DropdownButtonFormField<String>(
-            value: validDept,
-            hint: const Text('Select a department'),
-            items: const [
-              DropdownMenuItem(value: 'All', child: Text('All')),
-              DropdownMenuItem(value: 'Womens', child: Text('Womens')),
-              DropdownMenuItem(value: 'Mens', child: Text('Mens')),
-            ],
-            onChanged: (val) => setState(() => _selectedDepartment = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
-              ),
-            ),
-          );
-        }),
-        if (_selectedCategory != 'Accessories') ...[
-          const SizedBox(height: 20),
-          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Builder(builder: (context) {
-            final current = getSizeOptions(department: _selectedDepartment, category: _selectedCategory).toList();
-            final sizes = List<String>.from(current);
-            if (_selectedSize != null && !sizes.contains(_selectedSize)) {
-              sizes.insert(0, _selectedSize!);
-            }
-            final safeInitial = _selectedSize != null && sizes.contains(_selectedSize)
-                ? _selectedSize
+        Builder(
+          builder: (context) {
+            final safeCat =
+                _selectedCategory != null &&
+                    categories.contains(_selectedCategory)
+                ? _selectedCategory
                 : null;
-
             return DropdownButtonFormField<String>(
-              initialValue: safeInitial,
-              hint: const Text('Select a size'),
-              items: sizes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-              onChanged: (val) => setState(() => _selectedSize = val),
+              initialValue: safeCat,
+              hint: const Text('Select a category'),
+              items: categories
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedCategory = val;
+                  _selectedSize = null;
+                });
+              },
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -618,118 +526,232 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 ),
               ),
             );
-          }),
+          },
+        ),
+        const SizedBox(height: 20),
+        const Text('Department', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        Builder(
+          builder: (context) {
+            const deptItems = ['All', 'Womens', 'Mens'];
+            final validDept =
+                _selectedDepartment != null &&
+                    deptItems.contains(_selectedDepartment)
+                ? _selectedDepartment
+                : null;
+
+            return DropdownButtonFormField<String>(
+              value: validDept,
+              hint: const Text('Select a department'),
+              items: const [
+                DropdownMenuItem(value: 'All', child: Text('All')),
+                DropdownMenuItem(value: 'Womens', child: Text('Womens')),
+                DropdownMenuItem(value: 'Mens', child: Text('Mens')),
+              ],
+              onChanged: (val) => setState(() => _selectedDepartment = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            );
+          },
+        ),
+        if (_selectedCategory != 'Accessories') ...[
+          const SizedBox(height: 20),
+          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Builder(
+            builder: (context) {
+              final current = getSizeOptions(
+                department: _selectedDepartment,
+                category: _selectedCategory,
+              ).toList();
+              final sizes = List<String>.from(current);
+              if (_selectedSize != null && !sizes.contains(_selectedSize)) {
+                sizes.insert(0, _selectedSize!);
+              }
+              final safeInitial =
+                  _selectedSize != null && sizes.contains(_selectedSize)
+                  ? _selectedSize
+                  : null;
+
+              return DropdownButtonFormField<String>(
+                initialValue: safeInitial,
+                hint: const Text('Select a size'),
+                items: sizes
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => setState(() => _selectedSize = val),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
         const SizedBox(height: 20),
         const Text('Condition', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        Builder(builder: (context) {
-          final safeCondition = _selectedCondition != null && conditions.contains(_selectedCondition)
-              ? _selectedCondition
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeCondition,
-            hint: const Text('Select a condition'),
-            items: conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (val) => setState(() => _selectedCondition = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
+        Builder(
+          builder: (context) {
+            final safeCondition =
+                _selectedCondition != null &&
+                    conditions.contains(_selectedCondition)
+                ? _selectedCondition
+                : null;
+            return DropdownButtonFormField<String>(
+              initialValue: safeCondition,
+              hint: const Text('Select a condition'),
+              items: conditions
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedCondition = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
         const SizedBox(height: 20),
         const Text('Brand', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        Builder(builder: (context) {
-          final safeBrand = _selectedBrand != null && brands.contains(_selectedBrand)
-              ? _selectedBrand
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeBrand,
-            hint: const Text('Select a brand'),
-            items: brands.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-            onChanged: (val) => setState(() => _selectedBrand = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
+        Builder(
+          builder: (context) {
+            final safeBrand =
+                _selectedBrand != null && brands.contains(_selectedBrand)
+                ? _selectedBrand
+                : null;
+            return DropdownButtonFormField<String>(
+              initialValue: safeBrand,
+              hint: const Text('Select a brand'),
+              items: brands
+                  .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedBrand = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
         const SizedBox(height: 20),
         const Text(
           'Fitting (Optional)',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        Builder(builder: (context) {
-          final safeFitting = _selectedFitting != null && fittings.contains(_selectedFitting)
-              ? _selectedFitting
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeFitting,
-            hint: const Text('Select a fitting'),
-            items: fittings.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
-            onChanged: (val) => setState(() => _selectedFitting = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
+        Builder(
+          builder: (context) {
+            final safeFitting =
+                _selectedFitting != null && fittings.contains(_selectedFitting)
+                ? _selectedFitting
+                : null;
+            return DropdownButtonFormField<String>(
+              initialValue: safeFitting,
+              hint: const Text('Select a fitting'),
+              items: fittings
+                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedFitting = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
-            ),
-          );
-        }),
-        const SizedBox(height: 20),
-        Text('Material (Optional)', style: TextStyle(fontWeight: FontWeight.w600)
+            );
+          },
         ),
-        Builder(builder: (context) {
-          // defensive copy / null-safety: ensure we always work with a List<String>
-          final List<String> materialsList = materials;
-          final safeMaterial = _selectedMaterial != null && materialsList.contains(_selectedMaterial)
-              ? _selectedMaterial
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeMaterial,
-            hint: const Text('Select a material'),
-            items: materialsList.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-            onChanged: (val) => setState(() => _selectedMaterial = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
-              ),
-            ),
-          );
-        }),
         const SizedBox(height: 20),
-        Text('Colour (Optional)', style: TextStyle(fontWeight: FontWeight.w600)),
-        Builder(builder: (context) {
-          final List<String> coloursList = colours;
-          final safeColour = _selectedColour != null && coloursList.contains(_selectedColour)
-              ? _selectedColour
-              : null;
-          return DropdownButtonFormField<String>(
-            initialValue: safeColour,
-            hint: const Text('Select a colour'),
-            items: coloursList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (val) => setState(() => _selectedColour = val),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
+        Text(
+          'Material (Optional)',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        Builder(
+          builder: (context) {
+            // defensive copy / null-safety: ensure we always work with a List<String>
+            final List<String> materialsList = materials;
+            final safeMaterial =
+                _selectedMaterial != null &&
+                    materialsList.contains(_selectedMaterial)
+                ? _selectedMaterial
+                : null;
+            return DropdownButtonFormField<String>(
+              initialValue: safeMaterial,
+              hint: const Text('Select a material'),
+              items: materialsList
+                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedMaterial = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Colour (Optional)',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        Builder(
+          builder: (context) {
+            final List<String> coloursList = colours;
+            final safeColour =
+                _selectedColour != null && coloursList.contains(_selectedColour)
+                ? _selectedColour
+                : null;
+            return DropdownButtonFormField<String>(
+              initialValue: safeColour,
+              hint: const Text('Select a colour'),
+              items: coloursList
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedColour = val),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 20),
         const Text(
           'Description (Optional)',
