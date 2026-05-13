@@ -79,6 +79,7 @@ thryft/
 │   │   └── notification_model.dart      # In-app notifications
 │   ├── providers/                       # Provider-based state
 │   │   ├── cart_provider.dart
+│   │   ├── create_listing_provider.dart
 │   │   ├── wishlist_provider.dart
 │   │   ├── offer_provider.dart
 │   │   ├── search_provider.dart
