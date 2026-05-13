@@ -37,9 +37,13 @@ Future<String> _signInOrSignUp(
 
 void main() {
   if (!hasTestCredentials) {
-    test('FR2 integration tests', () {},
-        skip: 'No Supabase credentials — pass '
-            '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run');
+    test(
+      'FR2 integration tests',
+      () {},
+      skip:
+          'No Supabase credentials — pass '
+          '--dart-define=TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY to run',
+    );
     return;
   }
 
@@ -54,9 +58,17 @@ void main() {
     admin = getServiceClient();
 
     sellerId = await _signInOrSignUp(
-        client, _sellerEmail, _sellerPassword, 'fr4_seller');
+      client,
+      _sellerEmail,
+      _sellerPassword,
+      'fr4_seller',
+    );
     buyerId = await _signInOrSignUp(
-        client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      client,
+      _buyerEmail,
+      _buyerPassword,
+      'fr4_buyer',
+    );
 
     // Run tests as buyer (they are viewing the seller's profile)
     await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');
@@ -80,34 +92,45 @@ void main() {
     setUp(() async {
       // Seed 3 sold products and 1 rating
       await _signInOrSignUp(
-          client, _sellerEmail, _sellerPassword, 'fr4_seller');
+        client,
+        _sellerEmail,
+        _sellerPassword,
+        'fr4_seller',
+      );
 
-      p1 = await seedProduct(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          isSold: true,
-          orderStatus: 'delivered');
-      p2 = await seedProduct(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          isSold: true,
-          orderStatus: 'delivered',
-          name: 'FR2 Sold Shirt');
-      p3 = await seedProduct(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          isSold: true,
-          orderStatus: 'delivered',
-          name: 'FR2 Sold Jacket');
+      p1 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        isSold: true,
+        orderStatus: 'delivered',
+      );
+      p2 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        isSold: true,
+        orderStatus: 'delivered',
+        name: 'FR2 Sold Shirt',
+      );
+      p3 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        isSold: true,
+        orderStatus: 'delivered',
+        name: 'FR2 Sold Jacket',
+      );
 
-      await _signInOrSignUp(
-          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
-      r1 = await seedRating(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          productId: p1,
-          rating: 5,
-          comment: 'Perfect condition!');
+      await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      r1 = await seedRating(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        productId: p1,
+        rating: 5,
+        comment: 'Perfect condition!',
+      );
     });
 
     tearDown(() async {
@@ -139,12 +162,15 @@ void main() {
   // FR2 Partitions 3 & 4 — Profile with 0 ratings and 0 reviews
   // -------------------------------------------------------------------------
   group('FR2 #3,4 — profile with 0 ratings', () {
-    test('fetchRatings returns empty list for seller with no reviews', () async {
-      // Use a UUID that won't match any seller
-      const ghostSeller = '00000000-ffff-4000-8000-000000000000';
-      final ratings = await repo.fetchRatings(ghostSeller);
-      expect(ratings, isEmpty);
-    });
+    test(
+      'fetchRatings returns empty list for seller with no reviews',
+      () async {
+        // Use a UUID that won't match any seller
+        const ghostSeller = '00000000-ffff-4000-8000-000000000000';
+        final ratings = await repo.fetchRatings(ghostSeller);
+        expect(ratings, isEmpty);
+      },
+    );
 
     test('fetchSoldCount returns 0 for seller with no sold items', () async {
       const ghostSeller = '00000000-ffff-4000-8000-000000000000';
@@ -172,17 +198,24 @@ void main() {
 
     setUp(() async {
       await _signInOrSignUp(
-          client, _sellerEmail, _sellerPassword, 'fr4_seller');
-      p1 = await seedProduct(client,
-          sellerId: sellerId, isSold: true, orderStatus: 'delivered');
+        client,
+        _sellerEmail,
+        _sellerPassword,
+        'fr4_seller',
+      );
+      p1 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        isSold: true,
+        orderStatus: 'delivered',
+      );
       await client.auth.signOut();
     });
 
     tearDown(() async {
       await admin.from('products').delete().eq('id', p1);
       // Restore buyer session for subsequent tests
-      await _signInOrSignUp(
-          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');
     });
 
     test('fetchProfile still returns data when signed out', () async {
@@ -195,6 +228,24 @@ void main() {
       final count = await repo.fetchSoldCount(sellerId);
       expect(count, greaterThanOrEqualTo(1));
     });
+
+    test(
+      'making a review while signed out throws an error (RLS blocks insert)',
+      () async {
+        // The user is signed out in setUp().
+        // Attemp to insert a Review/Rating fails because Supabase Auth requires a logged-in user.
+        expect(
+          () async => await client.from('ratings').insert({
+            'seller_id': sellerId,
+            'buyer_id': buyerId,
+            'product_id': p1,
+            'rating': 5,
+            'comment': 'Attempting to review while logged out',
+          }),
+          throwsA(isA<PostgrestException>()),
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -205,21 +256,28 @@ void main() {
 
     setUp(() async {
       await _signInOrSignUp(
-          client, _sellerEmail, _sellerPassword, 'fr4_seller');
-      p1 = await seedProduct(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          isSold: true,
-          orderStatus: 'delivered');
+        client,
+        _sellerEmail,
+        _sellerPassword,
+        'fr4_seller',
+      );
+      p1 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        isSold: true,
+        orderStatus: 'delivered',
+      );
 
-      await _signInOrSignUp(
-          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
-      r1 = await seedRating(client,
-          sellerId: sellerId,
-          buyerId: buyerId,
-          productId: p1,
-          rating: 5,
-          comment: 'I bought this and loved it!');
+      await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      r1 = await seedRating(
+        client,
+        sellerId: sellerId,
+        buyerId: buyerId,
+        productId: p1,
+        rating: 5,
+        comment: 'I bought this and loved it!',
+      );
     });
 
     tearDown(() async {
@@ -243,29 +301,44 @@ void main() {
     setUp(() async {
       // Use the fr5 buyer as a 3rd user
       otherUserId = await _signInOrSignUp(
-          client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
+        client,
+        'fr5.buyer@thryft-test.local',
+        'Thryft!test99',
+        'fr5_buyer',
+      );
 
       await _signInOrSignUp(
-          client, _sellerEmail, _sellerPassword, 'fr4_seller');
-      p1 = await seedProduct(client,
-          sellerId: sellerId,
-          buyerId: otherUserId,
-          isSold: true,
-          orderStatus: 'delivered');
+        client,
+        _sellerEmail,
+        _sellerPassword,
+        'fr4_seller',
+      );
+      p1 = await seedProduct(
+        client,
+        sellerId: sellerId,
+        buyerId: otherUserId,
+        isSold: true,
+        orderStatus: 'delivered',
+      );
 
       // Rate as the other user
       await _signInOrSignUp(
-          client, 'fr5.buyer@thryft-test.local', 'Thryft!test99', 'fr5_buyer');
-      r1 = await seedRating(client,
-          sellerId: sellerId,
-          buyerId: otherUserId,
-          productId: p1,
-          rating: 4,
-          comment: 'Someone else bought this.');
+        client,
+        'fr5.buyer@thryft-test.local',
+        'Thryft!test99',
+        'fr5_buyer',
+      );
+      r1 = await seedRating(
+        client,
+        sellerId: sellerId,
+        buyerId: otherUserId,
+        productId: p1,
+        rating: 4,
+        comment: 'Someone else bought this.',
+      );
 
       // Switch back to main buyer
-      await _signInOrSignUp(
-          client, _buyerEmail, _buyerPassword, 'fr4_buyer');
+      await _signInOrSignUp(client, _buyerEmail, _buyerPassword, 'fr4_buyer');
     });
 
     tearDown(() async {
