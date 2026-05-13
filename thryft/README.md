@@ -175,13 +175,8 @@ flutter run -d windows         # Windows desktop
 ### 5. Run tests
 
 ```bash
-# Unit & widget tests (no test credentials required)
-flutter test
-
-# Integration tests (require .env.test — see above)
-flutter test --dart-define-from-file=.env.test test/fr8_wishlist
-flutter test --dart-define-from-file=.env.test test/fr7_making_offer
-flutter test --dart-define-from-file=.env.test test/fr11_chatbot
+# Unit & widget tests && integration tests (require .env.test — see above)
+cd thryft; flutter test --dart-define-from-file=.env.test -j 1
 ```
 
 ---
