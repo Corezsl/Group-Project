@@ -5,10 +5,10 @@ import 'package:thryft/providers/chat_service.dart';
 import '../helpers/seed_helper.dart';
 import '../helpers/supabase_test_client.dart';
 
-const fr11TestPassword = 'Thryft!test99';
+const testPassword = 'Thryft!test99';
 
-class Fr11ChatbotTestContext {
-  Fr11ChatbotTestContext(this.scope);
+class ChatbotTestContext {
+  ChatbotTestContext(this.scope);
 
   final String scope;
 
@@ -21,10 +21,10 @@ class Fr11ChatbotTestContext {
   final conversationIds = <String>[];
   final userIds = <String>[];
 
-  String get _emailPrefix => 'fr11.$runId.$scope';
+  String get _emailPrefix => 'chatbot.$runId.$scope';
 
   String get _usernamePrefix {
-    return 'fr11_${runId}_$scope'.replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_');
+    return 'chatbot_${runId}_$scope'.replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_');
   }
 
   Future<void> setUpAll() async {
@@ -47,7 +47,10 @@ class Fr11ChatbotTestContext {
     // Clean up any test data created during tests
     for (final conversationId in conversationIds) {
       try {
-        await client.from('user_interactions').delete().eq('id', conversationId);
+        await client
+            .from('user_interactions')
+            .delete()
+            .eq('id', conversationId);
       } catch (e) {
         // Ignore cleanup errors
       }
@@ -57,7 +60,7 @@ class Fr11ChatbotTestContext {
 
   Future<void> tearDownAll() async {
     await tearDown();
-    
+
     await client.auth.signOut();
     if (userIds.isEmpty) return;
 
@@ -77,7 +80,7 @@ class Fr11ChatbotTestContext {
       final created = await serviceClient.auth.admin.createUser(
         AdminUserAttributes(
           email: email,
-          password: fr11TestPassword,
+          password: testPassword,
           emailConfirm: true,
           userMetadata: {'username': username},
         ),
@@ -136,13 +139,13 @@ class Fr11ChatbotTestContext {
     try {
       res = await client.auth.signInWithPassword(
         email: email,
-        password: fr11TestPassword,
+        password: testPassword,
       );
     } on AuthException {
       await client.auth.signOut(scope: SignOutScope.local);
       res = await client.auth.signInWithPassword(
         email: email,
-        password: fr11TestPassword,
+        password: testPassword,
       );
     }
 
@@ -150,10 +153,7 @@ class Fr11ChatbotTestContext {
   }
 
   Future<AssistantChatProvider> createChatProvider() async {
-    return AssistantChatProvider(
-      chatService: chatService,
-      supabase: client,
-    );
+    return AssistantChatProvider(chatService: chatService, supabase: client);
   }
 
   Future<String> createConversation(String title) async {
@@ -180,7 +180,9 @@ class Fr11ChatbotTestContext {
     await provider.send(message);
   }
 
-  Future<List<Map<String, dynamic>>> getConversationMessages(String conversationId) async {
+  Future<List<Map<String, dynamic>>> getConversationMessages(
+    String conversationId,
+  ) async {
     final result = await client
         .from('messages')
         .select()
